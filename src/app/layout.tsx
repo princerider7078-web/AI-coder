@@ -3,7 +3,7 @@ import { Plus_Jakarta_Sans, Inter, JetBrains_Mono, Noto_Sans_Devanagari } from "
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/providers/theme-provider";
+import { AppProviders } from "@/components/providers/AppProviders";
 
 /* ---------- Fonts (GrowPlants Design System Part E.3) ---------- */
 const fontJakarta = Plus_Jakarta_Sans({
@@ -136,14 +136,9 @@ export default function RootLayout({
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
+        <AppProviders>
           {children}
-        </ThemeProvider>
+        </AppProviders>
         <Toaster />
         <SonnerToaster position="top-right" richColors closeButton />
       </body>
