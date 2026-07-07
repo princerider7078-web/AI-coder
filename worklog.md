@@ -64,3 +64,65 @@ Stage Summary:
   * /home/z/my-project/download/phase1-foundation-verification.png (initial screenshot)
   * /home/z/my-project/download/phase1-foundation-verification-final.png (final screenshot after interactions)
 - Awaiting user approval before starting Phase 2 (Design System & Component Library).
+
+---
+Task ID: 2
+Agent: Main (Senior Frontend Architect)
+Task: Phase 2 — Design System & Component Library. Build the GrowPlants-specific reusable component layer on top of the already-installed shadcn/ui primitives. Per the fullstack-dev skill rule, shadcn primitives (Button, Input, Modal, Drawer, Toast, etc.) are reused, not rebuilt. Only GrowPlants domain primitives, feedback states, and product-specific components are built.
+
+Work Log:
+- Confirmed Phase 1 approval; loaded fullstack-dev skill rules (reuse shadcn, no rebuild)
+- Inspected existing src/components/ui/ — 50+ shadcn primitives already installed (button, input, dialog, sheet, drawer, toast, table, calendar, etc.)
+- Defined Phase 2 scope: 12 common/ domain primitives + 5 feedback/ components + 6 products/ primitives
+- Built src/components/common/LogoMark.tsx — branded icon (Sprout in forest-green tile) with sm/md/lg/xl sizes + "tile" and "bare" variants
+- Built src/components/common/Logo.tsx — full brand lockup (LogoMark + wordmark + optional tagline) using Plus Jakarta Sans font, bilingual via useBilingual, hover scale animation
+- Built src/components/common/Rating.tsx — star rating with display mode (half-star precision, count support) + interactive mode (clickable, keyboard-navigable radiogroup); sm/md/lg sizes; uses amber accent for stars
+- Built src/components/common/Price.tsx — INR-formatted price with strikethrough MRP + discount % + sm/md/lg/xl sizes; auto-calculates discount via discountPercent()
+- Built src/components/common/StatusPill.tsx — enum-aware status badge covering all 25+ statuses across order/booking/payment/provider-verification/return/user enums; maps each to semantic color (success/warning/info/destructive/secondary)
+- Built src/components/common/SectionHeader.tsx — section title + subtitle + optional action link with arrow icon; h1/h2/h3 polymorphic; left/center align; optional leading icon
+- Built src/components/common/Container.tsx — responsive max-width wrapper (default max-w-7xl, narrow max-w-4xl, wide max-w-[1600px]); polymorphic as div/section/main/article/aside/header/footer
+- Built src/components/common/EmptyState.tsx — composable empty state with icon-in-tinted-circle + title + description + optional CTA (link or button); sm/md/lg sizes; role="status"
+- Built src/components/common/ErrorState.tsx — composable error state with alert-triangle icon + title + description + retry button + optional error code + optional support link; role="alert"
+- Built src/components/common/LanguageToggle.tsx — EN/HI switch with 3 variants (button with globe icon, segmented EN|HI radiogroup, icon-only); uses Zustand store; instant toggle
+- Built src/components/common/IconBadge.tsx — icon button with numeric bubble overlay; cart/wishlist/notification use cases; 0/1-9/10-99/100+ display logic; accessible label includes count; link or button variant
+- Built src/components/common/FilterChip.tsx — removable filter pill (× button) for active-filter bar; primary-tinted
+- Built src/components/common/FreeShippingProgressBar.tsx — ₹499 free-shipping threshold indicator; full variant (truck icon + message + progress bar) + compact variant (mobile); success state with checkmark when achieved
+- Built src/components/feedback/ProductCardSkeleton.tsx — loading skeleton matching ProductCard layout (image, badges, title, rating, price, button)
+- Built src/components/feedback/SectionSkeleton.tsx — full section skeleton with header + grid/carousel/list variants
+- Built src/components/feedback/ListSkeleton.tsx — generic list-item skeleton for order/booking/address lists
+- Built src/components/feedback/FormSkeleton.tsx — labeled input rows + submit button skeleton for auth/profile/address forms
+- Built src/components/feedback/OfflineBanner.tsx — sticky top banner detecting network status via useSyncExternalStore (SSR-safe, no setState-in-effect anti-pattern); shows "You're offline" message
+- Built src/components/products/StockStatus.tsx — inventory state indicator (in-stock green, low-stock amber with "Only X left", out-of-stock red); notify-me variant for OOS with bell icon
+- Built src/components/products/CareSpecs.tsx — plant care quick-glance row (sunlight/water/difficulty/pet-safe); compact (icon + value inline) + full (icon + label + value in tinted cards) variants
+- Built src/components/products/QuantitySelector.tsx — numeric stepper (1-10 max per PRD §10.1 FR-CART-004); sm/md sizes; readonly variant for order history; aria-live for screen readers
+- Built src/components/products/ProductBadges.tsx — Sale/New/Best Seller/OOS badges with icons; priority-ordered; maxBadges limit (default 2)
+- Built src/components/products/DiscountBadge.tsx — standalone discount % pill (success-green tinted)
+- Built src/components/products/RatingHistogram.tsx — 5→1 star bar chart with percentages; optional header showing average rating + total count
+- Rewrote src/app/page.tsx to showcase all Phase 1 + Phase 2 work in 13 sections: Header with Logo + IconBadges + LanguageToggle; Color Tokens; Typography; Bilingual Store (with button + icon + segmented toggles); shadcn/ui Base; Utility Formatters; Brand Lockup (LogoMark 4 sizes + bare, Logo 3 sizes); Rating & Price (display + interactive + DiscountBadge); StatusPill (order/booking/payment/verification statuses); SectionHeader (3 variants); Product Primitives (StockStatus, CareSpecs compact+full, QuantitySelector interactive, ProductBadges, RatingHistogram); Free Shipping Progress (3 states + compact); Filter Chips & IconBadge (interactive chip removal + 5 IconBadge variants); Empty & Error States (4 cards in grid); Loading Skeletons (ProductCardSkeleton grid + ListSkeleton + FormSkeleton); Constants Sanity Check
+- Ran bun run lint → 1 error: setState-in-effect in OfflineBanner.tsx
+- Refactored OfflineBanner.tsx to use useSyncExternalStore (React 18+ recommended pattern) → lint clean (0 errors, 0 warnings)
+- Fixed import error: page.tsx imported LogoMark from Logo.tsx instead of LogoMark.tsx → corrected to two separate imports
+- Used agent-browser for end-to-end verification:
+  * Page loaded with correct title "GrowPlants — Plants, Planters & Gardening Services in Sonipat"
+  * All 13 sections rendered (Color Tokens, Typography, Bilingual, shadcn Base, Formatters, Brand Lockup, Rating+Price, StatusPill, SectionHeader, Product Primitives, Free Shipping, Filter Chips+IconBadge, Empty+Error States, Skeletons, Constants)
+  * FilterChip removal works: clicked × on "Indoor Plants" chip → chip removed (3 remaining)
+  * QuantitySelector increase button works (clicked +1)
+  * Interactive Rating works: clicked 5 stars → radio state changed to checked=true
+  * LanguageToggle segmented works: clicked "हि" → EN unchecked, हि checked; logo aria-label switched to Hindi ("ग्रोप्लांट्स — सोनीपत में..."); hero CTAs switched to "पौधे खरीदें" / "माली बुक करें"
+  * No page errors, no console warnings
+  * Captured full-page screenshot saved to /home/z/my-project/download/phase2-component-library-full.png
+
+Stage Summary:
+- Phase 2 (Design System & Component Library) is COMPLETE and verified end-to-end.
+- 23 GrowPlants-specific components shipped across 3 folders:
+  * common/ (12): Logo, LogoMark, Rating, Price, StatusPill, SectionHeader, Container, EmptyState, ErrorState, LanguageToggle, IconBadge, FilterChip, FreeShippingProgressBar
+  * feedback/ (5): ProductCardSkeleton, SectionSkeleton, ListSkeleton, FormSkeleton, OfflineBanner
+  * products/ (6): StockStatus, CareSpecs, QuantitySelector, ProductBadges, DiscountBadge, RatingHistogram
+- Every component: TypeScript-typed props, design-token-driven (no hardcoded colors/sizes), bilingual-aware (via useBilingual or localized enum labels), WCAG 2.1 AA accessible (semantic HTML, aria-labels, keyboard nav, role attributes), responsive (mobile-first via Tailwind utilities).
+- shadcn/ui primitives (50+ in src/components/ui/) reused as the foundation — no duplication.
+- ESLint clean (0 errors, 0 warnings). Dev server log shows GET / 200, no fatal errors. Agent Browser verified all interactive components work.
+- All 13 scratch-page sections render correctly with all variants of every component.
+- Artifacts:
+  * /home/z/my-project/download/phase2-component-library-top.png (top of page screenshot)
+  * /home/z/my-project/download/phase2-component-library-full.png (full-page screenshot)
+- Awaiting user approval before starting Phase 3 (Layout System — Header, Footer, CartDrawer, MobileBottomNav, MobileDrawerNav, AnnouncementBar, SearchBar with autocomplete, NotificationBell, MegaMenu).
