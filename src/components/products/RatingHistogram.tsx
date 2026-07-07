@@ -59,7 +59,7 @@ export function RatingHistogram({
               aria-label={`${STAR_LABELS[row.stars]}: ${row.percentage}% (${row.count} reviews)`}
             >
               <div
-                className="h-full rounded-full bg-accent transition-all duration-500 ease-base"
+                className="h-full rounded-full bg-warning transition-all duration-500 ease-base"
                 style={{ width: `${row.percentage}%` }}
               />
             </div>

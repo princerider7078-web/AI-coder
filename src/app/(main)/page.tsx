@@ -1,270 +1,198 @@
-"use client";
+import type { Metadata } from "next";
+import { HeroSection } from "@/components/sections/HeroSection";
+import { TrustBadges } from "@/components/common/TrustBadges";
+import { QuickCategoryGrid } from "@/components/sections/QuickCategoryGrid";
+import { BestSellersSection } from "@/components/sections/BestSellersSection";
+import { ServicesSection } from "@/components/sections/ServicesSection";
+import { WhyChooseUsSection } from "@/components/sections/WhyChooseUsSection";
+import { ProvidersSection } from "@/components/sections/ProvidersSection";
+import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
+import { BlogPreviewSection } from "@/components/sections/BlogPreviewSection";
+import { FAQSection } from "@/components/sections/FAQSection";
+import { NewsletterSection } from "@/components/sections/NewsletterSection";
+import { WhatsAppButton } from "@/components/common/WhatsAppButton";
+import { Container } from "@/components/common/Container";
+import { FAQ_ITEMS, PRODUCTS, TESTIMONIALS, TESTIMONIAL_STATS } from "@/data/homepageData";
+import { APP_URL, CONTACT_PHONE, CONTACT_EMAIL } from "@/lib/constants";
 
 /**
  * ============================================================================
- * GrowPlants — Phase 3 Layout Verification Page (TEMPORARY)
+ * GrowPlants — Homepage (Phase 4)
  * ============================================================================
  *
- * This page verifies that the Phase 3 Layout System is fully functional:
- *   - AnnouncementBar rotates bilingual promos
- *   - Header renders with logo image, search bar, mega menu, icon badges
- *   - CartDrawer opens when cart icon is clicked (try the "Add Demo Item"
- *     buttons below to populate the cart)
- *   - Footer renders all columns + trust badges + newsletter
- *   - MobileBottomNav shows on mobile (<768px)
- *   - MobileDrawerNav opens via hamburger
+ * Built per HOMEPAGE_AUDIT_REPORT.md. 10 sections in the exact order
+ * specified by §1.1:
+ *   1. HeroSection (with PincodeChecker integrated)
+ *   1a. TrustBadges (persistent trust bar below hero — audit §9.1.5)
+ *   2. QuickCategoryGrid
+ *   3. BestSellersSection
+ *   4. ServicesSection
+ *   5. WhyChooseUsSection
+ *   6. ProvidersSection
+ *   7. TestimonialsSection (id="testimonials")
+ *   8. BlogPreviewSection
+ *   9. FAQSection
+ *   10. NewsletterSection (id="newsletter")
  *
- * This page will be REPLACED by the real GrowPlants Homepage in Phase 4.
+ * Plus floating WhatsAppButton (audit §11.1).
+ *
+ * JSON-LD structured data (audit C7 fix):
+ *   - LocalBusiness (GrowPlants as Sonipat business)
+ *   - ItemList (featured products)
+ *   - FAQPage (FAQ accordion)
+ *   - Review/Testimonial aggregate rating
+ *
+ * Page-specific metadata (audit M17 fix).
  * ============================================================================
  */
-import { Sprout, ShoppingCart, CheckCircle2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Container } from "@/components/common/Container";
-import { SectionHeader } from "@/components/common/SectionHeader";
-import { useCart } from "@/contexts/CartContext";
-import { useBilingual } from "@/store/useBilingual";
-import { formatINR } from "@/lib/utils";
 
-// Demo products for "add to cart" testing
-const DEMO_PRODUCTS = [
-  {
-    productId: "1",
-    name: "Snake Plant (Sansevieria)",
-    slug: "snake-plant",
-    price: 299,
-    image: "https://nurserylive.com/cdn/shop/products/nurserylive-snake-plant-sansevieria-trifasciata-plant_600x600.jpg",
+export const metadata: Metadata = {
+  title: "GrowPlants — Plants, Planters & Gardening Services in Sonipat",
+  description:
+    "Shop healthy indoor & outdoor plants, premium planters, and gardening supplies. Book verified local gardeners for balcony setup, maintenance, and landscaping in Sonipat, Haryana. Free delivery above ₹499.",
+  alternates: {
+    canonical: "/",
   },
-  {
-    productId: "2",
-    name: "Money Plant (Pothos)",
-    slug: "money-plant",
-    price: 249,
-    image: "https://nurserylive.com/cdn/shop/products/nurserylive-money-plant-po-thos-plant_600x600.jpg",
+  openGraph: {
+    title: "GrowPlants — Plants, Planters & Gardening Services in Sonipat",
+    description:
+      "Sonipat's trusted botanical marketplace. Shop plants, planters, and gardening supplies, or book verified local gardeners. Free delivery above ₹499.",
+    url: "/",
+    type: "website",
   },
-  {
-    productId: "3",
-    name: "Areca Palm",
-    slug: "areca-palm",
-    price: 499,
-    image: "https://nurserylive.com/cdn/shop/products/nurserylive-areca-palm-plant_600x600.jpg",
-  },
-  {
-    productId: "4",
-    name: "ZZ Plant",
-    slug: "zz-plant",
-    price: 599,
-    image: "https://nurserylive.com/cdn/shop/products/nurserylive-zz-plant_600x600.jpg",
-  },
-];
+};
 
-export default function Phase3LayoutVerificationPage() {
-  const { addItem, openDrawer, items, itemCount, subtotal } = useCart();
-  const { t } = useBilingual();
+/* ---------- JSON-LD Structured Data (audit C7 fix) ---------- */
 
-  const handleAddDemo = (product: (typeof DEMO_PRODUCTS)[number]) => {
-    addItem({
-      productId: product.productId,
-      variantId: null,
+const localBusinessSchema = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "GrowPlants",
+  description:
+    "Location-based botanical e-commerce and gardening service marketplace in Sonipat, Haryana.",
+  url: APP_URL,
+  telephone: CONTACT_PHONE,
+  email: CONTACT_EMAIL,
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Sonipat",
+    addressRegion: "Haryana",
+    addressCountry: "IN",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 28.9949,
+    longitude: 77.0246,
+  },
+  openingHours: "Mo-Su 09:00-19:00",
+  priceRange: "₹₹",
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: TESTIMONIAL_STATS.averageRating,
+    reviewCount: TESTIMONIAL_STATS.totalReviews,
+  },
+};
+
+const itemListSchema = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Featured Plants",
+  itemListElement: PRODUCTS.slice(0, 8).map((product, idx) => ({
+    "@type": "ListItem",
+    position: idx + 1,
+    item: {
+      "@type": "Product",
       name: product.name,
-      slug: product.slug,
-      price: product.price,
       image: product.image,
-      quantity: 1,
-      inStock: true,
-    });
-    openDrawer();
-  };
+      description: product.shortDescription,
+      sku: product.id,
+      offers: {
+        "@type": "Offer",
+        price: product.sellingPrice,
+        priceCurrency: "INR",
+        availability:
+          product.availableStock > 0
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+      },
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: product.rating,
+        reviewCount: product.reviewCount,
+      },
+    },
+  })),
+};
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map((item) => ({
+    "@type": "Question",
+    name: item.question.en,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer.en,
+    },
+  })),
+};
+
+/* ---------- Page ---------- */
+
+export default function HomePage() {
   return (
-    <Container variant="default" className="section-py">
-      {/* ---------- Hero ---------- */}
-      <section className="text-center mb-16">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-body-sm font-medium mb-4">
-          <Sparkles className="size-4" aria-hidden="true" />
-          Phase 3 — Layout System Complete
-        </div>
-        <h1 className="text-display mb-4">
-          {t("hero.title")}
-        </h1>
-        <p className="text-body-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-          {t("hero.subtitle")}
-        </p>
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          <Button size="lg" asChild>
-            <a href="/shop">{t("hero.ctaPrimary")}</a>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <a href="/services">{t("hero.ctaSecondary")}</a>
-          </Button>
-        </div>
-      </section>
-
-      {/* ---------- Status Banner ---------- */}
-      <Card className="mb-12 border-primary/30 bg-primary/5">
-        <CardContent className="flex items-start gap-3 p-4">
-          <CheckCircle2 className="size-5 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-          <div className="text-body-sm">
-            <p className="font-semibold text-foreground">
-              Layout shell ready for Phase 4 (Homepage)
-            </p>
-            <p className="text-muted-foreground mt-1">
-              AnnouncementBar, Header (with your logo, search, mega menu, pincode
-              checker, wishlist, notifications, cart, account), CartDrawer, Footer
-              (trust badges, multi-column links, newsletter, social, payment
-              methods), MobileBottomNav, and MobileDrawerNav are all wired and
-              functional. Try clicking the cart icon in the header or adding demo
-              items below.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ---------- Demo: Add to Cart ---------- */}
-      <SectionHeader
-        title="Test the Cart Drawer"
-        subtitle="Click any button below to add an item to the cart — the CartDrawer slides in automatically"
-        icon={ShoppingCart}
-        className="mb-6"
+    <>
+      {/* JSON-LD structured data (audit C7 fix) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-        {DEMO_PRODUCTS.map((product) => (
-          <Card key={product.productId} className="overflow-hidden hover-lift">
-            <CardContent className="p-4 space-y-3">
-              <div className="aspect-square rounded-md bg-muted flex items-center justify-center">
-                <Sprout className="size-12 text-muted-foreground" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-body-sm font-medium text-foreground line-clamp-2">
-                  {product.name}
-                </p>
-                <p className="text-h4 font-bold text-foreground mt-1">
-                  {formatINR(product.price)}
-                </p>
-              </div>
-              <Button
-                className="w-full gap-2"
-                onClick={() => handleAddDemo(product)}
-              >
-                <ShoppingCart className="size-4" aria-hidden="true" />
-                {t("common.btn.addToCart")}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* ---------- 1. Hero ---------- */}
+      <HeroSection />
 
-      {/* ---------- Cart State ---------- */}
-      <Card className="mb-12">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="text-overline text-muted-foreground mb-1">Live cart state (from CartContext)</p>
-              <p className="text-h3 font-bold text-foreground">
-                {itemCount} {itemCount === 1 ? "item" : "items"} · {formatINR(subtotal)}
-              </p>
-            </div>
-            <Button onClick={openDrawer} disabled={itemCount === 0} className="gap-2">
-              <ShoppingCart className="size-4" aria-hidden="true" />
-              Open Cart Drawer
-            </Button>
-          </div>
-          {items.length > 0 && (
-            <>
-              <Separator className="my-4" />
-              <ul className="space-y-2">
-                {items.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between text-body-sm">
-                    <span className="text-foreground">{item.name}</span>
-                    <span className="text-muted-foreground tabular-nums">
-                      {item.quantity} × {formatINR(item.price)} = {formatINR(item.quantity * item.price)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {/* ---------- 1a. Trust badges bar (audit §9.1.5 fix) ---------- */}
+      <Container className="py-6">
+        <TrustBadges />
+      </Container>
 
-      {/* ---------- What's Wired ---------- */}
-      <SectionHeader
-        title="What's Wired in Phase 3"
-        subtitle="Every component below is functional — try them"
-        className="mb-6"
-      />
+      {/* ---------- 2. Quick Category Grid ---------- */}
+      <QuickCategoryGrid />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-        <FeatureCard
-          icon={Sparkles}
-          title="AnnouncementBar"
-          desc="Rotating bilingual promos above the header. Dismissible (persists per session)."
-        />
-        <FeatureCard
-          icon={ShoppingCart}
-          title="Header + Search"
-          desc="Logo image, search with autocomplete dropdown, pincode checker, icon badges."
-        />
-        <FeatureCard
-          icon={Sprout}
-          title="MegaMenu"
-          desc="Desktop dropdown with 2-level category hierarchy (Plants/Planters/Products/Services)."
-        />
-        <FeatureCard
-          icon={ShoppingCart}
-          title="CartDrawer"
-          desc="Slide-out cart with free-shipping progress, quantity selectors, checkout CTA."
-        />
-        <FeatureCard
-          icon={CheckCircle2}
-          title="Footer"
-          desc="4 trust badges, 5 link columns, newsletter signup, social icons, payment methods."
-        />
-        <FeatureCard
-          icon={Sprout}
-          title="Mobile Nav"
-          desc="Bottom tab bar (Home/Shop/Services/Cart/Account) + hamburger drawer with categories."
-        />
-      </div>
+      {/* ---------- 3. Best Sellers ---------- */}
+      <BestSellersSection />
 
-      {/* ---------- Note ---------- */}
-      <Card className="bg-muted/30">
-        <CardContent className="p-6 text-center">
-          <p className="text-body-sm text-muted-foreground">
-            <strong className="text-foreground">Note:</strong> The links in the
-            Header, MegaMenu, Footer, and MobileBottomNav point to routes
-            (/shop, /services, /account, etc.) that will be built in Phases 4–13.
-            For now they return 404 — that&apos;s expected. The layout shell itself
-            is fully functional. The real Homepage replaces this page in Phase 4.
-          </p>
-        </CardContent>
-      </Card>
-    </Container>
-  );
-}
+      {/* ---------- 4. Services ---------- */}
+      <ServicesSection />
 
-function FeatureCard({
-  icon: Icon,
-  title,
-  desc,
-}: {
-  icon: typeof Sprout;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <Card className="h-full">
-      <CardContent className="p-4 flex items-start gap-3">
-        <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-          <Icon className="size-5" aria-hidden="true" />
-        </div>
-        <div>
-          <p className="text-body font-semibold text-foreground">{title}</p>
-          <p className="text-body-sm text-muted-foreground mt-0.5">{desc}</p>
-        </div>
-      </CardContent>
-    </Card>
+      {/* ---------- 5. Why Choose Us ---------- */}
+      <WhyChooseUsSection />
+
+      {/* ---------- 6. Providers ---------- */}
+      <ProvidersSection />
+
+      {/* ---------- 7. Testimonials (id="testimonials") ---------- */}
+      <TestimonialsSection />
+
+      {/* ---------- 8. Blog Preview ---------- */}
+      <BlogPreviewSection />
+
+      {/* ---------- 9. FAQ ---------- */}
+      <FAQSection />
+
+      {/* ---------- 10. Newsletter (id="newsletter") ---------- */}
+      <NewsletterSection />
+
+      {/* ---------- Floating WhatsApp (audit §11.1) ---------- */}
+      <WhatsAppButton />
+    </>
   );
 }

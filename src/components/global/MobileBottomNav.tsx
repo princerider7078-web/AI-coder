@@ -73,7 +73,7 @@ export function MobileBottomNav() {
                         className={cn(
                           "absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1",
                           "flex items-center justify-center",
-                          "rounded-full bg-accent text-accent-foreground text-[10px] font-bold tabular-nums",
+                          "rounded-full bg-warning text-on-warning text-[10px] font-bold tabular-nums",
                           "ring-2 ring-background"
                         )}
                         aria-hidden="true"

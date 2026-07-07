@@ -70,7 +70,7 @@ export function IconBadge({
           className={cn(
             "absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1",
             "flex items-center justify-center",
-            "rounded-full bg-accent text-accent-foreground text-[10px] font-bold tabular-nums",
+            "rounded-full bg-warning text-on-warning text-[10px] font-bold tabular-nums",
             "ring-2 ring-background"
           )}
           aria-hidden="true"

@@ -5,24 +5,21 @@
 
 /*
  * ============================================================================
- * GrowPlants — Design System Tokens (globals.css)
- * Source of truth: Frontend Development Plan, Part E (Design System Plan)
+ * GrowPlants — "Growth and Vitality" Design System
+ * Source: design.md (user-provided specification)
  *
- * Color anchors (from 01_project_specification.md):
- *   - Background olive: #f7fbf0
- *   - Text pine:        #181d17
- *
- * Brand identity: "Botanical Premium" — warm, natural, expert, Indian.
- * Primary: forest green. Accent: warm amber. Secondary: sage.
+ * Design Style: Modern, Clean, Premium, Nature-Inspired, Trust-Focused
+ * Brand Personality: Fresh, Natural, Premium, Professional, Friendly
+ * Core Principles: Mobile-First, Fast Scannability, Minimal Cognitive Load,
+ *                  High Conversion, Accessibility-First
  * ============================================================================
  */
 
 @theme inline {
-  /* ---- shadcn/ui semantic bridge (keep compatibility with all shadcn components) ---- */
+  /* ---- shadcn/ui semantic bridge ---- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --font-heading: var(--font-jakarta);
   --font-devanagari: var(--font-noto-devanagari);
   --font-mono: var(--font-jetbrains-mono);
 
@@ -59,162 +56,278 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* ---- GrowPlants brand color tokens ---- */
-  --color-brand-bg: var(--brand-bg);
-  --color-brand-fg: var(--brand-fg);
-  --color-brand-primary: var(--brand-primary);
-  --color-brand-primary-hover: var(--brand-primary-hover);
-  --color-brand-accent: var(--brand-accent);
-  --color-brand-secondary: var(--brand-secondary);
+  /* ---- GrowPlants Material 3 color tokens ---- */
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-surface-tint: var(--surface-tint);
+
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-on-primary-fixed: var(--on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
+  --color-inverse-primary: var(--inverse-primary);
+
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
+
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+
+  --color-leaf-green: var(--leaf-green);
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --color-danger: var(--danger);
+  --color-on-warning: var(--on-warning);
   --color-info: var(--info);
-  --color-surface: var(--surface);
-  --color-surface-alt: var(--surface-alt);
+  --color-on-info: var(--on-info);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
 
-  /* ---- Radius scale ---- */
+  /* ---- Primary scale (50-900) ---- */
+  --color-primary-50: #F2FBF3;
+  --color-primary-100: #DDF5E0;
+  --color-primary-200: #BCEABF;
+  --color-primary-300: #8FD68E;
+  --color-primary-400: #5ABB59;
+  --color-primary-500: #2E7D32;
+  --color-primary-600: #256628;
+  --color-primary-700: #1C4D1E;
+  --color-primary-800: #123614;
+  --color-primary-900: #081E0A;
+
+  /* ---- Radius scale (design.md §5) ---- */
   --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-  --radius-2xl: calc(var(--radius-lg) + 8px);
+  --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* ---- Shadows ---- */
-  --shadow-xs: 0 1px 2px rgba(24, 29, 23, 0.06);
-  --shadow-sm: 0 2px 4px rgba(24, 29, 23, 0.08);
-  --shadow-md: 0 8px 16px rgba(24, 29, 23, 0.10);
-  --shadow-lg: 0 16px 32px rgba(24, 29, 23, 0.12);
-  --shadow-focus: 0 0 0 3px rgba(46, 125, 50, 0.35);
+  /* ---- Shadow system (design.md §6) ---- */
+  --shadow-xs: 0 1px 2px rgba(24, 29, 23, 0.05);
+  --shadow-sm: 0 2px 8px rgba(24, 29, 23, 0.08);
+  --shadow-md: 0 4px 16px rgba(24, 29, 23, 0.10);
+  --shadow-lg: 0 8px 32px rgba(24, 29, 23, 0.12);
+  --shadow-xl: 0 16px 48px rgba(24, 29, 23, 0.15);
+  --shadow-focus: 0 0 0 3px rgba(13, 99, 27, 0.35);
 
-  /* ---- Motion ---- */
+  /* ---- Motion (design.md §9: 150ms / 200ms / 300ms) ---- */
   --ease-fast: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-base: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-slow: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 150ms;
-  --duration-base: 250ms;
-  --duration-slow: 400ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
 }
 
 /* ============================================================================
- * LIGHT THEME — GrowPlants default
- * Brand palette: olive background, pine text, forest green primary, amber accent
+ * LIGHT THEME — "Growth and Vitality" (design.md)
  * ============================================================================
  */
 :root {
-  /* shadcn semantic tokens (GrowPlants-mapped) */
-  --background: #f7fbf0;            /* brand-bg olive */
-  --foreground: #181d17;            /* brand-fg pine */
-  --card: #ffffff;
-  --card-foreground: #181d17;
-  --popover: #ffffff;
-  --popover-foreground: #181d17;
-  --primary: #2e7d32;               /* forest green */
-  --primary-foreground: #ffffff;
-  --secondary: #6b8e4e;             /* sage */
-  --secondary-foreground: #ffffff;
-  --muted: #f1f5e8;                 /* surface-alt */
-  --muted-foreground: #6b7561;
-  --accent: #f59e0b;                /* warm amber */
-  --accent-foreground: #181d17;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-  --border: #e3e8d8;
-  --input: #e3e8d8;
-  --ring: #2e7d32;
-  --radius: 0.625rem;
+  /* ---- shadcn semantic tokens mapped to Material 3 ---- */
+  --background: #f7fbf0;                  /* surface */
+  --foreground: #181d17;                  /* on-surface */
+  --card: #ffffff;                        /* surface-container-lowest */
+  --card-foreground: #181d17;             /* on-surface */
+  --popover: #ffffff;                     /* surface-container-lowest */
+  --popover-foreground: #181d17;          /* on-surface */
+  --primary: #0d631b;                     /* primary (dark green) */
+  --primary-foreground: #ffffff;          /* on-primary */
+  --secondary: #7a5649;                   /* secondary (brown) */
+  --secondary-foreground: #ffffff;        /* on-secondary */
+  --muted: #ebefe5;                       /* surface-container */
+  --muted-foreground: #40493d;            /* on-surface-variant */
+  --accent: #e5eadf;                      /* surface-container-high (hover surfaces) */
+  --accent-foreground: #181d17;           /* on-surface */
+  --destructive: #EF4444;                 /* error */
+  --destructive-foreground: #ffffff;      /* on-error */
+  --border: #bfcaba;                      /* outline-variant */
+  --input: #bfcaba;                       /* outline-variant */
+  --ring: #0d631b;                        /* primary */
+  --radius: 0.75rem;                      /* md (12px) default for shadcn */
 
-  /* Brand tokens */
-  --brand-bg: #f7fbf0;
-  --brand-fg: #181d17;
-  --brand-primary: #2e7d32;
-  --brand-primary-hover: #256628;
-  --brand-accent: #f59e0b;
-  --brand-secondary: #6b8e4e;
+  /* ---- Material 3 surface system ---- */
+  --surface: #f7fbf0;
+  --surface-dim: #d7dbd2;
+  --surface-bright: #f7fbf0;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f1f5eb;
+  --surface-container: #ebefe5;
+  --surface-container-high: #e5eadf;
+  --surface-container-highest: #e0e4da;
+  --on-surface: #181d17;
+  --on-surface-variant: #40493d;
+  --inverse-surface: #2d322b;
+  --inverse-on-surface: #eef2e8;
+  --outline: #707a6c;
+  --outline-variant: #bfcaba;
+  --surface-tint: #1b6d24;
 
-  /* Semantic colors */
-  --success: #16a34a;
-  --warning: #d97706;
-  --danger: #dc2626;
-  --info: #0284c7;
+  /* ---- Primary ---- */
+  --primary-container: #2e7d32;
+  --on-primary-container: #cbffc2;
+  --primary-fixed: #a3f69c;
+  --primary-fixed-dim: #88d982;
+  --on-primary-fixed: #002204;
+  --on-primary-fixed-variant: #005312;
+  --inverse-primary: #88d982;
 
-  /* Surfaces */
-  --surface: #ffffff;
-  --surface-alt: #f1f5e8;
+  /* ---- Secondary (brown) ---- */
+  --secondary-container: #fdcdbc;
+  --on-secondary-container: #795548;
+  --secondary-fixed: #ffdbcf;
+  --secondary-fixed-dim: #ebbcac;
+  --on-secondary-fixed: #2e150b;
+  --on-secondary-fixed-variant: #603f33;
 
-  /* Sidebar (account/provider/admin) */
+  /* ---- Tertiary (pink) ---- */
+  --tertiary: #923357;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #b14b6f;
+  --on-tertiary-container: #ffedf0;
+  --tertiary-fixed: #ffd9e2;
+  --tertiary-fixed-dim: #ffb1c7;
+  --on-tertiary-fixed: #3f001c;
+  --on-tertiary-fixed-variant: #7f2448;
+
+  /* ---- Error ---- */
+  --error: #EF4444;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  /* ---- Status colors ---- */
+  --leaf-green: #43A047;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --on-warning: #ffffff;
+  --info: #3B82F6;
+  --on-info: #ffffff;
+
+  /* ---- Sidebar (account/provider/admin) ---- */
   --sidebar: #ffffff;
   --sidebar-foreground: #181d17;
-  --sidebar-primary: #2e7d32;
+  --sidebar-primary: #0d631b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5e8;
+  --sidebar-accent: #e5eadf;
   --sidebar-accent-foreground: #181d17;
-  --sidebar-border: #e3e8d8;
-  --sidebar-ring: #2e7d32;
+  --sidebar-border: #bfcaba;
+  --sidebar-ring: #0d631b;
 
-  /* Charts */
-  --chart-1: #2e7d32;  /* forest green */
-  --chart-2: #6b8e4e;  /* sage */
-  --chart-3: #f59e0b;  /* amber */
-  --chart-4: #16a34a;  /* success green */
-  --chart-5: #d97706;  /* warning amber */
+  /* ---- Charts ---- */
+  --chart-1: #0d631b;   /* primary green */
+  --chart-2: #43A047;   /* leaf green */
+  --chart-3: #F59E0B;   /* warning amber */
+  --chart-4: #7a5649;   /* secondary brown */
+  --chart-5: #923357;   /* tertiary pink */
 }
 
 /* ============================================================================
- * DARK THEME — future-ready tokens (Phase 1 ships light only, but tokens exist)
+ * DARK THEME — inverse of Growth and Vitality
  * ============================================================================
  */
 .dark {
-  --background: #0f140d;
-  --foreground: #eef3e6;
-  --card: #181d17;
-  --card-foreground: #eef3e6;
-  --popover: #181d17;
-  --popover-foreground: #eef3e6;
-  --primary: #4caf50;
-  --primary-foreground: #0f140d;
-  --secondary: #9bb87a;
-  --secondary-foreground: #0f140d;
-  --muted: #232a1c;
-  --muted-foreground: #a8b39a;
-  --accent: #fbbf24;
-  --accent-foreground: #0f140d;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.10);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #4caf50;
-
-  --brand-bg: #0f140d;
-  --brand-fg: #eef3e6;
-  --brand-primary: #4caf50;
-  --brand-primary-hover: #5dc362;
-  --brand-accent: #fbbf24;
-  --brand-secondary: #9bb87a;
-
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --info: #38bdf8;
+  --background: #181d17;
+  --foreground: #eef2e8;
+  --card: #2d322b;
+  --card-foreground: #eef2e8;
+  --popover: #2d322b;
+  --popover-foreground: #eef2e8;
+  --primary: #88d982;
+  --primary-foreground: #002204;
+  --secondary: #ebbcac;
+  --secondary-foreground: #2e150b;
+  --muted: #40493d;
+  --muted-foreground: #bfcaba;
+  --accent: #40493d;
+  --accent-foreground: #eef2e8;
+  --destructive: #ffdad6;
+  --destructive-foreground: #93000a;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #88d982;
 
   --surface: #181d17;
-  --surface-alt: #232a1c;
+  --surface-dim: #181d17;
+  --surface-bright: #2d322b;
+  --surface-container-lowest: #131611;
+  --surface-container-low: #1d211b;
+  --surface-container: #232820;
+  --surface-container-high: #2d322b;
+  --surface-container-highest: #383d35;
+  --on-surface: #eef2e8;
+  --on-surface-variant: #bfcaba;
+  --inverse-surface: #eef2e8;
+  --inverse-on-surface: #2d322b;
+  --outline: #8a9384;
+  --outline-variant: #40493d;
+  --surface-tint: #88d982;
 
-  --sidebar: #181d17;
-  --sidebar-foreground: #eef3e6;
-  --sidebar-primary: #4caf50;
-  --sidebar-primary-foreground: #0f140d;
-  --sidebar-accent: #232a1c;
-  --sidebar-accent-foreground: #eef3e6;
-  --sidebar-border: rgba(255, 255, 255, 0.10);
-  --sidebar-ring: #4caf50;
+  --primary-container: #005312;
+  --on-primary-container: #a3f69c;
+  --inverse-primary: #0d631b;
 
-  --chart-1: #4caf50;
-  --chart-2: #9bb87a;
-  --chart-3: #fbbf24;
-  --chart-4: #22c55e;
-  --chart-5: #f59e0b;
+  --secondary-container: #603f33;
+  --on-secondary-container: #ffdbcf;
+
+  --tertiary: #ffb1c7;
+  --on-tertiary: #3f001c;
+  --tertiary-container: #7f2448;
+  --on-tertiary-container: #ffd9e2;
+
+  --error: #ffdad6;
+  --on-error: #93000a;
+  --error-container: #93000a;
+  --on-error-container: #ffdad6;
+
+  --leaf-green: #5ABB59;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --on-warning: #ffffff;
+  --info: #3B82F6;
+  --on-info: #ffffff;
+
+  --sidebar: #2d322b;
+  --sidebar-foreground: #eef2e8;
+  --sidebar-primary: #88d982;
+  --sidebar-primary-foreground: #002204;
+  --sidebar-accent: #40493d;
+  --sidebar-accent-foreground: #eef2e8;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-ring: #88d982;
+
+  --chart-1: #88d982;
+  --chart-2: #5ABB59;
+  --chart-3: #F59E0B;
+  --chart-4: #ebbcac;
+  --chart-5: #ffb1c7;
 }
 
 /* ============================================================================
@@ -224,7 +337,7 @@
 @layer base {
   * {
     @apply border-border;
-    outline-color: hsl(var(--ring) / 1);
+    outline-color: var(--ring);
   }
 
   html {
@@ -241,10 +354,9 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Headings use Plus Jakarta Sans for premium botanical identity */
+  /* Headings use Inter (design.md §3: Inter for all typography) */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-jakarta), var(--font-inter), system-ui, sans-serif;
-    font-weight: 700;
+    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
     letter-spacing: -0.02em;
     line-height: 1.2;
   }
@@ -298,7 +410,7 @@
  * ============================================================================
  */
 @layer utilities {
-  /* Container — max-width with horizontal padding, responsive */
+  /* Container — max-width with horizontal padding */
   .container-px {
     @apply px-4 sm:px-6 lg:px-8;
   }
@@ -306,40 +418,50 @@
     @apply mx-auto w-full max-w-7xl;
   }
 
-  /* Section vertical rhythm */
+  /* Section vertical rhythm (design.md spacing: lg=24px, xl=32px, xxl=48px) */
   .section-py {
     @apply py-12 md:py-16 lg:py-24;
   }
 
-  /* Heading scale (fluid, mobile-first) */
+  /* ---- Typography scale (design.md §3) ---- */
   .text-display {
-    font-size: clamp(2.25rem, 1.4rem + 3.5vw, 3.5rem);
-    line-height: 1.1;
-    font-weight: 800;
+    font-size: clamp(2rem, 1.4rem + 3vw, 3rem);
+    line-height: 1.2;
+    font-weight: 700;
   }
   .text-h1 {
-    font-size: clamp(1.875rem, 1.3rem + 2.5vw, 2.5rem);
+    font-size: clamp(2rem, 1.5rem + 2.5vw, 3rem);
     line-height: 1.2;
-    font-weight: 800;
+    font-weight: 700;
   }
   .text-h2 {
-    font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
-    line-height: 1.25;
+    font-size: clamp(1.75rem, 1.4rem + 1.75vw, 2.5rem);
+    line-height: 1.2;
     font-weight: 700;
   }
   .text-h3 {
-    font-size: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
-    line-height: 1.3;
-    font-weight: 700;
+    font-size: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+    line-height: 1.2;
+    font-weight: 600;
   }
   .text-h4 {
-    font-size: clamp(1.125rem, 1.05rem + 0.4vw, 1.25rem);
+    font-size: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+    line-height: 1.3;
+    font-weight: 600;
+  }
+  .text-h5 {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+  .text-h6 {
+    font-size: 1.125rem;
     line-height: 1.4;
     font-weight: 600;
   }
   .text-body-lg {
     font-size: 1.125rem;
-    line-height: 1.6;
+    line-height: 1.5;
   }
   .text-body {
     font-size: 1rem;
@@ -386,7 +508,7 @@
   /* Scrollbar styling (subtle, on-brand) */
   .scrollbar-pretty {
     scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    scrollbar-color: var(--outline-variant) transparent;
   }
   .scrollbar-pretty::-webkit-scrollbar {
     width: 8px;
@@ -396,11 +518,11 @@
     background: transparent;
   }
   .scrollbar-pretty::-webkit-scrollbar-thumb {
-    background: var(--border);
+    background: var(--outline-variant);
     border-radius: var(--radius-full);
   }
   .scrollbar-pretty::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
+    background: var(--outline);
   }
 }
 

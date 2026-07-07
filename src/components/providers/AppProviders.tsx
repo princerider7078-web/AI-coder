@@ -6,11 +6,13 @@
  *
  * Phase 1: ThemeProvider only.
  * Phase 3: + CartProvider (for CartDrawer and Cart page).
- * Future phases will add: AuthContext, UserContext, WishlistContext,
- * AddressContext, OrdersContext, SettingsContext, TanStack QueryClientProvider.
+ * Phase 4: + WishlistProvider (for ProductCard wishlist toggle on homepage).
+ * Future phases will add: AuthContext, UserContext, AddressContext,
+ * OrdersContext, SettingsContext, TanStack QueryClientProvider.
  */
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { CartProvider } from "@/contexts/CartContext";
+import { WishlistProvider } from "@/contexts/WishlistContext";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -20,7 +22,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       enableSystem={false}
       disableTransitionOnChange
     >
-      <CartProvider>{children}</CartProvider>
+      <WishlistProvider>
+        <CartProvider>{children}</CartProvider>
+      </WishlistProvider>
     </ThemeProvider>
   );
 }

@@ -1,18 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Inter, JetBrains_Mono, Noto_Sans_Devanagari } from "next/font/google";
+import { Inter, JetBrains_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { AppProviders } from "@/components/providers/AppProviders";
 
-/* ---------- Fonts (GrowPlants Design System Part E.3) ---------- */
-const fontJakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap",
-});
-
+/* ---------- Fonts (Growth and Vitality Design System §3: Inter for all) ---------- */
 const fontInter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -131,7 +124,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontJakarta.variable} ${fontInter.variable} ${fontJetbrainsMono.variable} ${fontNotoDevanagari.variable} antialiased bg-background text-foreground min-h-screen flex flex-col`}
+        className={`${fontInter.variable} ${fontJetbrainsMono.variable} ${fontNotoDevanagari.variable} antialiased bg-background text-foreground min-h-screen flex flex-col`}
       >
         <a href="#main-content" className="skip-to-content">
           Skip to content

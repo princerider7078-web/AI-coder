@@ -83,7 +83,7 @@ export function Rating({
                 className={cn(
                   STAR_SIZE[size],
                   isFilled
-                    ? "fill-accent text-accent"
+                    ? "fill-warning text-warning"
                     : "fill-transparent text-muted-foreground"
                 )}
                 aria-hidden="true"
@@ -121,7 +121,7 @@ export function Rating({
                   style={{ width: `${fillPercent}%` }}
                 >
                   <Star
-                    className={cn(STAR_SIZE[size], "text-accent fill-accent")}
+                    className={cn(STAR_SIZE[size], "text-warning fill-warning")}
                     aria-hidden="true"
                   />
                 </div>

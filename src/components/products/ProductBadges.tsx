@@ -47,7 +47,7 @@ export function ProductBadges({
     badges.push({
       icon: Flame,
       label: `${discountPercent}% OFF`,
-      className: "bg-accent text-accent-foreground",
+      className: "bg-warning text-on-warning",
     });
   }
   if (isBestseller) {
