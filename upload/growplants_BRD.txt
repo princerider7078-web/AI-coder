@@ -1,0 +1,396 @@
+GROWPLANTS
+Business Requirement Document (BRD)
+Version 1.0
+Status: Business Scope Freeze
+1. Executive Summary
+
+GROWPLANTS ek location-based eCommerce aur Gardening Service Platform hoga jo users ko plants, planters aur gardening services ek hi platform par provide karega.
+
+Platform ka initial launch Sonipat (Haryana) mein hoga aur future mein multi-city expansion support karega.
+
+System customers ko products purchase karne, gardening services book karne aur future AI-powered plant assistance provide karne ke liye design kiya jayega.
+
+2. Business Vision
+
+India ka trusted digital gardening ecosystem banana.
+
+Jahan user:
+
+Plants purchase kar sake
+Planters purchase kar sake
+Gardening products kharid sake
+Gardening experts hire kar sake
+Plant care assistance le sake
+
+Sab ek single platform par.
+
+3. Mission Statement
+
+Local gardening market ko digitalize karna aur customers ko healthy plants aur trusted gardening services tak aasaan access dena.
+
+4. Business Goals
+Short-Term Goals (0-12 Months)
+Sonipat market capture
+Brand trust establish karna
+Repeat customers create karna
+Service provider network build karna
+Success Metrics
+1000+ registered users
+500+ orders
+100+ service bookings
+30% repeat customer rate
+Mid-Term Goals (1-3 Years)
+Haryana expansion
+Multi-city operations
+AI recommendation system
+Success Metrics
+25,000+ users
+10,000+ orders
+5,000+ bookings
+Long-Term Goals (3-5 Years)
+National expansion
+AI-powered gardening platform
+Leading plant commerce brand
+Success Metrics
+100,000+ active users
+Multi-city operations
+Profitable business model
+5. Business Problem Statement
+
+Current gardening market suffers from:
+
+Product Issues
+Limited local availability
+Poor quality assurance
+Lack of product information
+Service Issues
+Difficult gardener discovery
+Unverified providers
+No standardized booking process
+Customer Issues
+Multiple vendors required
+No centralized platform
+Lack of plant guidance
+6. Proposed Solution
+
+GROWPLANTS will provide:
+
+Product Marketplace
+Plants
+Planters
+Gardening supplies
+Service Marketplace
+Gardening services
+Installation services
+Maintenance services
+Future AI Assistance
+Plant diagnosis
+Plant recommendations
+Garden planning
+7. Target Audience
+Primary Customers
+Homeowners
+
+Age:
+25-55
+
+Needs:
+
+Home decoration
+Gardening
+Plant maintenance
+Apartment Residents
+
+Needs:
+
+Balcony gardens
+Indoor plants
+Low-maintenance plants
+Plant Enthusiasts
+
+Needs:
+
+Rare plants
+Plant care information
+Gardening products
+Secondary Customers
+Small Businesses
+
+Needs:
+
+Office plants
+Plant maintenance
+Commercial Properties
+
+Needs:
+
+Landscaping services
+Maintenance contracts
+8. Geographic Scope
+Phase 1
+City
+
+Sonipat
+
+Coverage:
+
+Urban areas
+Residential sectors
+Commercial zones
+Phase 2
+
+Additional Haryana cities
+
+Phase 3
+
+Multi-state expansion
+
+9. Revenue Model
+Revenue Stream 1
+
+Product Sales
+
+Source:
+
+Plants
+Planters
+Gardening products
+Revenue Stream 2
+
+Service Booking Commission
+
+Commission earned from:
+
+Gardening bookings
+Installation bookings
+Maintenance bookings
+Revenue Stream 3
+
+Featured Listings
+
+Service providers can pay for premium visibility.
+
+Future Revenue Streams
+Vendor subscriptions
+Sponsored products
+Advertising
+AI premium services
+10. Business Stakeholders
+Owner
+
+Business owner
+
+Responsibilities:
+
+Strategic decisions
+Inventory procurement
+Operations
+Customers
+
+Responsibilities:
+
+Product purchases
+Service bookings
+Service Providers
+
+Responsibilities:
+
+Service fulfillment
+Quality maintenance
+Admin
+
+Responsibilities:
+
+Platform management
+Approvals
+Monitoring
+11. Product Categories
+Plants
+Indoor Plants
+Outdoor Plants
+Flowering Plants
+Succulents
+Bonsai
+Medicinal Plants
+Air Purifying Plants
+Planters
+Ceramic
+Plastic
+Metal
+Hanging
+Decorative
+Gardening Products
+Pots
+Seeds
+Fertilizers
+Soil
+Tools
+Accessories
+12. Service Categories
+Gardening
+Gardener Hiring
+Plant Installation
+Balcony Garden Setup
+Terrace Garden Setup
+Garden Maintenance
+Lawn Maintenance
+Landscape Design
+Plant Health Inspection
+13. Business Policies
+Customer Account Policy
+
+Guest checkout allowed:
+
+? No
+
+Account required:
+
+? Yes
+
+Review Policy
+
+Allowed:
+
+Text reviews
+Image reviews
+
+Only verified customers can review.
+
+Inventory Policy
+
+Real-time inventory tracking.
+
+Out-of-stock products remain visible.
+
+Users can request notifications.
+
+Booking Policy
+
+Services available city-wise.
+
+Customer location stored with coordinates.
+
+14. Return & Refund Policy
+Plants
+
+Damage claim:
+
+Within 24 hours
+
+Evidence:
+
+Photo required
+
+Resolution:
+
+Replacement preferred
+
+Planters & Accessories
+
+Replacement:
+
+Within 7 days
+
+Condition:
+
+Manufacturing defect or shipping damage
+
+Services
+
+Cancellation allowed before service starts.
+
+Refund after service completion subject to review.
+
+15. Risk Assessment
+Business Risk
+
+Low local demand.
+
+Mitigation:
+
+Marketing campaigns.
+
+Operational Risk
+
+Plant damage during delivery.
+
+Mitigation:
+
+Improved packaging.
+
+Service Risk
+
+Provider no-shows.
+
+Mitigation:
+
+Provider rating system.
+
+Technical Risk
+
+System downtime.
+
+Mitigation:
+
+Cloud deployment and monitoring.
+
+16. Compliance Requirements
+Privacy Policy
+Terms & Conditions
+Refund Policy
+Cookie Policy
+User Consent Collection
+17. Future Roadmap
+AI Plant Doctor
+
+Photo-based disease detection.
+
+AI Plant Recommendation
+
+Personalized plant suggestions.
+
+AI Garden Planner
+
+Garden layout generation.
+
+Plant Care Reminder
+
+Automated care schedules.
+
+AR Plant Preview
+
+Visual plant placement.
+
+18. BRD Approval Summary
+Business Name
+
+GROWPLANTS
+
+Launch City
+
+Sonipat
+
+Business Type
+
+eCommerce + Service Marketplace
+
+Scale Target
+
+100,000+ Users
+
+Revenue Sources
+Product Sales
+Service Commissions
+Featured Listings
+Core Launch Modules
+Product Store
+Service Marketplace
+Booking System
+Customer Accounts
+Admin Panel
+Inventory Management
+Order Tracking
+Future Expansion
+AI Features
+Multi-City Expansion
+Advanced Marketplace Features

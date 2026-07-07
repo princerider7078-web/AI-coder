@@ -1,0 +1,602 @@
+     1→================================================================================
+     2→        GROWPLANTS — PRODUCT REQUIREMENTS DOCUMENT (PRD)
+     3→================================================================================
+     4→Document Version  : 1.0
+     5→BRD Reference     : GROWPLANTS BRD v1.0
+     6→Status            : Draft — For Developer Review
+     7→Prepared For      : Development Team / AI Coding Tools
+     8→Date              : 2025
+     9→================================================================================
+    10→
+    11→================================================================================
+    12→TABLE OF CONTENTS
+    13→================================================================================
+    14→
+    15→SECTION 01 — Document Overview & Conventions
+    16→SECTION 02 — Product Vision & Scope
+    17→SECTION 03 — System Architecture Overview
+    18→SECTION 04 — Tech Stack Recommendations
+    19→SECTION 05 — Database Schema (Full)
+    20→SECTION 06 — User Roles & Permissions Matrix
+    21→SECTION 07 — Authentication & Account Management
+    22→SECTION 08 — Customer-Facing Frontend (Web + Mobile)
+    23→SECTION 09 — Product Catalog Module
+    24→SECTION 10 — Shopping Cart & Checkout Flow
+    25→SECTION 11 — Order Management System
+    26→SECTION 12 — Service Marketplace Module
+    27→SECTION 13 — Booking System
+    28→SECTION 14 — Payment Integration
+    29→SECTION 15 — Inventory Management System
+    30→SECTION 16 — Notifications System
+    31→SECTION 17 — Review & Rating System
+    32→SECTION 18 — Search & Filter System
+    33→SECTION 19 — Admin Panel (Full Specification)
+    34→SECTION 20 — Service Provider Panel
+    35→SECTION 21 — Return & Refund Management
+    36→SECTION 22 — Delivery & Logistics
+    37→SECTION 23 — Location & City Management
+    38→SECTION 24 — SEO & Performance Requirements
+    39→SECTION 25 — Security Requirements
+    40→SECTION 26 — API Specification (REST Endpoints)
+    41→SECTION 27 — Third-Party Integrations
+    42→SECTION 28 — Future Modules (AI Roadmap)
+    43→SECTION 29 — Non-Functional Requirements
+    44→SECTION 30 — Acceptance Criteria & Testing Guidelines
+    45→SECTION 31 — Deployment & DevOps
+    46→SECTION 32 — Appendix: Enums, Constants & Config
+    47→
+    48→================================================================================
+    49→SECTION 01 — DOCUMENT OVERVIEW & CONVENTIONS
+    50→================================================================================
+    51→
+    52→1.1 PURPOSE
+    53→-----------
+    54→This Product Requirements Document (PRD) defines the complete functional and
+    55→non-functional requirements for the GROWPLANTS platform. It is intended as the
+    56→single source of truth for:
+    57→  - Frontend developers (Web & Mobile)
+    58→  - Backend developers (API & Database)
+    59→  - AI coding tools (Cursor, GitHub Copilot, Claude, etc.)
+    60→  - QA engineers
+    61→  - DevOps engineers
+    62→
+    63→This document translates the Business Requirements Document (BRD v1.0) into
+    64→precise, implementable specifications. Every feature described here maps to a
+    65→business goal. No feature in this document exists without a BRD justification.
+    66→
+    67→1.2 DOCUMENT CONVENTIONS
+    68→--------------------------
+    69→- [REQUIRED]   = Must be built in Phase 1 (MVP Launch)
+    70→- [PHASE-2]    = Required for Haryana expansion
+    71→- [PHASE-3]    = Required for national expansion
+    72→- [FUTURE-AI]  = AI-powered features in future roadmap
+    73→- [OPTIONAL]   = Nice-to-have, build if time permits
+    74→- FR-XXX       = Functional Requirement ID
+    75→- NFR-XXX      = Non-Functional Requirement ID
+    76→- API-XXX      = API Endpoint ID
+    77→- DB-XXX       = Database Table/Model ID
+    78→- UI-XXX       = UI Screen/Component ID
+    79→
+    80→1.3 ASSUMPTIONS
+    81→---------------
+    82→1. Platform launches in Sonipat, Haryana first.
+    83→2. Business owner manages inventory directly (no multi-vendor product marketplace).
+    84→3. Service providers are third-party freelancers onboarded by admin.
+    85→4. Payment gateway: Razorpay (India-first, supports UPI, cards, wallets).
+    86→5. Delivery is managed in-house or via local courier for Phase 1.
+    87→6. Mobile app: React Native (single codebase, Android + iOS).
+    88→7. Backend: Node.js + Express or NestJS (developer's choice, must be RESTful).
+    89→8. Database: PostgreSQL (primary) + Redis (caching/sessions).
+    90→9. File storage: AWS S3 or Cloudflare R2.
+    91→10. All prices in Indian Rupees (INR).
+    92→11. Language: Hindi + English bilingual support (UI labels bilingual).
+    93→12. Guest checkout is NOT allowed — account required for all purchases.
+    94→
+    95→1.4 OUT OF SCOPE (Phase 1)
+    96→---------------------------
+    97→- Multi-vendor product marketplace (sellers listing their own products)
+    98→- International shipping
+    99→- Cryptocurrency payments
+   100→- AR plant preview (future)
+   101→- AI plant doctor / recommendations (future)
+   102→- Loyalty points / rewards program
+   103→- Affiliate marketing module
+   104→- Live chat with gardeners
+   105→
+   106→================================================================================
+   107→SECTION 02 — PRODUCT VISION & SCOPE
+   108→================================================================================
+   109→
+   110→2.1 PRODUCT OVERVIEW
+   111→---------------------
+   112→GROWPLANTS is a location-based eCommerce and Service Marketplace platform for
+   113→the gardening ecosystem in India. It combines:
+   114→
+   115→  PILLAR 1: PRODUCT STORE
+   116→    → Online store for plants, planters, gardening supplies.
+   117→    → Owner-managed inventory.
+   118→    → Delivery within serviceable pincodes.
+   119→
+   120→  PILLAR 2: SERVICE MARKETPLACE
+   121→    → Customers can book gardening services.
+   122→    → Services fulfilled by verified service providers.
+   123→    → Admin approves all service providers.
+   124→    → Commission-based revenue model.
+   125→
+   126→  PILLAR 3: ADMIN CONTROL CENTER
+   127→    → Full platform management by business owner/admin.
+   128→    → Order, booking, inventory, provider, and customer management.
+   129→
+   130→2.2 PHASE SCOPE
+   131→----------------
+   132→PHASE 1 (MVP — 0-6 months):
+   133→  - Customer Web App + Mobile App
+   134→  - Product Catalog (Plants, Planters, Gardening Products)
+   135→  - Cart + Checkout + Payment
+   136→  - Order Management
+   137→  - Service Booking (basic)
+   138→  - Service Provider Panel (basic)
+   139→  - Admin Panel (full)
+   140→  - Inventory Management
+   141→  - Review & Rating
+   142→  - Notification System (Email + Push + SMS)
+   143→  - Sonipat city only
+   144→
+   145→PHASE 2 (6-18 months):
+   146→  - Multi-city support (Haryana)
+   147→  - Advanced analytics dashboard
+   148→  - Featured listings for service providers
+   149→  - Vendor subscription model
+   150→
+   151→PHASE 3 (18-36 months):
+   152→  - National expansion
+   153→  - AI recommendation engine
+   154→  - AI plant doctor
+   155→  - AR plant preview
+   156→  - Advanced B2B features
+   157→
+   158→2.3 PLATFORM TYPES
+   159→-------------------
+   160→1. Customer Web App       → React.js (responsive, works on mobile browsers too)
+   161→2. Customer Mobile App    → React Native (Android + iOS)
+   162→3. Admin Web Panel        → React.js (desktop-first, separate app)
+   163→4. Service Provider App   → React Native (shared with customer app, role-based)
+   164→5. Backend API            → Node.js / NestJS (REST API)
+   165→6. Database               → PostgreSQL + Redis
+   166→7. File Storage           → AWS S3 / Cloudflare R2
+   167→
+   168→================================================================================
+   169→SECTION 03 — SYSTEM ARCHITECTURE OVERVIEW
+   170→================================================================================
+   171→
+   172→3.1 HIGH-LEVEL ARCHITECTURE
+   173→-----------------------------
+   174→
+   175→  [Customer Web/Mobile App]
+   176→           |
+   177→           | HTTPS REST API
+   178→           ↓
+   179→  [API Gateway / Load Balancer]
+   180→           |
+   181→           ↓
+   182→  [Backend API Server (Node.js)]
+   183→     |          |          |
+   184→     ↓          ↓          ↓
+   185→[PostgreSQL]  [Redis]   [AWS S3]
+   186→(main DB)   (cache/    (images/
+   187→             sessions)  files)
+   188→     |
+   189→     ↓
+   190→[Razorpay API]  [Firebase (Push)]  [Twilio/MSG91 (SMS)]  [SendGrid (Email)]
+   191→
+   192→3.2 MODULE BREAKDOWN
+   193→---------------------
+   194→Backend modules (separate services or route groups):
+   195→  - auth           → Authentication, sessions, OTP
+   196→  - users          → Customer profiles, addresses
+   197→  - products       → Catalog, categories, variants
+   198→  - inventory      → Stock management
+   199→  - cart           → Shopping cart (Redis-backed)
+   200→  - orders         → Order lifecycle management
+   201→  - services       → Service catalog
+   202→  - bookings       → Booking lifecycle
+   203→  - providers      → Service provider profiles
+   204→  - payments       → Razorpay integration
+   205→  - reviews        → Reviews and ratings
+   206→  - notifications  → Email, SMS, push
+   207→  - admin          → Admin-only endpoints
+   208→  - search         → Search and filter
+   209→  - locations      → City, pincode, area management
+   210→  - uploads        → File/image upload to S3
+   211→  - returns        → Return and refund management
+   212→  - reports        → Analytics and reporting
+   213→
+   214→3.3 DATA FLOW: PRODUCT ORDER
+   215→-----------------------------
+   216→Customer → Browse Products → Add to Cart → Enter Address
+   217→→ Select Delivery Slot (if applicable) → Review Order
+   218→→ Payment (Razorpay) → Payment Webhook → Order Created
+   219→→ Admin Notified → Admin Confirms → Delivery Assigned
+   220→→ Customer Notified → Delivered → Order Completed
+   221→→ Review Prompt Sent
+   222→
+   223→3.4 DATA FLOW: SERVICE BOOKING
+   224→--------------------------------
+   225→Customer → Browse Services → Select Service
+   226→→ Enter Location (coordinates captured) → Select Date/Time
+   227→→ Select Service Provider (or auto-assign) → Review & Confirm
+   228→→ Payment (advance or COD) → Booking Created
+   229→→ Provider Notified → Provider Confirms → Service Delivered
+   230→→ Booking Completed → Review Prompt Sent
+   231→
+   232→================================================================================
+   233→SECTION 04 — TECH STACK RECOMMENDATIONS
+   234→================================================================================
+   235→
+   236→4.1 FRONTEND (Customer Web)
+   237→-----------------------------
+   238→Framework        : React.js 18+
+   239→State Management : Redux Toolkit + RTK Query (for API calls)
+   240→Styling          : Tailwind CSS + shadcn/ui component library
+   241→Routing          : React Router v6
+   242→Forms            : React Hook Form + Zod (validation)
+   243→Maps             : Google Maps API (location picker, delivery area)
+   244→Payments         : Razorpay Web SDK
+   245→SEO              : React Helmet / Next.js (consider Next.js for SEO benefits)
+   246→Image Handling   : React-image-crop (for uploads), Cloudinary/S3 URLs
+   247→Build Tool       : Vite or Next.js
+   248→PWA              : Yes (add to home screen, offline capability for basic browsing)
+   249→
+   250→RECOMMENDATION: Use Next.js 14+ (App Router) for better SEO, server-side
+   251→rendering, and image optimization — critical for a product eCommerce site.
+   252→
+   253→4.2 MOBILE APP
+   254→---------------
+   255→Framework     : React Native (Expo managed workflow)
+   256→Navigation    : React Navigation v6
+   257→State         : Redux Toolkit
+   258→Payments      : Razorpay React Native SDK
+   259→Maps          : react-native-maps + Google Maps
+   260→Push Notifs   : Firebase Cloud Messaging (FCM)
+   261→Storage       : AsyncStorage (local), Redux Persist
+   262→Camera        : Expo Camera (for review photos, plant photos)
+   263→Platform      : Android 8.0+ and iOS 13+
+   264→
+   265→4.3 BACKEND API
+   266→----------------
+   267→Runtime       : Node.js 20 LTS
+   268→Framework     : NestJS (TypeScript, modular, enterprise-grade)
+   269→              OR Express.js + TypeScript (simpler, faster to build)
+   270→ORM           : Prisma (PostgreSQL)
+   271→Auth          : JWT (access token 15min) + Refresh Token (7 days) + HTTP-only cookies
+   272→Validation    : Joi or class-validator (NestJS)
+   273→File Upload   : Multer → AWS S3 SDK
+   274→Caching       : Redis (ioredis)
+   275→Queues        : Bull (Redis-based) for background jobs (emails, notifications)
+   276→Logging       : Winston + Morgan
+   277→API Docs      : Swagger / OpenAPI 3.0
+   278→
+   279→4.4 DATABASE
+   280→-------------
+   281→Primary DB    : PostgreSQL 15+
+   282→Cache / Queue : Redis 7+
+   283→ORM           : Prisma
+   284→Migrations    : Prisma Migrate
+   285→Search        : PostgreSQL Full-Text Search (Phase 1), Elasticsearch (Phase 3)
+   286→
+   287→4.5 INFRASTRUCTURE
+   288→-------------------
+   289→Cloud         : AWS / DigitalOcean / Railway (Phase 1 — cost-effective)
+   290→Web Server    : Nginx (reverse proxy)
+   291→SSL           : Let's Encrypt / AWS Certificate Manager
+   292→CDN           : Cloudflare
+   293→File Storage  : AWS S3 / Cloudflare R2
+   294→Domain        : growplants.in (recommended)
+   295→Email         : SendGrid or AWS SES
+   296→SMS           : MSG91 or Textlocal (India-specific, cheap)
+   297→Push Notifs   : Firebase Cloud Messaging (free tier sufficient for Phase 1)
+   298→Monitoring    : PM2 (process manager) + Sentry (error tracking)
+   299→
+   300→4.6 DEVELOPMENT TOOLS
+   301→----------------------
+   302→Version Control : Git + GitHub / GitLab
+   303→CI/CD           : GitHub Actions
+   304→Containerization: Docker + Docker Compose (local dev)
+   305→API Testing     : Postman / Thunder Client
+   306→Code Quality    : ESLint + Prettier + Husky (pre-commit hooks)
+   307→
+   308→================================================================================
+   309→SECTION 05 — DATABASE SCHEMA (FULL)
+   310→================================================================================
+   311→
+   312→NOTATION:
+   313→  PK  = Primary Key
+   314→  FK  = Foreign Key
+   315→  UQ  = Unique
+   316→  IDX = Index
+   317→  NN  = Not Null
+   318→  DEF = Default Value
+   319→
+   320→All tables use UUID as primary key (uuid_generate_v4()) unless noted otherwise.
+   321→All tables include: created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ
+   322→
+   323→------------------------------------------------------------------------------
+   324→DB-001: TABLE — users
+   325→------------------------------------------------------------------------------
+   326→Column              Type              Constraints       Notes
+   327→-------------------------------------------------------------------------------
+   328→id                  UUID              PK, NN            
+   329→full_name           VARCHAR(100)      NN
+   330→email               VARCHAR(150)      UQ, NN
+   331→phone               VARCHAR(15)       UQ, NN            Indian format +91XXXXXXXXXX
+   332→phone_verified      BOOLEAN           DEF false
+   333→email_verified      BOOLEAN           DEF false
+   334→password_hash       VARCHAR(255)      NN
+   335→role                ENUM              NN                customer | admin | provider
+   336→status              ENUM              DEF active        active | suspended | deleted
+   337→profile_image_url   TEXT              NULL
+   338→date_of_birth       DATE              NULL
+   339→gender              ENUM              NULL              male | female | other | prefer_not
+   340→preferred_language  ENUM              DEF en            en | hi
+   341→last_login_at       TIMESTAMPTZ       NULL
+   342→created_at          TIMESTAMPTZ       DEF NOW()
+   343→updated_at          TIMESTAMPTZ       DEF NOW()
+   344→
+   345→INDEXES: email, phone, role, status
+   346→
+   347→------------------------------------------------------------------------------
+   348→DB-002: TABLE — user_addresses
+   349→------------------------------------------------------------------------------
+   350→Column              Type              Constraints       Notes
+   351→-------------------------------------------------------------------------------
+   352→id                  UUID              PK
+   353→user_id             UUID              FK → users.id, NN
+   354→label               VARCHAR(50)       NULL              e.g. "Home", "Office"
+   355→full_name           VARCHAR(100)      NN                recipient name
+   356→phone               VARCHAR(15)       NN                recipient phone
+   357→address_line_1      VARCHAR(255)      NN
+   358→address_line_2      VARCHAR(255)      NULL
+   359→landmark            VARCHAR(100)      NULL
+   360→city                VARCHAR(100)      NN                DEF "Sonipat"
+   361→state               VARCHAR(100)      NN                DEF "Haryana"
+   362→pincode             VARCHAR(10)       NN
+   363→latitude            DECIMAL(10,8)     NULL
+   364→longitude           DECIMAL(11,8)     NULL
+   365→is_default          BOOLEAN           DEF false
+   366→created_at          TIMESTAMPTZ       DEF NOW()
+   367→
+   368→INDEXES: user_id, pincode
+   369→
+   370→------------------------------------------------------------------------------
+   371→DB-003: TABLE — otp_verifications
+   372→------------------------------------------------------------------------------
+   373→Column              Type              Constraints       Notes
+   374→-------------------------------------------------------------------------------
+   375→id                  UUID              PK
+   376→identifier          VARCHAR(150)      NN, IDX           phone or email
+   377→identifier_type     ENUM              NN                phone | email
+   378→otp_code            VARCHAR(10)       NN
+   379→purpose             ENUM              NN                registration | login | password_reset | phone_change
+   380→is_used             BOOLEAN           DEF false
+   381→attempts            INT               DEF 0
+   382→expires_at          TIMESTAMPTZ       NN
+   383→created_at          TIMESTAMPTZ       DEF NOW()
+   384→
+   385→NOTE: OTP expires in 10 minutes. Max 3 failed attempts before lockout.
+   386→
+   387→------------------------------------------------------------------------------
+   388→DB-004: TABLE — refresh_tokens
+   389→------------------------------------------------------------------------------
+   390→Column              Type              Constraints       Notes
+   391→-------------------------------------------------------------------------------
+   392→id                  UUID              PK
+   393→user_id             UUID              FK → users.id
+   394→token_hash          VARCHAR(255)      UQ, NN
+   395→device_info         JSONB             NULL              {device, OS, app_version, ip}
+   396→expires_at          TIMESTAMPTZ       NN
+   397→is_revoked          BOOLEAN           DEF false
+   398→created_at          TIMESTAMPTZ       DEF NOW()
+   399→
+   400→------------------------------------------------------------------------------
+   401→DB-005: TABLE — product_categories
+   402→------------------------------------------------------------------------------
+   403→Column              Type              Constraints       Notes
+   404→-------------------------------------------------------------------------------
+   405→id                  UUID              PK
+   406→name                VARCHAR(100)      NN
+   407→slug                VARCHAR(120)      UQ, NN
+   408→name_hi             VARCHAR(100)      NULL              Hindi name
+   409→description         TEXT              NULL
+   410→description_hi      TEXT              NULL
+   411→parent_id           UUID              FK → product_categories.id (self-ref)
+   412→icon_url            TEXT              NULL
+   413→banner_url          TEXT              NULL
+   414→display_order       INT               DEF 0
+   415→is_active           BOOLEAN           DEF true
+   416→seo_title           VARCHAR(160)      NULL
+   417→seo_description     VARCHAR(320)      NULL
+   418→created_at          TIMESTAMPTZ       DEF NOW()
+   419→updated_at          TIMESTAMPTZ       DEF NOW()
+   420→
+   421→SEED DATA:
+   422→  Level 1 (parent_id = null):
+   423→    - Plants
+   424→    - Planters
+   425→    - Gardening Products
+   426→  
+   427→  Level 2 (Plants):
+   428→    - Indoor Plants
+   429→    - Outdoor Plants
+   430→    - Flowering Plants
+   431→    - Succulents
+   432→    - Bonsai
+   433→    - Medicinal Plants
+   434→    - Air Purifying Plants
+   435→    - Seasonal Plants
+   436→  
+   437→  Level 2 (Planters):
+   438→    - Ceramic Planters
+   439→    - Plastic Planters
+   440→    - Metal Planters
+   441→    - Hanging Planters
+   442→    - Decorative Planters
+   443→    - Terracotta Planters
+   444→    - Fiber Planters
+   445→  
+   446→  Level 2 (Gardening Products):
+   447→    - Pots & Containers
+   448→    - Seeds & Bulbs
+   449→    - Fertilizers & Manure
+   450→    - Soil & Cocopeat
+   451→    - Tools & Equipment
+   452→    - Accessories & Decor
+   453→    - Pest Control
+   454→    - Plant Food & Growth
+   455→
+   456→------------------------------------------------------------------------------
+   457→DB-006: TABLE — products
+   458→------------------------------------------------------------------------------
+   459→Column              Type              Constraints       Notes
+   460→-------------------------------------------------------------------------------
+   461→id                  UUID              PK
+   462→name                VARCHAR(200)      NN
+   463→name_hi             VARCHAR(200)      NULL
+   464→slug                VARCHAR(220)      UQ, NN
+   465→short_description   VARCHAR(500)      NULL
+   466→description         TEXT              NULL              Rich text / HTML
+   467→description_hi      TEXT              NULL
+   468→category_id         UUID              FK → product_categories.id, NN
+   469→sku                 VARCHAR(100)      UQ, NN            Stock Keeping Unit
+   470→barcode             VARCHAR(100)      NULL
+   471→base_price          DECIMAL(10,2)     NN
+   472→selling_price       DECIMAL(10,2)     NN
+   473→discount_percent    DECIMAL(5,2)      DEF 0
+   474→cost_price          DECIMAL(10,2)     NULL              For margin calculation (admin only)
+   475→tax_rate            DECIMAL(5,2)      DEF 18            GST %
+   476→tax_included        BOOLEAN           DEF true          Is tax included in selling_price?
+   477→weight_grams        INT               NULL              For shipping calculation
+   478→dimensions_cm       JSONB             NULL              {length, width, height}
+   479→care_instructions   TEXT              NULL              Plant care info
+   480→sunlight_req        ENUM              NULL              full_sun | partial_shade | shade | indirect
+   481→water_freq          ENUM              NULL              daily | alternate_day | weekly | monthly
+   482→difficulty_level    ENUM              NULL              easy | moderate | expert
+   483→is_pet_safe         BOOLEAN           NULL
+   484→is_air_purifying    BOOLEAN           NULL
+   485→suitable_for        TEXT[]            NULL              ['indoor','outdoor','balcony','office']
+   486→seasonal            BOOLEAN           DEF false
+   487→season_available    TEXT[]            NULL              ['spring','summer','monsoon','winter']
+   488→primary_image_url   TEXT              NN
+   489→is_active           BOOLEAN           DEF true
+   490→is_featured         BOOLEAN           DEF false
+   491→is_bestseller       BOOLEAN           DEF false
+   492→is_new_arrival      BOOLEAN           DEF false
+   493→tags                TEXT[]            NULL              For search
+   494→seo_title           VARCHAR(160)      NULL
+   495→seo_description     VARCHAR(320)      NULL
+   496→meta_keywords       TEXT[]            NULL
+   497→total_sold          INT               DEF 0             Denormalized counter
+   498→average_rating      DECIMAL(3,2)      DEF 0
+   499→review_count        INT               DEF 0
+   500→created_at          TIMESTAMPTZ       DEF NOW()
+   501→updated_at          TIMESTAMPTZ       DEF NOW()
+   502→
+   503→INDEXES: slug, category_id, is_active, is_featured, tags (GIN), suitable_for (GIN)
+   504→FULL TEXT SEARCH INDEX on: name, description, tags
+   505→
+   506→------------------------------------------------------------------------------
+   507→DB-007: TABLE — product_images
+   508→------------------------------------------------------------------------------
+   509→Column              Type              Constraints       Notes
+   510→-------------------------------------------------------------------------------
+   511→id                  UUID              PK
+   512→product_id          UUID              FK → products.id, NN
+   513→image_url           TEXT              NN
+   514→alt_text            VARCHAR(200)      NULL
+   515→display_order       INT               DEF 0
+   516→is_primary          BOOLEAN           DEF false
+   517→created_at          TIMESTAMPTZ       DEF NOW()
+   518→
+   519→MAX 10 IMAGES PER PRODUCT. First image = primary by default.
+   520→
+   521→------------------------------------------------------------------------------
+   522→DB-008: TABLE — product_variants
+   523→------------------------------------------------------------------------------
+   524→Column              Type              Constraints       Notes
+   525→-------------------------------------------------------------------------------
+   526→id                  UUID              PK
+   527→product_id          UUID              FK → products.id, NN
+   528→variant_name        VARCHAR(100)      NN                e.g. "Large - Ceramic Pot"
+   529→sku                 VARCHAR(100)      UQ, NN
+   530→attributes          JSONB             NN                {size:"Large", pot_type:"Ceramic", color:"White"}
+   531→price_adjustment    DECIMAL(10,2)     DEF 0             Added to base selling_price
+   532→is_active           BOOLEAN           DEF true
+   533→sort_order          INT               DEF 0
+   534→created_at          TIMESTAMPTZ       DEF NOW()
+   535→
+   536→NOTE: If product has no variants, all inventory is tracked on products table.
+   537→If variants exist, inventory is tracked per variant.
+   538→
+   539→------------------------------------------------------------------------------
+   540→DB-009: TABLE — inventory
+   541→------------------------------------------------------------------------------
+   542→Column              Type              Constraints       Notes
+   543→-------------------------------------------------------------------------------
+   544→id                  UUID              PK
+   545→product_id          UUID              FK → products.id, NN, IDX
+   546→variant_id          UUID              FK → product_variants.id, NULL, IDX
+   547→quantity_available  INT               NN, DEF 0
+   548→quantity_reserved   INT               NN, DEF 0         In cart / pending order
+   549→quantity_sold       INT               NN, DEF 0
+   550→low_stock_threshold INT               DEF 5
+   551→reorder_point       INT               DEF 10
+   552→reorder_quantity    INT               DEF 50
+   553→last_restocked_at   TIMESTAMPTZ       NULL
+   554→created_at          TIMESTAMPTZ       DEF NOW()
+   555→updated_at          TIMESTAMPTZ       DEF NOW()
+   556→
+   557→RULE: quantity_available must never go below 0 (use DB-level CHECK constraint).
+   558→RULE: quantity_reserved is decremented when order is confirmed/cancelled.
+   559→
+   560→------------------------------------------------------------------------------
+   561→DB-010: TABLE — inventory_transactions
+   562→------------------------------------------------------------------------------
+   563→Column              Type              Constraints       Notes
+   564→-------------------------------------------------------------------------------
+   565→id                  UUID              PK
+   566→product_id          UUID              FK → products.id, NN
+   567→variant_id          UUID              FK → product_variants.id, NULL
+   568→transaction_type    ENUM              NN                restock | sale | return | adjustment | damage
+   569→quantity_change     INT               NN                Positive = added, Negative = reduced
+   570→quantity_before     INT               NN
+   571→quantity_after      INT               NN
+   572→reference_type      ENUM              NULL              order | return | manual
+   573→reference_id        UUID              NULL              order_id or return_id
+   574→notes               TEXT              NULL
+   575→performed_by        UUID              FK → users.id     Admin who made the change
+   576→created_at          TIMESTAMPTZ       DEF NOW()
+   577→
+   578→------------------------------------------------------------------------------
+   579→DB-011: TABLE — carts
+   580→------------------------------------------------------------------------------
+   581→Column              Type              Constraints       Notes
+   582→-------------------------------------------------------------------------------
+   583→id                  UUID              PK
+   584→user_id             UUID              FK → users.id, UQ (one cart per user)
+   585→session_id          VARCHAR(100)      NULL              For anonymous tracking before login
+   586→coupon_code         VARCHAR(50)       NULL
+   587→coupon_discount     DECIMAL(10,2)     DEF 0
+   588→notes               TEXT              NULL
+   589→expires_at          TIMESTAMPTZ       NULL              Auto-clear abandoned carts after 7 days
+   590→created_at          TIMESTAMPTZ       DEF NOW()
+   591→updated_at          TIMESTAMPTZ       DEF NOW()
+   592→
+   593→NOTE: Cart is Redis-backed for performance. PostgreSQL is source of truth.
+   594→Redis key: "cart:{user_id}" → JSON of cart items.
+   595→
+   596→------------------------------------------------------------------------------
+   597→DB-012: TABLE — cart_items
+   598→------------------------------------------------------------------------------
+   599→Column              Type              Constraints       Notes
+   600→-------------------------------------------------------------------------------
+
+[showing lines 1-600 of 2830; use offset=601 with limit to continue reading]

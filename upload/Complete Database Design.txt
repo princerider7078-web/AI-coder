@@ -1,0 +1,1144 @@
+# GROWPLANTS
+
+# Step 5: Complete Database Design (Production Schema)
+
+Version 1.0
+
+====================================================
+DATABASE ARCHITECTURE OVERVIEW
+==============================
+
+Database Engine:
+PostgreSQL
+
+ORM:
+Prisma
+
+Architecture Style:
+Relational Database
+
+Database Strategy:
+Normalized Core + Optimized Read Queries
+
+Scale Target:
+100,000+ Users
+
+====================================================
+DATABASE MODULES
+================
+
+1. Authentication Module
+
+2. User Module
+
+3. Address Module
+
+4. Product Module
+
+5. Category Module
+
+6. Inventory Module
+
+7. Cart Module
+
+8. Wishlist Module
+
+9. Order Module
+
+10. Review Module
+
+11. Service Provider Module
+
+12. Service Module
+
+13. Booking Module
+
+14. Notification Module
+
+15. CMS Module
+
+16. Analytics Module
+
+17. SEO Module
+
+18. Audit Module
+
+19. Refund Module
+
+20. Future AI Module
+
+====================================================
+AUTHENTICATION TABLES
+=====================
+
+TABLE: users
+
+id (UUID PK)
+
+name
+
+email
+
+password_hash
+
+phone
+
+avatar
+
+role
+
+status
+
+email_verified
+
+last_login
+
+created_at
+
+updated_at
+
+---
+
+TABLE: sessions
+
+id
+
+user_id
+
+refresh_token
+
+ip_address
+
+device_info
+
+expires_at
+
+created_at
+
+---
+
+TABLE: password_resets
+
+id
+
+user_id
+
+token
+
+expires_at
+
+created_at
+
+====================================================
+USER PROFILE TABLES
+===================
+
+TABLE: customer_profiles
+
+id
+
+user_id
+
+gender
+
+date_of_birth
+
+preferred_language
+
+marketing_consent
+
+created_at
+
+updated_at
+
+---
+
+TABLE: addresses
+
+id
+
+user_id
+
+full_name
+
+phone
+
+address_line_1
+
+address_line_2
+
+landmark
+
+city
+
+state
+
+country
+
+postal_code
+
+latitude
+
+longitude
+
+is_default
+
+created_at
+
+updated_at
+
+
+CATEGORY SYSTEM
+===============
+
+TABLE: categories
+
+id
+
+name
+
+slug
+
+description
+
+image
+
+parent_id
+
+level
+
+sort_order
+
+status
+
+created_at
+
+updated_at
+
+---
+
+Example Hierarchy
+
+Plants
+
+Indoor Plants
+
+Outdoor Plants
+
+Flowering Plants
+
+Planters
+
+Ceramic
+
+Plastic
+
+Metal
+
+Gardening Products
+
+Seeds
+
+Tools
+
+
+PRODUCT SYSTEM
+==============
+
+TABLE: products
+
+id
+
+name
+
+slug
+
+sku
+
+short_description
+
+full_description
+
+category_id
+
+brand
+
+price
+
+sale_price
+
+cost_price
+
+weight
+
+status
+
+featured
+
+is_new
+
+is_best_seller
+
+is_trending
+
+seo_title
+
+seo_description
+
+created_at
+
+updated_at
+
+---
+
+TABLE: product_images
+
+id
+
+product_id
+
+image_url
+
+alt_text
+
+sort_order
+
+created_at
+
+---
+
+TABLE: product_attributes
+
+id
+
+product_id
+
+attribute_name
+
+attribute_value
+
+---
+
+Examples
+
+Indoor/Outdoor
+
+Water Need
+
+Sunlight Need
+
+Pet Friendly
+
+Toxic
+
+Growth Rate
+
+Difficulty Level
+
+Air Purifying
+
+---
+
+TABLE: product_variants
+
+id
+
+product_id
+
+variant_name
+
+sku
+
+price
+
+stock
+
+status
+
+====================================================
+INVENTORY SYSTEM
+================
+
+TABLE: inventory
+
+id
+
+product_id
+
+available_stock
+
+reserved_stock
+
+sold_stock
+
+reorder_level
+
+updated_at
+
+---
+
+TABLE: inventory_logs
+
+id
+
+product_id
+
+old_stock
+
+new_stock
+
+change_type
+
+reason
+
+created_by
+
+created_at
+
+====================================================
+CART SYSTEM
+===========
+
+TABLE: carts
+
+id
+
+user_id
+
+created_at
+
+updated_at
+
+---
+
+TABLE: cart_items
+
+id
+
+cart_id
+
+product_id
+
+variant_id
+
+quantity
+
+price
+
+created_at
+
+====================================================
+WISHLIST SYSTEM
+===============
+
+TABLE: wishlists
+
+id
+
+user_id
+
+product_id
+
+created_at
+
+====================================================
+ORDER MANAGEMENT
+================
+
+TABLE: orders
+
+id
+
+order_number
+
+user_id
+
+address_id
+
+subtotal
+
+shipping_charge
+
+discount
+
+tax
+
+grand_total
+
+payment_method
+
+payment_status
+
+order_status
+
+notes
+
+created_at
+
+updated_at
+
+---
+
+TABLE: order_items
+
+id
+
+order_id
+
+product_id
+
+variant_id
+
+quantity
+
+unit_price
+
+total_price
+
+---
+
+TABLE: order_status_history
+
+id
+
+order_id
+
+status
+
+remarks
+
+created_at
+
+---
+
+ORDER STATUS FLOW
+
+Pending
+
+Confirmed
+
+Packed
+
+Shipped
+
+Out For Delivery
+
+Delivered
+
+Cancelled
+
+Returned
+
+Refunded
+
+====================================================
+REFUND SYSTEM
+=============
+
+TABLE: refund_requests
+
+id
+
+order_id
+
+user_id
+
+reason
+
+description
+
+status
+
+created_at
+
+---
+
+TABLE: refund_evidence
+
+id
+
+refund_id
+
+image_url
+
+created_at
+
+====================================================
+REVIEWS SYSTEM
+==============
+
+TABLE: reviews
+
+id
+
+product_id
+
+user_id
+
+rating
+
+review_text
+
+status
+
+created_at
+
+---
+
+TABLE: review_images
+
+id
+
+review_id
+
+image_url
+
+created_at
+
+====================================================
+SERVICE PROVIDERS
+=================
+
+TABLE: providers
+
+id
+
+user_id
+
+business_name
+
+experience_years
+
+description
+
+city
+
+status
+
+approval_date
+
+created_at
+
+---
+
+TABLE: provider_documents
+
+id
+
+provider_id
+
+document_type
+
+document_url
+
+verification_status
+
+---
+
+TABLE: provider_locations
+
+id
+
+provider_id
+
+city
+
+latitude
+
+longitude
+
+service_radius
+
+====================================================
+SERVICE MODULE
+==============
+
+TABLE: services
+
+id
+
+provider_id
+
+name
+
+slug
+
+description
+
+category
+
+pricing_type
+
+price
+
+status
+
+created_at
+
+---
+
+PRICING TYPES
+
+Fixed
+
+Hourly
+
+Custom Quote
+
+====================================================
+BOOKING MODULE
+==============
+
+TABLE: bookings
+
+id
+
+user_id
+
+provider_id
+
+service_id
+
+address_id
+
+booking_date
+
+status
+
+notes
+
+created_at
+
+---
+
+TABLE: booking_status_history
+
+id
+
+booking_id
+
+status
+
+remarks
+
+created_at
+
+---
+
+BOOKING STATUS
+
+Requested
+
+Accepted
+
+In Progress
+
+Completed
+
+Cancelled
+
+====================================================
+PROVIDER PAYOUTS
+================
+
+TABLE: provider_earnings
+
+id
+
+provider_id
+
+booking_id
+
+amount
+
+commission
+
+net_amount
+
+created_at
+
+---
+
+TABLE: provider_settlements
+
+id
+
+provider_id
+
+month
+
+total_amount
+
+status
+
+settled_at
+
+====================================================
+NOTIFICATION SYSTEM
+===================
+
+TABLE: notifications
+
+id
+
+user_id
+
+title
+
+message
+
+type
+
+is_read
+
+created_at
+
+---
+
+TABLE: notification_templates
+
+id
+
+name
+
+subject
+
+content
+
+status
+
+====================================================
+CMS SYSTEM
+==========
+
+TABLE: banners
+
+id
+
+title
+
+image
+
+link
+
+position
+
+status
+
+---
+
+TABLE: pages
+
+id
+
+title
+
+slug
+
+content
+
+seo_title
+
+seo_description
+
+status
+
+---
+
+TABLE: faqs
+
+id
+
+question
+
+answer
+
+sort_order
+
+status
+
+====================================================
+BLOG SYSTEM
+===========
+
+TABLE: blog_categories
+
+id
+
+name
+
+slug
+
+---
+
+TABLE: blog_posts
+
+id
+
+title
+
+slug
+
+excerpt
+
+content
+
+featured_image
+
+author
+
+status
+
+published_at
+
+---
+
+TABLE: blog_tags
+
+id
+
+name
+
+slug
+
+====================================================
+SEO SYSTEM
+==========
+
+TABLE: seo_meta
+
+id
+
+entity_type
+
+entity_id
+
+meta_title
+
+meta_description
+
+canonical_url
+
+og_image
+
+====================================================
+ANALYTICS SYSTEM
+================
+
+TABLE: page_views
+
+id
+
+user_id
+
+page_url
+
+referrer
+
+device
+
+created_at
+
+---
+
+TABLE: product_views
+
+id
+
+user_id
+
+product_id
+
+created_at
+
+---
+
+TABLE: search_logs
+
+id
+
+user_id
+
+search_query
+
+results_count
+
+created_at
+
+====================================================
+AUDIT LOGGING
+=============
+
+TABLE: audit_logs
+
+id
+
+user_id
+
+action
+
+entity_type
+
+entity_id
+
+old_data
+
+new_data
+
+created_at
+
+====================================================
+CONTACT SYSTEM
+==============
+
+TABLE: contact_messages
+
+id
+
+name
+
+email
+
+phone
+
+subject
+
+message
+
+status
+
+created_at
+
+====================================================
+NEWSLETTER SYSTEM
+=================
+
+TABLE: newsletter_subscribers
+
+id
+
+email
+
+status
+
+created_at
+
+====================================================
+FUTURE AI MODULES
+=================
+
+TABLE: ai_plant_diagnosis
+
+id
+
+user_id
+
+image_url
+
+diagnosis
+
+recommendation
+
+created_at
+
+---
+
+TABLE: ai_recommendations
+
+id
+
+user_id
+
+recommendation_data
+
+created_at
+
+---
+
+TABLE: plant_care_reminders
+
+id
+
+user_id
+
+plant_name
+
+watering_schedule
+
+fertilizer_schedule
+
+next_due_date
+
+====================================================
+DATABASE INDEXING STRATEGY
+==========================
+
+INDEXES
+
+users(email)
+
+products(slug)
+
+products(category_id)
+
+products(status)
+
+products(featured)
+
+orders(user_id)
+
+orders(order_status)
+
+bookings(provider_id)
+
+bookings(status)
+
+reviews(product_id)
+
+services(provider_id)
+
+blog_posts(slug)
+
+====================================================
+SOFT DELETE STRATEGY
+====================
+
+Important Tables
+
+products
+
+categories
+
+services
+
+providers
+
+blog_posts
+
+pages
+
+Should Use:
+
+deleted_at
+
+Instead of Permanent Delete
+
+====================================================
+ESTIMATED TABLE COUNT
+=====================
+
+Core Tables:
+45+
+
+Future AI Tables:
+5+
+
+Audit Tables:
+3+
+
+Total Production Schema:
+50+ Tables
+
+====================================================
+END OF DATABASE DESIGN
+======================

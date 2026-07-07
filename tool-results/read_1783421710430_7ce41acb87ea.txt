@@ -1,0 +1,2002 @@
+     1→     1→================================================================================
+     2→     2→        GROWPLANTS — PRODUCT REQUIREMENTS DOCUMENT (PRD)
+     3→     3→================================================================================
+     4→     4→Document Version  : 1.0
+     5→     5→BRD Reference     : GROWPLANTS BRD v1.0
+     6→     6→Status            : Draft — For Developer Review
+     7→     7→Prepared For      : Development Team / AI Coding Tools
+     8→     8→Date              : 2025
+     9→     9→================================================================================
+    10→    10→
+    11→    11→================================================================================
+    12→    12→TABLE OF CONTENTS
+    13→    13→================================================================================
+    14→    14→
+    15→    15→SECTION 01 — Document Overview & Conventions
+    16→    16→SECTION 02 — Product Vision & Scope
+    17→    17→SECTION 03 — System Architecture Overview
+    18→    18→SECTION 04 — Tech Stack Recommendations
+    19→    19→SECTION 05 — Database Schema (Full)
+    20→    20→SECTION 06 — User Roles & Permissions Matrix
+    21→    21→SECTION 07 — Authentication & Account Management
+    22→    22→SECTION 08 — Customer-Facing Frontend (Web + Mobile)
+    23→    23→SECTION 09 — Product Catalog Module
+    24→    24→SECTION 10 — Shopping Cart & Checkout Flow
+    25→    25→SECTION 11 — Order Management System
+    26→    26→SECTION 12 — Service Marketplace Module
+    27→    27→SECTION 13 — Booking System
+    28→    28→SECTION 14 — Payment Integration
+    29→    29→SECTION 15 — Inventory Management System
+    30→    30→SECTION 16 — Notifications System
+    31→    31→SECTION 17 — Review & Rating System
+    32→    32→SECTION 18 — Search & Filter System
+    33→    33→SECTION 19 — Admin Panel (Full Specification)
+    34→    34→SECTION 20 — Service Provider Panel
+    35→    35→SECTION 21 — Return & Refund Management
+    36→    36→SECTION 22 — Delivery & Logistics
+    37→    37→SECTION 23 — Location & City Management
+    38→    38→SECTION 24 — SEO & Performance Requirements
+    39→    39→SECTION 25 — Security Requirements
+    40→    40→SECTION 26 — API Specification (REST Endpoints)
+    41→    41→SECTION 27 — Third-Party Integrations
+    42→    42→SECTION 28 — Future Modules (AI Roadmap)
+    43→    43→SECTION 29 — Non-Functional Requirements
+    44→    44→SECTION 30 — Acceptance Criteria & Testing Guidelines
+    45→    45→SECTION 31 — Deployment & DevOps
+    46→    46→SECTION 32 — Appendix: Enums, Constants & Config
+    47→    47→
+    48→    48→================================================================================
+    49→    49→SECTION 01 — DOCUMENT OVERVIEW & CONVENTIONS
+    50→    50→================================================================================
+    51→    51→
+    52→    52→1.1 PURPOSE
+    53→    53→-----------
+    54→    54→This Product Requirements Document (PRD) defines the complete functional and
+    55→    55→non-functional requirements for the GROWPLANTS platform. It is intended as the
+    56→    56→single source of truth for:
+    57→    57→  - Frontend developers (Web & Mobile)
+    58→    58→  - Backend developers (API & Database)
+    59→    59→  - AI coding tools (Cursor, GitHub Copilot, Claude, etc.)
+    60→    60→  - QA engineers
+    61→    61→  - DevOps engineers
+    62→    62→
+    63→    63→This document translates the Business Requirements Document (BRD v1.0) into
+    64→    64→precise, implementable specifications. Every feature described here maps to a
+    65→    65→business goal. No feature in this document exists without a BRD justification.
+    66→    66→
+    67→    67→1.2 DOCUMENT CONVENTIONS
+    68→    68→--------------------------
+    69→    69→- [REQUIRED]   = Must be built in Phase 1 (MVP Launch)
+    70→    70→- [PHASE-2]    = Required for Haryana expansion
+    71→    71→- [PHASE-3]    = Required for national expansion
+    72→    72→- [FUTURE-AI]  = AI-powered features in future roadmap
+    73→    73→- [OPTIONAL]   = Nice-to-have, build if time permits
+    74→    74→- FR-XXX       = Functional Requirement ID
+    75→    75→- NFR-XXX      = Non-Functional Requirement ID
+    76→    76→- API-XXX      = API Endpoint ID
+    77→    77→- DB-XXX       = Database Table/Model ID
+    78→    78→- UI-XXX       = UI Screen/Component ID
+    79→    79→
+    80→    80→1.3 ASSUMPTIONS
+    81→    81→---------------
+    82→    82→1. Platform launches in Sonipat, Haryana first.
+    83→    83→2. Business owner manages inventory directly (no multi-vendor product marketplace).
+    84→    84→3. Service providers are third-party freelancers onboarded by admin.
+    85→    85→4. Payment gateway: Razorpay (India-first, supports UPI, cards, wallets).
+    86→    86→5. Delivery is managed in-house or via local courier for Phase 1.
+    87→    87→6. Mobile app: React Native (single codebase, Android + iOS).
+    88→    88→7. Backend: Node.js + Express or NestJS (developer's choice, must be RESTful).
+    89→    89→8. Database: PostgreSQL (primary) + Redis (caching/sessions).
+    90→    90→9. File storage: AWS S3 or Cloudflare R2.
+    91→    91→10. All prices in Indian Rupees (INR).
+    92→    92→11. Language: Hindi + English bilingual support (UI labels bilingual).
+    93→    93→12. Guest checkout is NOT allowed — account required for all purchases.
+    94→    94→
+    95→    95→1.4 OUT OF SCOPE (Phase 1)
+    96→    96→---------------------------
+    97→    97→- Multi-vendor product marketplace (sellers listing their own products)
+    98→    98→- International shipping
+    99→    99→- Cryptocurrency payments
+   100→   100→- AR plant preview (future)
+   101→   101→- AI plant doctor / recommendations (future)
+   102→   102→- Loyalty points / rewards program
+   103→   103→- Affiliate marketing module
+   104→   104→- Live chat with gardeners
+   105→   105→
+   106→   106→================================================================================
+   107→   107→SECTION 02 — PRODUCT VISION & SCOPE
+   108→   108→================================================================================
+   109→   109→
+   110→   110→2.1 PRODUCT OVERVIEW
+   111→   111→---------------------
+   112→   112→GROWPLANTS is a location-based eCommerce and Service Marketplace platform for
+   113→   113→the gardening ecosystem in India. It combines:
+   114→   114→
+   115→   115→  PILLAR 1: PRODUCT STORE
+   116→   116→    → Online store for plants, planters, gardening supplies.
+   117→   117→    → Owner-managed inventory.
+   118→   118→    → Delivery within serviceable pincodes.
+   119→   119→
+   120→   120→  PILLAR 2: SERVICE MARKETPLACE
+   121→   121→    → Customers can book gardening services.
+   122→   122→    → Services fulfilled by verified service providers.
+   123→   123→    → Admin approves all service providers.
+   124→   124→    → Commission-based revenue model.
+   125→   125→
+   126→   126→  PILLAR 3: ADMIN CONTROL CENTER
+   127→   127→    → Full platform management by business owner/admin.
+   128→   128→    → Order, booking, inventory, provider, and customer management.
+   129→   129→
+   130→   130→2.2 PHASE SCOPE
+   131→   131→----------------
+   132→   132→PHASE 1 (MVP — 0-6 months):
+   133→   133→  - Customer Web App + Mobile App
+   134→   134→  - Product Catalog (Plants, Planters, Gardening Products)
+   135→   135→  - Cart + Checkout + Payment
+   136→   136→  - Order Management
+   137→   137→  - Service Booking (basic)
+   138→   138→  - Service Provider Panel (basic)
+   139→   139→  - Admin Panel (full)
+   140→   140→  - Inventory Management
+   141→   141→  - Review & Rating
+   142→   142→  - Notification System (Email + Push + SMS)
+   143→   143→  - Sonipat city only
+   144→   144→
+   145→   145→PHASE 2 (6-18 months):
+   146→   146→  - Multi-city support (Haryana)
+   147→   147→  - Advanced analytics dashboard
+   148→   148→  - Featured listings for service providers
+   149→   149→  - Vendor subscription model
+   150→   150→
+   151→   151→PHASE 3 (18-36 months):
+   152→   152→  - National expansion
+   153→   153→  - AI recommendation engine
+   154→   154→  - AI plant doctor
+   155→   155→  - AR plant preview
+   156→   156→  - Advanced B2B features
+   157→   157→
+   158→   158→2.3 PLATFORM TYPES
+   159→   159→-------------------
+   160→   160→1. Customer Web App       → React.js (responsive, works on mobile browsers too)
+   161→   161→2. Customer Mobile App    → React Native (Android + iOS)
+   162→   162→3. Admin Web Panel        → React.js (desktop-first, separate app)
+   163→   163→4. Service Provider App   → React Native (shared with customer app, role-based)
+   164→   164→5. Backend API            → Node.js / NestJS (REST API)
+   165→   165→6. Database               → PostgreSQL + Redis
+   166→   166→7. File Storage           → AWS S3 / Cloudflare R2
+   167→   167→
+   168→   168→================================================================================
+   169→   169→SECTION 03 — SYSTEM ARCHITECTURE OVERVIEW
+   170→   170→================================================================================
+   171→   171→
+   172→   172→3.1 HIGH-LEVEL ARCHITECTURE
+   173→   173→-----------------------------
+   174→   174→
+   175→   175→  [Customer Web/Mobile App]
+   176→   176→           |
+   177→   177→           | HTTPS REST API
+   178→   178→           ↓
+   179→   179→  [API Gateway / Load Balancer]
+   180→   180→           |
+   181→   181→           ↓
+   182→   182→  [Backend API Server (Node.js)]
+   183→   183→     |          |          |
+   184→   184→     ↓          ↓          ↓
+   185→   185→[PostgreSQL]  [Redis]   [AWS S3]
+   186→   186→(main DB)   (cache/    (images/
+   187→   187→             sessions)  files)
+   188→   188→     |
+   189→   189→     ↓
+   190→   190→[Razorpay API]  [Firebase (Push)]  [Twilio/MSG91 (SMS)]  [SendGrid (Email)]
+   191→   191→
+   192→   192→3.2 MODULE BREAKDOWN
+   193→   193→---------------------
+   194→   194→Backend modules (separate services or route groups):
+   195→   195→  - auth           → Authentication, sessions, OTP
+   196→   196→  - users          → Customer profiles, addresses
+   197→   197→  - products       → Catalog, categories, variants
+   198→   198→  - inventory      → Stock management
+   199→   199→  - cart           → Shopping cart (Redis-backed)
+   200→   200→  - orders         → Order lifecycle management
+   201→   201→  - services       → Service catalog
+   202→   202→  - bookings       → Booking lifecycle
+   203→   203→  - providers      → Service provider profiles
+   204→   204→  - payments       → Razorpay integration
+   205→   205→  - reviews        → Reviews and ratings
+   206→   206→  - notifications  → Email, SMS, push
+   207→   207→  - admin          → Admin-only endpoints
+   208→   208→  - search         → Search and filter
+   209→   209→  - locations      → City, pincode, area management
+   210→   210→  - uploads        → File/image upload to S3
+   211→   211→  - returns        → Return and refund management
+   212→   212→  - reports        → Analytics and reporting
+   213→   213→
+   214→   214→3.3 DATA FLOW: PRODUCT ORDER
+   215→   215→-----------------------------
+   216→   216→Customer → Browse Products → Add to Cart → Enter Address
+   217→   217→→ Select Delivery Slot (if applicable) → Review Order
+   218→   218→→ Payment (Razorpay) → Payment Webhook → Order Created
+   219→   219→→ Admin Notified → Admin Confirms → Delivery Assigned
+   220→   220→→ Customer Notified → Delivered → Order Completed
+   221→   221→→ Review Prompt Sent
+   222→   222→
+   223→   223→3.4 DATA FLOW: SERVICE BOOKING
+   224→   224→--------------------------------
+   225→   225→Customer → Browse Services → Select Service
+   226→   226→→ Enter Location (coordinates captured) → Select Date/Time
+   227→   227→→ Select Service Provider (or auto-assign) → Review & Confirm
+   228→   228→→ Payment (advance or COD) → Booking Created
+   229→   229→→ Provider Notified → Provider Confirms → Service Delivered
+   230→   230→→ Booking Completed → Review Prompt Sent
+   231→   231→
+   232→   232→================================================================================
+   233→   233→SECTION 04 — TECH STACK RECOMMENDATIONS
+   234→   234→================================================================================
+   235→   235→
+   236→   236→4.1 FRONTEND (Customer Web)
+   237→   237→-----------------------------
+   238→   238→Framework        : React.js 18+
+   239→   239→State Management : Redux Toolkit + RTK Query (for API calls)
+   240→   240→Styling          : Tailwind CSS + shadcn/ui component library
+   241→   241→Routing          : React Router v6
+   242→   242→Forms            : React Hook Form + Zod (validation)
+   243→   243→Maps             : Google Maps API (location picker, delivery area)
+   244→   244→Payments         : Razorpay Web SDK
+   245→   245→SEO              : React Helmet / Next.js (consider Next.js for SEO benefits)
+   246→   246→Image Handling   : React-image-crop (for uploads), Cloudinary/S3 URLs
+   247→   247→Build Tool       : Vite or Next.js
+   248→   248→PWA              : Yes (add to home screen, offline capability for basic browsing)
+   249→   249→
+   250→   250→RECOMMENDATION: Use Next.js 14+ (App Router) for better SEO, server-side
+   251→   251→rendering, and image optimization — critical for a product eCommerce site.
+   252→   252→
+   253→   253→4.2 MOBILE APP
+   254→   254→---------------
+   255→   255→Framework     : React Native (Expo managed workflow)
+   256→   256→Navigation    : React Navigation v6
+   257→   257→State         : Redux Toolkit
+   258→   258→Payments      : Razorpay React Native SDK
+   259→   259→Maps          : react-native-maps + Google Maps
+   260→   260→Push Notifs   : Firebase Cloud Messaging (FCM)
+   261→   261→Storage       : AsyncStorage (local), Redux Persist
+   262→   262→Camera        : Expo Camera (for review photos, plant photos)
+   263→   263→Platform      : Android 8.0+ and iOS 13+
+   264→   264→
+   265→   265→4.3 BACKEND API
+   266→   266→----------------
+   267→   267→Runtime       : Node.js 20 LTS
+   268→   268→Framework     : NestJS (TypeScript, modular, enterprise-grade)
+   269→   269→              OR Express.js + TypeScript (simpler, faster to build)
+   270→   270→ORM           : Prisma (PostgreSQL)
+   271→   271→Auth          : JWT (access token 15min) + Refresh Token (7 days) + HTTP-only cookies
+   272→   272→Validation    : Joi or class-validator (NestJS)
+   273→   273→File Upload   : Multer → AWS S3 SDK
+   274→   274→Caching       : Redis (ioredis)
+   275→   275→Queues        : Bull (Redis-based) for background jobs (emails, notifications)
+   276→   276→Logging       : Winston + Morgan
+   277→   277→API Docs      : Swagger / OpenAPI 3.0
+   278→   278→
+   279→   279→4.4 DATABASE
+   280→   280→-------------
+   281→   281→Primary DB    : PostgreSQL 15+
+   282→   282→Cache / Queue : Redis 7+
+   283→   283→ORM           : Prisma
+   284→   284→Migrations    : Prisma Migrate
+   285→   285→Search        : PostgreSQL Full-Text Search (Phase 1), Elasticsearch (Phase 3)
+   286→   286→
+   287→   287→4.5 INFRASTRUCTURE
+   288→   288→-------------------
+   289→   289→Cloud         : AWS / DigitalOcean / Railway (Phase 1 — cost-effective)
+   290→   290→Web Server    : Nginx (reverse proxy)
+   291→   291→SSL           : Let's Encrypt / AWS Certificate Manager
+   292→   292→CDN           : Cloudflare
+   293→   293→File Storage  : AWS S3 / Cloudflare R2
+   294→   294→Domain        : growplants.in (recommended)
+   295→   295→Email         : SendGrid or AWS SES
+   296→   296→SMS           : MSG91 or Textlocal (India-specific, cheap)
+   297→   297→Push Notifs   : Firebase Cloud Messaging (free tier sufficient for Phase 1)
+   298→   298→Monitoring    : PM2 (process manager) + Sentry (error tracking)
+   299→   299→
+   300→   300→4.6 DEVELOPMENT TOOLS
+   301→   301→----------------------
+   302→   302→Version Control : Git + GitHub / GitLab
+   303→   303→CI/CD           : GitHub Actions
+   304→   304→Containerization: Docker + Docker Compose (local dev)
+   305→   305→API Testing     : Postman / Thunder Client
+   306→   306→Code Quality    : ESLint + Prettier + Husky (pre-commit hooks)
+   307→   307→
+   308→   308→================================================================================
+   309→   309→SECTION 05 — DATABASE SCHEMA (FULL)
+   310→   310→================================================================================
+   311→   311→
+   312→   312→NOTATION:
+   313→   313→  PK  = Primary Key
+   314→   314→  FK  = Foreign Key
+   315→   315→  UQ  = Unique
+   316→   316→  IDX = Index
+   317→   317→  NN  = Not Null
+   318→   318→  DEF = Default Value
+   319→   319→
+   320→   320→All tables use UUID as primary key (uuid_generate_v4()) unless noted otherwise.
+   321→   321→All tables include: created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ
+   322→   322→
+   323→   323→------------------------------------------------------------------------------
+   324→   324→DB-001: TABLE — users
+   325→   325→------------------------------------------------------------------------------
+   326→   326→Column              Type              Constraints       Notes
+   327→   327→-------------------------------------------------------------------------------
+   328→   328→id                  UUID              PK, NN            
+   329→   329→full_name           VARCHAR(100)      NN
+   330→   330→email               VARCHAR(150)      UQ, NN
+   331→   331→phone               VARCHAR(15)       UQ, NN            Indian format +91XXXXXXXXXX
+   332→   332→phone_verified      BOOLEAN           DEF false
+   333→   333→email_verified      BOOLEAN           DEF false
+   334→   334→password_hash       VARCHAR(255)      NN
+   335→   335→role                ENUM              NN                customer | admin | provider
+   336→   336→status              ENUM              DEF active        active | suspended | deleted
+   337→   337→profile_image_url   TEXT              NULL
+   338→   338→date_of_birth       DATE              NULL
+   339→   339→gender              ENUM              NULL              male | female | other | prefer_not
+   340→   340→preferred_language  ENUM              DEF en            en | hi
+   341→   341→last_login_at       TIMESTAMPTZ       NULL
+   342→   342→created_at          TIMESTAMPTZ       DEF NOW()
+   343→   343→updated_at          TIMESTAMPTZ       DEF NOW()
+   344→   344→
+   345→   345→INDEXES: email, phone, role, status
+   346→   346→
+   347→   347→------------------------------------------------------------------------------
+   348→   348→DB-002: TABLE — user_addresses
+   349→   349→------------------------------------------------------------------------------
+   350→   350→Column              Type              Constraints       Notes
+   351→   351→-------------------------------------------------------------------------------
+   352→   352→id                  UUID              PK
+   353→   353→user_id             UUID              FK → users.id, NN
+   354→   354→label               VARCHAR(50)       NULL              e.g. "Home", "Office"
+   355→   355→full_name           VARCHAR(100)      NN                recipient name
+   356→   356→phone               VARCHAR(15)       NN                recipient phone
+   357→   357→address_line_1      VARCHAR(255)      NN
+   358→   358→address_line_2      VARCHAR(255)      NULL
+   359→   359→landmark            VARCHAR(100)      NULL
+   360→   360→city                VARCHAR(100)      NN                DEF "Sonipat"
+   361→   361→state               VARCHAR(100)      NN                DEF "Haryana"
+   362→   362→pincode             VARCHAR(10)       NN
+   363→   363→latitude            DECIMAL(10,8)     NULL
+   364→   364→longitude           DECIMAL(11,8)     NULL
+   365→   365→is_default          BOOLEAN           DEF false
+   366→   366→created_at          TIMESTAMPTZ       DEF NOW()
+   367→   367→
+   368→   368→INDEXES: user_id, pincode
+   369→   369→
+   370→   370→------------------------------------------------------------------------------
+   371→   371→DB-003: TABLE — otp_verifications
+   372→   372→------------------------------------------------------------------------------
+   373→   373→Column              Type              Constraints       Notes
+   374→   374→-------------------------------------------------------------------------------
+   375→   375→id                  UUID              PK
+   376→   376→identifier          VARCHAR(150)      NN, IDX           phone or email
+   377→   377→identifier_type     ENUM              NN                phone | email
+   378→   378→otp_code            VARCHAR(10)       NN
+   379→   379→purpose             ENUM              NN                registration | login | password_reset | phone_change
+   380→   380→is_used             BOOLEAN           DEF false
+   381→   381→attempts            INT               DEF 0
+   382→   382→expires_at          TIMESTAMPTZ       NN
+   383→   383→created_at          TIMESTAMPTZ       DEF NOW()
+   384→   384→
+   385→   385→NOTE: OTP expires in 10 minutes. Max 3 failed attempts before lockout.
+   386→   386→
+   387→   387→------------------------------------------------------------------------------
+   388→   388→DB-004: TABLE — refresh_tokens
+   389→   389→------------------------------------------------------------------------------
+   390→   390→Column              Type              Constraints       Notes
+   391→   391→-------------------------------------------------------------------------------
+   392→   392→id                  UUID              PK
+   393→   393→user_id             UUID              FK → users.id
+   394→   394→token_hash          VARCHAR(255)      UQ, NN
+   395→   395→device_info         JSONB             NULL              {device, OS, app_version, ip}
+   396→   396→expires_at          TIMESTAMPTZ       NN
+   397→   397→is_revoked          BOOLEAN           DEF false
+   398→   398→created_at          TIMESTAMPTZ       DEF NOW()
+   399→   399→
+   400→   400→------------------------------------------------------------------------------
+   401→   401→DB-005: TABLE — product_categories
+   402→   402→------------------------------------------------------------------------------
+   403→   403→Column              Type              Constraints       Notes
+   404→   404→-------------------------------------------------------------------------------
+   405→   405→id                  UUID              PK
+   406→   406→name                VARCHAR(100)      NN
+   407→   407→slug                VARCHAR(120)      UQ, NN
+   408→   408→name_hi             VARCHAR(100)      NULL              Hindi name
+   409→   409→description         TEXT              NULL
+   410→   410→description_hi      TEXT              NULL
+   411→   411→parent_id           UUID              FK → product_categories.id (self-ref)
+   412→   412→icon_url            TEXT              NULL
+   413→   413→banner_url          TEXT              NULL
+   414→   414→display_order       INT               DEF 0
+   415→   415→is_active           BOOLEAN           DEF true
+   416→   416→seo_title           VARCHAR(160)      NULL
+   417→   417→seo_description     VARCHAR(320)      NULL
+   418→   418→created_at          TIMESTAMPTZ       DEF NOW()
+   419→   419→updated_at          TIMESTAMPTZ       DEF NOW()
+   420→   420→
+   421→   421→SEED DATA:
+   422→   422→  Level 1 (parent_id = null):
+   423→   423→    - Plants
+   424→   424→    - Planters
+   425→   425→    - Gardening Products
+   426→   426→  
+   427→   427→  Level 2 (Plants):
+   428→   428→    - Indoor Plants
+   429→   429→    - Outdoor Plants
+   430→   430→    - Flowering Plants
+   431→   431→    - Succulents
+   432→   432→    - Bonsai
+   433→   433→    - Medicinal Plants
+   434→   434→    - Air Purifying Plants
+   435→   435→    - Seasonal Plants
+   436→   436→  
+   437→   437→  Level 2 (Planters):
+   438→   438→    - Ceramic Planters
+   439→   439→    - Plastic Planters
+   440→   440→    - Metal Planters
+   441→   441→    - Hanging Planters
+   442→   442→    - Decorative Planters
+   443→   443→    - Terracotta Planters
+   444→   444→    - Fiber Planters
+   445→   445→  
+   446→   446→  Level 2 (Gardening Products):
+   447→   447→    - Pots & Containers
+   448→   448→    - Seeds & Bulbs
+   449→   449→    - Fertilizers & Manure
+   450→   450→    - Soil & Cocopeat
+   451→   451→    - Tools & Equipment
+   452→   452→    - Accessories & Decor
+   453→   453→    - Pest Control
+   454→   454→    - Plant Food & Growth
+   455→   455→
+   456→   456→------------------------------------------------------------------------------
+   457→   457→DB-006: TABLE — products
+   458→   458→------------------------------------------------------------------------------
+   459→   459→Column              Type              Constraints       Notes
+   460→   460→-------------------------------------------------------------------------------
+   461→   461→id                  UUID              PK
+   462→   462→name                VARCHAR(200)      NN
+   463→   463→name_hi             VARCHAR(200)      NULL
+   464→   464→slug                VARCHAR(220)      UQ, NN
+   465→   465→short_description   VARCHAR(500)      NULL
+   466→   466→description         TEXT              NULL              Rich text / HTML
+   467→   467→description_hi      TEXT              NULL
+   468→   468→category_id         UUID              FK → product_categories.id, NN
+   469→   469→sku                 VARCHAR(100)      UQ, NN            Stock Keeping Unit
+   470→   470→barcode             VARCHAR(100)      NULL
+   471→   471→base_price          DECIMAL(10,2)     NN
+   472→   472→selling_price       DECIMAL(10,2)     NN
+   473→   473→discount_percent    DECIMAL(5,2)      DEF 0
+   474→   474→cost_price          DECIMAL(10,2)     NULL              For margin calculation (admin only)
+   475→   475→tax_rate            DECIMAL(5,2)      DEF 18            GST %
+   476→   476→tax_included        BOOLEAN           DEF true          Is tax included in selling_price?
+   477→   477→weight_grams        INT               NULL              For shipping calculation
+   478→   478→dimensions_cm       JSONB             NULL              {length, width, height}
+   479→   479→care_instructions   TEXT              NULL              Plant care info
+   480→   480→sunlight_req        ENUM              NULL              full_sun | partial_shade | shade | indirect
+   481→   481→water_freq          ENUM              NULL              daily | alternate_day | weekly | monthly
+   482→   482→difficulty_level    ENUM              NULL              easy | moderate | expert
+   483→   483→is_pet_safe         BOOLEAN           NULL
+   484→   484→is_air_purifying    BOOLEAN           NULL
+   485→   485→suitable_for        TEXT[]            NULL              ['indoor','outdoor','balcony','office']
+   486→   486→seasonal            BOOLEAN           DEF false
+   487→   487→season_available    TEXT[]            NULL              ['spring','summer','monsoon','winter']
+   488→   488→primary_image_url   TEXT              NN
+   489→   489→is_active           BOOLEAN           DEF true
+   490→   490→is_featured         BOOLEAN           DEF false
+   491→   491→is_bestseller       BOOLEAN           DEF false
+   492→   492→is_new_arrival      BOOLEAN           DEF false
+   493→   493→tags                TEXT[]            NULL              For search
+   494→   494→seo_title           VARCHAR(160)      NULL
+   495→   495→seo_description     VARCHAR(320)      NULL
+   496→   496→meta_keywords       TEXT[]            NULL
+   497→   497→total_sold          INT               DEF 0             Denormalized counter
+   498→   498→average_rating      DECIMAL(3,2)      DEF 0
+   499→   499→review_count        INT               DEF 0
+   500→   500→created_at          TIMESTAMPTZ       DEF NOW()
+   501→   501→updated_at          TIMESTAMPTZ       DEF NOW()
+   502→   502→
+   503→   503→INDEXES: slug, category_id, is_active, is_featured, tags (GIN), suitable_for (GIN)
+   504→   504→FULL TEXT SEARCH INDEX on: name, description, tags
+   505→   505→
+   506→   506→------------------------------------------------------------------------------
+   507→   507→DB-007: TABLE — product_images
+   508→   508→------------------------------------------------------------------------------
+   509→   509→Column              Type              Constraints       Notes
+   510→   510→-------------------------------------------------------------------------------
+   511→   511→id                  UUID              PK
+   512→   512→product_id          UUID              FK → products.id, NN
+   513→   513→image_url           TEXT              NN
+   514→   514→alt_text            VARCHAR(200)      NULL
+   515→   515→display_order       INT               DEF 0
+   516→   516→is_primary          BOOLEAN           DEF false
+   517→   517→created_at          TIMESTAMPTZ       DEF NOW()
+   518→   518→
+   519→   519→MAX 10 IMAGES PER PRODUCT. First image = primary by default.
+   520→   520→
+   521→   521→------------------------------------------------------------------------------
+   522→   522→DB-008: TABLE — product_variants
+   523→   523→------------------------------------------------------------------------------
+   524→   524→Column              Type              Constraints       Notes
+   525→   525→-------------------------------------------------------------------------------
+   526→   526→id                  UUID              PK
+   527→   527→product_id          UUID              FK → products.id, NN
+   528→   528→variant_name        VARCHAR(100)      NN                e.g. "Large - Ceramic Pot"
+   529→   529→sku                 VARCHAR(100)      UQ, NN
+   530→   530→attributes          JSONB             NN                {size:"Large", pot_type:"Ceramic", color:"White"}
+   531→   531→price_adjustment    DECIMAL(10,2)     DEF 0             Added to base selling_price
+   532→   532→is_active           BOOLEAN           DEF true
+   533→   533→sort_order          INT               DEF 0
+   534→   534→created_at          TIMESTAMPTZ       DEF NOW()
+   535→   535→
+   536→   536→NOTE: If product has no variants, all inventory is tracked on products table.
+   537→   537→If variants exist, inventory is tracked per variant.
+   538→   538→
+   539→   539→------------------------------------------------------------------------------
+   540→   540→DB-009: TABLE — inventory
+   541→   541→------------------------------------------------------------------------------
+   542→   542→Column              Type              Constraints       Notes
+   543→   543→-------------------------------------------------------------------------------
+   544→   544→id                  UUID              PK
+   545→   545→product_id          UUID              FK → products.id, NN, IDX
+   546→   546→variant_id          UUID              FK → product_variants.id, NULL, IDX
+   547→   547→quantity_available  INT               NN, DEF 0
+   548→   548→quantity_reserved   INT               NN, DEF 0         In cart / pending order
+   549→   549→quantity_sold       INT               NN, DEF 0
+   550→   550→low_stock_threshold INT               DEF 5
+   551→   551→reorder_point       INT               DEF 10
+   552→   552→reorder_quantity    INT               DEF 50
+   553→   553→last_restocked_at   TIMESTAMPTZ       NULL
+   554→   554→created_at          TIMESTAMPTZ       DEF NOW()
+   555→   555→updated_at          TIMESTAMPTZ       DEF NOW()
+   556→   556→
+   557→   557→RULE: quantity_available must never go below 0 (use DB-level CHECK constraint).
+   558→   558→RULE: quantity_reserved is decremented when order is confirmed/cancelled.
+   559→   559→
+   560→   560→------------------------------------------------------------------------------
+   561→   561→DB-010: TABLE — inventory_transactions
+   562→   562→------------------------------------------------------------------------------
+   563→   563→Column              Type              Constraints       Notes
+   564→   564→-------------------------------------------------------------------------------
+   565→   565→id                  UUID              PK
+   566→   566→product_id          UUID              FK → products.id, NN
+   567→   567→variant_id          UUID              FK → product_variants.id, NULL
+   568→   568→transaction_type    ENUM              NN                restock | sale | return | adjustment | damage
+   569→   569→quantity_change     INT               NN                Positive = added, Negative = reduced
+   570→   570→quantity_before     INT               NN
+   571→   571→quantity_after      INT               NN
+   572→   572→reference_type      ENUM              NULL              order | return | manual
+   573→   573→reference_id        UUID              NULL              order_id or return_id
+   574→   574→notes               TEXT              NULL
+   575→   575→performed_by        UUID              FK → users.id     Admin who made the change
+   576→   576→created_at          TIMESTAMPTZ       DEF NOW()
+   577→   577→
+   578→   578→------------------------------------------------------------------------------
+   579→   579→DB-011: TABLE — carts
+   580→   580→------------------------------------------------------------------------------
+   581→   581→Column              Type              Constraints       Notes
+   582→   582→-------------------------------------------------------------------------------
+   583→   583→id                  UUID              PK
+   584→   584→user_id             UUID              FK → users.id, UQ (one cart per user)
+   585→   585→session_id          VARCHAR(100)      NULL              For anonymous tracking before login
+   586→   586→coupon_code         VARCHAR(50)       NULL
+   587→   587→coupon_discount     DECIMAL(10,2)     DEF 0
+   588→   588→notes               TEXT              NULL
+   589→   589→expires_at          TIMESTAMPTZ       NULL              Auto-clear abandoned carts after 7 days
+   590→   590→created_at          TIMESTAMPTZ       DEF NOW()
+   591→   591→updated_at          TIMESTAMPTZ       DEF NOW()
+   592→   592→
+   593→   593→NOTE: Cart is Redis-backed for performance. PostgreSQL is source of truth.
+   594→   594→Redis key: "cart:{user_id}" → JSON of cart items.
+   595→   595→
+   596→   596→------------------------------------------------------------------------------
+   597→   597→DB-012: TABLE — cart_items
+   598→   598→------------------------------------------------------------------------------
+   599→   599→Column              Type              Constraints       Notes
+   600→   600→-------------------------------------------------------------------------------
+   601→   601→id                  UUID              PK
+   602→   602→cart_id             UUID              FK → carts.id, NN
+   603→   603→product_id          UUID              FK → products.id, NN
+   604→   604→variant_id          UUID              FK → product_variants.id, NULL
+   605→   605→quantity            INT               NN, CHECK > 0
+   606→   606→unit_price          DECIMAL(10,2)     NN                Snapshot at time of add
+   607→   607→notes               TEXT              NULL              Special instructions
+   608→   608→created_at          TIMESTAMPTZ       DEF NOW()
+   609→   609→updated_at          TIMESTAMPTZ       DEF NOW()
+   610→   610→
+   611→   611→UQ CONSTRAINT: (cart_id, product_id, variant_id) — prevent duplicate line items.
+   612→   612→
+   613→   613→------------------------------------------------------------------------------
+   614→   614→DB-013: TABLE — orders
+   615→   615→------------------------------------------------------------------------------
+   616→   616→Column              Type              Constraints       Notes
+   617→   617→-------------------------------------------------------------------------------
+   618→   618→id                  UUID              PK
+   619→   619→order_number        VARCHAR(20)       UQ, NN            e.g. "GP-2024-001234"
+   620→   620→user_id             UUID              FK → users.id, NN
+   621→   621→status              ENUM              NN                See Order Status Enum below
+   622→   622→payment_status      ENUM              NN                pending | paid | failed | refunded | partial_refund
+   623→   623→delivery_address    JSONB             NN                Snapshot of address at order time
+   624→   624→subtotal            DECIMAL(10,2)     NN                Before discounts + shipping
+   625→   625→discount_amount     DECIMAL(10,2)     DEF 0
+   626→   626→coupon_code         VARCHAR(50)       NULL
+   627→   627→coupon_discount     DECIMAL(10,2)     DEF 0
+   628→   628→shipping_charge     DECIMAL(10,2)     DEF 0
+   629→   629→tax_amount          DECIMAL(10,2)     DEF 0
+   630→   630→total_amount        DECIMAL(10,2)     NN
+   631→   631→payment_method      ENUM              NULL              razorpay | cod | wallet
+   632→   632→razorpay_order_id   VARCHAR(100)      NULL
+   633→   633→razorpay_payment_id VARCHAR(100)      NULL
+   634→   634→delivery_slot       JSONB             NULL              {date, time_start, time_end}
+   635→   635→estimated_delivery  DATE              NULL
+   636→   636→actual_delivery     TIMESTAMPTZ       NULL
+   637→   637→delivery_person     JSONB             NULL              {name, phone, tracking_url}
+   638→   638→internal_notes      TEXT              NULL              Admin notes
+   639→   639→customer_notes      TEXT              NULL
+   640→   640→cancellation_reason TEXT              NULL
+   641→   641→cancelled_by        UUID              FK → users.id, NULL
+   642→   642→cancelled_at        TIMESTAMPTZ       NULL
+   643→   643→created_at          TIMESTAMPTZ       DEF NOW()
+   644→   644→updated_at          TIMESTAMPTZ       DEF NOW()
+   645→   645→
+   646→   646→ORDER NUMBER FORMAT: "GP-YYYY-XXXXXX" where XXXXXX is zero-padded sequential.
+   647→   647→
+   648→   648→ORDER STATUS ENUM:
+   649→   649→  pending           → Order placed, payment pending
+   650→   650→  confirmed         → Payment received, order confirmed by admin
+   651→   651→  processing        → Being prepared/packed
+   652→   652→  out_for_delivery  → With delivery person
+   653→   653→  delivered         → Successfully delivered
+   654→   654→  cancelled         → Cancelled (before dispatch)
+   655→   655→  return_requested  → Customer raised return
+   656→   656→  return_approved   → Admin approved return
+   657→   657→  return_completed  → Return picked up and processed
+   658→   658→  refunded          → Refund issued
+   659→   659→
+   660→   660→INDEXES: user_id, status, payment_status, order_number, created_at
+   661→   661→
+   662→   662→------------------------------------------------------------------------------
+   663→   663→DB-014: TABLE — order_items
+   664→   664→------------------------------------------------------------------------------
+   665→   665→Column              Type              Constraints       Notes
+   666→   666→-------------------------------------------------------------------------------
+   667→   667→id                  UUID              PK
+   668→   668→order_id            UUID              FK → orders.id, NN
+   669→   669→product_id          UUID              FK → products.id, NN
+   670→   670→variant_id          UUID              FK → product_variants.id, NULL
+   671→   671→product_snapshot    JSONB             NN                Full product data at order time
+   672→   672→quantity            INT               NN
+   673→   673→unit_price          DECIMAL(10,2)     NN
+   674→   674→total_price         DECIMAL(10,2)     NN
+   675→   675→tax_amount          DECIMAL(10,2)     DEF 0
+   676→   676→is_reviewed         BOOLEAN           DEF false
+   677→   677→return_status       ENUM              NULL              none | requested | approved | rejected | completed
+   678→   678→return_reason       TEXT              NULL
+   679→   679→return_images       TEXT[]            NULL
+   680→   680→created_at          TIMESTAMPTZ       DEF NOW()
+   681→   681→
+   682→   682→------------------------------------------------------------------------------
+   683→   683→DB-015: TABLE — order_status_history
+   684→   684→------------------------------------------------------------------------------
+   685→   685→Column              Type              Constraints       Notes
+   686→   686→-------------------------------------------------------------------------------
+   687→   687→id                  UUID              PK
+   688→   688→order_id            UUID              FK → orders.id, NN
+   689→   689→status              ENUM              NN                (same enum as orders.status)
+   690→   690→notes               TEXT              NULL
+   691→   691→changed_by          UUID              FK → users.id, NULL
+   692→   692→created_at          TIMESTAMPTZ       DEF NOW()
+   693→   693→
+   694→   694→------------------------------------------------------------------------------
+   695→   695→DB-016: TABLE — service_categories
+   696→   696→------------------------------------------------------------------------------
+   697→   697→Column              Type              Constraints       Notes
+   698→   698→-------------------------------------------------------------------------------
+   699→   699→id                  UUID              PK
+   700→   700→name                VARCHAR(100)      NN
+   701→   701→name_hi             VARCHAR(100)      NULL
+   702→   702→slug                VARCHAR(120)      UQ
+   703→   703→description         TEXT              NULL
+   704→   704→icon_url            TEXT              NULL
+   705→   705→display_order       INT               DEF 0
+   706→   706→is_active           BOOLEAN           DEF true
+   707→   707→created_at          TIMESTAMPTZ       DEF NOW()
+   708→   708→
+   709→   709→SEED DATA:
+   710→   710→  - Gardener Hiring
+   711→   711→  - Plant Installation
+   712→   712→  - Balcony Garden Setup
+   713→   713→  - Terrace Garden Setup
+   714→   714→  - Garden Maintenance
+   715→   715→  - Lawn Maintenance
+   716→   716→  - Landscape Design
+   717→   717→  - Plant Health Inspection
+   718→   718→
+   719→   719→------------------------------------------------------------------------------
+   720→   720→DB-017: TABLE — services
+   721→   721→------------------------------------------------------------------------------
+   722→   722→Column              Type              Constraints       Notes
+   723→   723→-------------------------------------------------------------------------------
+   724→   724→id                  UUID              PK
+   725→   725→name                VARCHAR(200)      NN
+   726→   726→name_hi             VARCHAR(200)      NULL
+   727→   727→slug                VARCHAR(220)      UQ
+   728→   728→description         TEXT              NULL
+   729→   729→description_hi      TEXT              NULL
+   730→   730→category_id         UUID              FK → service_categories.id, NN
+   731→   731→service_type        ENUM              NN                one_time | recurring | subscription
+   732→   732→pricing_type        ENUM              NN                fixed | hourly | quote_based
+   733→   733→base_price          DECIMAL(10,2)     NULL              NULL if quote_based
+   734→   734→price_unit          VARCHAR(50)       NULL              "per visit", "per hour", "per sq.ft"
+   735→   735→min_duration_hrs    DECIMAL(4,2)      NULL
+   736→   736→max_duration_hrs    DECIMAL(4,2)      NULL
+   737→   737→advance_required    BOOLEAN           DEF false
+   738→   738→advance_percent     INT               NULL              % of total as advance
+   739→   739→cancellation_policy TEXT              NULL
+   740→   740→requirements        TEXT[]            NULL              What customer must provide
+   741→   741→includes            TEXT[]            NULL              What service includes
+   742→   742→excludes            TEXT[]            NULL              What service excludes
+   743→   743→primary_image_url   TEXT              NULL
+   744→   744→gallery_images      TEXT[]            NULL
+   745→   745→is_active           BOOLEAN           DEF true
+   746→   746→is_featured         BOOLEAN           DEF false
+   747→   747→available_cities    TEXT[]            NN                ['Sonipat']
+   748→   748→tags                TEXT[]            NULL
+   749→   749→average_rating      DECIMAL(3,2)      DEF 0
+   750→   750→review_count        INT               DEF 0
+   751→   751→total_bookings      INT               DEF 0
+   752→   752→created_at          TIMESTAMPTZ       DEF NOW()
+   753→   753→updated_at          TIMESTAMPTZ       DEF NOW()
+   754→   754→
+   755→   755→------------------------------------------------------------------------------
+   756→   756→DB-018: TABLE — service_providers
+   757→   757→------------------------------------------------------------------------------
+   758→   758→Column              Type              Constraints       Notes
+   759→   759→-------------------------------------------------------------------------------
+   760→   760→id                  UUID              PK
+   761→   761→user_id             UUID              FK → users.id, UQ, NN
+   762→   762→display_name        VARCHAR(100)      NN                Business/personal name
+   763→   763→bio                 TEXT              NULL
+   764→   764→profile_image_url   TEXT              NULL
+   765→   765→experience_years    INT               NULL
+   766→   766→specializations     TEXT[]            NULL
+   767→   767→id_proof_type       ENUM              NULL              aadhar | pan | passport | driving_license
+   768→   768→id_proof_url        TEXT              NULL              S3 URL
+   769→   769→id_proof_number     VARCHAR(50)       NULL
+   770→   770→address             TEXT              NULL
+   771→   771→city                VARCHAR(100)      NN
+   772→   772→serviceable_areas   TEXT[]            NULL              Pincodes or area names
+   773→   773→service_radius_km   INT               DEF 10
+   774→   774→verification_status ENUM              DEF pending       pending | approved | rejected | suspended
+   775→   775→verification_notes  TEXT              NULL
+   776→   776→verified_by         UUID              FK → users.id, NULL (admin)
+   777→   777→verified_at         TIMESTAMPTZ       NULL
+   778→   778→bank_account_name   VARCHAR(100)      NULL
+   779→   779→bank_account_number VARCHAR(50)       NULL              Encrypted
+   780→   780→bank_ifsc           VARCHAR(20)       NULL
+   781→   781→upi_id              VARCHAR(100)      NULL
+   782→   782→commission_rate     DECIMAL(5,2)      DEF 20            Platform commission %
+   783→   783→is_available        BOOLEAN           DEF true
+   784→   784→available_hours     JSONB             NULL              {mon:{start:"09:00",end:"18:00"}, ...}
+   785→   785→average_rating      DECIMAL(3,2)      DEF 0
+   786→   786→review_count        INT               DEF 0
+   787→   787→total_bookings      INT               DEF 0
+   788→   788→joined_at           TIMESTAMPTZ       DEF NOW()
+   789→   789→created_at          TIMESTAMPTZ       DEF NOW()
+   790→   790→updated_at          TIMESTAMPTZ       DEF NOW()
+   791→   791→
+   792→   792→INDEXES: user_id, verification_status, city
+   793→   793→
+   794→   794→------------------------------------------------------------------------------
+   795→   795→DB-019: TABLE — provider_services (many-to-many)
+   796→   796→------------------------------------------------------------------------------
+   797→   797→Column              Type              Constraints       Notes
+   798→   798→-------------------------------------------------------------------------------
+   799→   799→id                  UUID              PK
+   800→   800→provider_id         UUID              FK → service_providers.id, NN
+   801→   801→service_id          UUID              FK → services.id, NN
+   802→   802→custom_price        DECIMAL(10,2)     NULL              If provider charges differently
+   803→   803→is_active           BOOLEAN           DEF true
+   804→   804→created_at          TIMESTAMPTZ       DEF NOW()
+   805→   805→
+   806→   806→UQ CONSTRAINT: (provider_id, service_id)
+   807→   807→
+   808→   808→------------------------------------------------------------------------------
+   809→   809→DB-020: TABLE — bookings
+   810→   810→------------------------------------------------------------------------------
+   811→   811→Column              Type              Constraints       Notes
+   812→   812→-------------------------------------------------------------------------------
+   813→   813→id                  UUID              PK
+   814→   814→booking_number      VARCHAR(20)       UQ, NN            e.g. "GB-2024-001234"
+   815→   815→user_id             UUID              FK → users.id, NN
+   816→   816→service_id          UUID              FK → services.id, NN
+   817→   817→provider_id         UUID              FK → service_providers.id, NULL (auto-assign or manual)
+   818→   818→status              ENUM              NN                See Booking Status Enum
+   819→   819→payment_status      ENUM              NN                pending | advance_paid | fully_paid | refunded
+   820→   820→service_address     JSONB             NN                Where service will be delivered
+   821→   821→latitude            DECIMAL(10,8)     NULL
+   822→   822→longitude           DECIMAL(11,8)     NULL
+   823→   823→scheduled_date      DATE              NN
+   824→   824→scheduled_time_start TIME             NN
+   825→   825→scheduled_time_end  TIME              NULL
+   826→   826→actual_start        TIMESTAMPTZ       NULL
+   827→   827→actual_end          TIMESTAMPTZ       NULL
+   828→   828→service_area_sqft   DECIMAL(10,2)     NULL              For area-based pricing
+   829→   829→quoted_amount       DECIMAL(10,2)     NULL
+   830→   830→advance_amount      DECIMAL(10,2)     DEF 0
+   831→   831→total_amount        DECIMAL(10,2)     NULL
+   832→   832→payment_method      ENUM              NULL
+   833→   833→razorpay_order_id   VARCHAR(100)      NULL
+   834→   834→razorpay_payment_id VARCHAR(100)      NULL
+   835→   835→customer_notes      TEXT              NULL
+   836→   836→provider_notes      TEXT              NULL
+   837→   837→completion_photos   TEXT[]            NULL              Provider uploads after completion
+   838→   838→cancellation_reason TEXT              NULL
+   839→   839→cancelled_by        UUID              FK → users.id, NULL
+   840→   840→cancelled_at        TIMESTAMPTZ       NULL
+   841→   841→is_reviewed         BOOLEAN           DEF false
+   842→   842→created_at          TIMESTAMPTZ       DEF NOW()
+   843→   843→updated_at          TIMESTAMPTZ       DEF NOW()
+   844→   844→
+   845→   845→BOOKING STATUS ENUM:
+   846→   846→  pending           → Booking created, awaiting provider confirmation
+   847→   847→  confirmed         → Provider confirmed
+   848→   848→  provider_assigned → Admin assigned provider
+   849→   849→  in_progress       → Service started
+   850→   850→  completed         → Service completed
+   851→   851→  cancelled         → Cancelled before start
+   852→   852→  no_show_provider  → Provider didn't show up
+   853→   853→  no_show_customer  → Customer not available
+   854→   854→  disputed          → Under dispute
+   855→   855→
+   856→   856→------------------------------------------------------------------------------
+   857→   857→DB-021: TABLE — booking_status_history
+   858→   858→------------------------------------------------------------------------------
+   859→   859→(Same structure as order_status_history but with booking_id FK)
+   860→   860→
+   861→   861→------------------------------------------------------------------------------
+   862→   862→DB-022: TABLE — reviews
+   863→   863→------------------------------------------------------------------------------
+   864→   864→Column              Type              Constraints       Notes
+   865→   865→-------------------------------------------------------------------------------
+   866→   866→id                  UUID              PK
+   867→   867→reviewer_id         UUID              FK → users.id, NN
+   868→   868→reviewable_type     ENUM              NN                product | service | provider
+   869→   869→reviewable_id       UUID              NN                product_id or service_id or provider_id
+   870→   870→reference_type      ENUM              NN                order_item | booking
+   871→   871→reference_id        UUID              NN                order_item_id or booking_id
+   872→   872→rating              INT               NN                CHECK between 1 and 5
+   873→   873→title               VARCHAR(100)      NULL
+   874→   874→body                TEXT              NULL
+   875→   875→images              TEXT[]            NULL              Max 5 images
+   876→   876→is_verified_purchase BOOLEAN          DEF true
+   877→   877→is_approved         BOOLEAN           DEF true          Admin moderation flag
+   878→   878→admin_response      TEXT              NULL
+   879→   879→is_featured         BOOLEAN           DEF false
+   880→   880→helpful_count       INT               DEF 0
+   881→   881→created_at          TIMESTAMPTZ       DEF NOW()
+   882→   882→updated_at          TIMESTAMPTZ       DEF NOW()
+   883→   883→
+   884→   884→UQ CONSTRAINT: (reviewer_id, reference_type, reference_id) — one review per purchase.
+   885→   885→
+   886→   886→INDEXES: reviewable_type, reviewable_id, reviewer_id, rating
+   887→   887→
+   888→   888→------------------------------------------------------------------------------
+   889→   889→DB-023: TABLE — notifications
+   890→   890→------------------------------------------------------------------------------
+   891→   891→Column              Type              Constraints       Notes
+   892→   892→-------------------------------------------------------------------------------
+   893→   893→id                  UUID              PK
+   894→   894→user_id             UUID              FK → users.id, NN
+   895→   895→type                ENUM              NN                order_update | booking_update | payment | 
+   896→   896→                                                        promotional | system | review_request
+   897→   897→title               VARCHAR(200)      NN
+   898→   898→body                TEXT              NN
+   899→   899→channel             ENUM              NN                email | sms | push | in_app
+   900→   900→reference_type      ENUM              NULL              order | booking | product | general
+   901→   901→reference_id        UUID              NULL
+   902→   902→is_read             BOOLEAN           DEF false
+   903→   903→is_sent             BOOLEAN           DEF false
+   904→   904→sent_at             TIMESTAMPTZ       NULL
+   905→   905→read_at             TIMESTAMPTZ       NULL
+   906→   906→metadata            JSONB             NULL              Extra data for deep linking
+   907→   907→created_at          TIMESTAMPTZ       DEF NOW()
+   908→   908→
+   909→   909→INDEXES: user_id, is_read, created_at
+   910→   910→
+   911→   911→------------------------------------------------------------------------------
+   912→   912→DB-024: TABLE — notification_preferences
+   913→   913→------------------------------------------------------------------------------
+   914→   914→Column              Type              Constraints       Notes
+   915→   915→-------------------------------------------------------------------------------
+   916→   916→id                  UUID              PK
+   917→   917→user_id             UUID              FK → users.id, UQ
+   918→   918→email_order_updates BOOLEAN           DEF true
+   919→   919→email_promotions    BOOLEAN           DEF true
+   920→   920→sms_order_updates   BOOLEAN           DEF true
+   921→   921→sms_promotions      BOOLEAN           DEF false
+   922→   922→push_order_updates  BOOLEAN           DEF true
+   923→   923→push_promotions     BOOLEAN           DEF true
+   924→   924→push_booking_updates BOOLEAN          DEF true
+   925→   925→created_at          TIMESTAMPTZ       DEF NOW()
+   926→   926→updated_at          TIMESTAMPTZ       DEF NOW()
+   927→   927→
+   928→   928→------------------------------------------------------------------------------
+   929→   929→DB-025: TABLE — coupons
+   930→   930→------------------------------------------------------------------------------
+   931→   931→Column              Type              Constraints       Notes
+   932→   932→-------------------------------------------------------------------------------
+   933→   933→id                  UUID              PK
+   934→   934→code                VARCHAR(50)       UQ, NN
+   935→   935→description         VARCHAR(200)      NULL
+   936→   936→discount_type       ENUM              NN                percentage | flat
+   937→   937→discount_value      DECIMAL(10,2)     NN
+   938→   938→min_order_amount    DECIMAL(10,2)     DEF 0
+   939→   939→max_discount_amount DECIMAL(10,2)     NULL              Cap for percentage discounts
+   940→   940→applicable_to       ENUM              DEF all           all | products | services
+   941→   941→usage_limit_total   INT               NULL              NULL = unlimited
+   942→   942→usage_limit_per_user INT              DEF 1
+   943→   943→times_used          INT               DEF 0
+   944→   944→valid_from          TIMESTAMPTZ       NN
+   945→   945→valid_until         TIMESTAMPTZ       NN
+   946→   946→is_active           BOOLEAN           DEF true
+   947→   947→created_by          UUID              FK → users.id (admin)
+   948→   948→created_at          TIMESTAMPTZ       DEF NOW()
+   949→   949→
+   950→   950→------------------------------------------------------------------------------
+   951→   951→DB-026: TABLE — coupon_usages
+   952→   952→------------------------------------------------------------------------------
+   953→   953→Column              Type              Constraints       Notes
+   954→   954→-------------------------------------------------------------------------------
+   955→   955→id                  UUID              PK
+   956→   956→coupon_id           UUID              FK → coupons.id, NN
+   957→   957→user_id             UUID              FK → users.id, NN
+   958→   958→order_id            UUID              FK → orders.id, NULL
+   959→   959→booking_id          UUID              FK → bookings.id, NULL
+   960→   960→discount_applied    DECIMAL(10,2)     NN
+   961→   961→used_at             TIMESTAMPTZ       DEF NOW()
+   962→   962→
+   963→   963→UQ CONSTRAINT: (coupon_id, user_id, order_id)
+   964→   964→
+   965→   965→------------------------------------------------------------------------------
+   966→   966→DB-027: TABLE — wishlists
+   967→   967→------------------------------------------------------------------------------
+   968→   968→Column              Type              Constraints       Notes
+   969→   969→-------------------------------------------------------------------------------
+   970→   970→id                  UUID              PK
+   971→   971→user_id             UUID              FK → users.id, NN
+   972→   972→product_id          UUID              FK → products.id, NN
+   973→   973→created_at          TIMESTAMPTZ       DEF NOW()
+   974→   974→
+   975→   975→UQ CONSTRAINT: (user_id, product_id)
+   976→   976→
+   977→   977→------------------------------------------------------------------------------
+   978→   978→DB-028: TABLE — stock_notifications (Notify Me)
+   979→   979→------------------------------------------------------------------------------
+   980→   980→Column              Type              Constraints       Notes
+   981→   981→-------------------------------------------------------------------------------
+   982→   982→id                  UUID              PK
+   983→   983→user_id             UUID              FK → users.id, NN
+   984→   984→product_id          UUID              FK → products.id, NN
+   985→   985→variant_id          UUID              FK → product_variants.id, NULL
+   986→   986→is_notified         BOOLEAN           DEF false
+   987→   987→notified_at         TIMESTAMPTZ       NULL
+   988→   988→created_at          TIMESTAMPTZ       DEF NOW()
+   989→   989→
+   990→   990→UQ CONSTRAINT: (user_id, product_id, variant_id)
+   991→   991→
+   992→   992→------------------------------------------------------------------------------
+   993→   993→DB-029: TABLE — cities
+   994→   994→------------------------------------------------------------------------------
+   995→   995→Column              Type              Constraints       Notes
+   996→   996→-------------------------------------------------------------------------------
+   997→   997→id                  UUID              PK
+   998→   998→name                VARCHAR(100)      NN
+   999→   999→name_hi             VARCHAR(100)      NULL
+  1000→  1000→state               VARCHAR(100)      NN
+  1001→  1001→is_active           BOOLEAN           DEF true
+  1002→  1002→is_serviceable      BOOLEAN           DEF true
+  1003→  1003→launch_date         DATE              NULL
+  1004→  1004→center_lat          DECIMAL(10,8)     NULL
+  1005→  1005→center_lng          DECIMAL(11,8)     NULL
+  1006→  1006→created_at          TIMESTAMPTZ       DEF NOW()
+  1007→  1007→
+  1008→  1008→SEED DATA: {name:"Sonipat", state:"Haryana", is_active:true, is_serviceable:true}
+  1009→  1009→
+  1010→  1010→------------------------------------------------------------------------------
+  1011→  1011→DB-030: TABLE — serviceable_pincodes
+  1012→  1012→------------------------------------------------------------------------------
+  1013→  1013→Column              Type              Constraints       Notes
+  1014→  1014→-------------------------------------------------------------------------------
+  1015→  1015→id                  UUID              PK
+  1016→  1016→pincode             VARCHAR(10)       UQ, NN
+  1017→  1017→city_id             UUID              FK → cities.id, NN
+  1018→  1018→area_name           VARCHAR(100)      NULL
+  1019→  1019→delivery_charge     DECIMAL(10,2)     DEF 0
+  1020→  1020→min_delivery_days   INT               DEF 1
+  1021→  1021→max_delivery_days   INT               DEF 3
+  1022→  1022→cod_available       BOOLEAN           DEF true
+  1023→  1023→is_active           BOOLEAN           DEF true
+  1024→  1024→created_at          TIMESTAMPTZ       DEF NOW()
+  1025→  1025→
+  1026→  1026→------------------------------------------------------------------------------
+  1027→  1027→DB-031: TABLE — payments
+  1028→  1028→------------------------------------------------------------------------------
+  1029→  1029→Column              Type              Constraints       Notes
+  1030→  1030→-------------------------------------------------------------------------------
+  1031→  1031→id                  UUID              PK
+  1032→  1032→user_id             UUID              FK → users.id, NN
+  1033→  1033→reference_type      ENUM              NN                order | booking
+  1034→  1034→reference_id        UUID              NN
+  1035→  1035→amount              DECIMAL(10,2)     NN
+  1036→  1036→currency            VARCHAR(5)        DEF INR
+  1037→  1037→payment_method      ENUM              NN                razorpay_upi | razorpay_card | 
+  1038→  1038→                                                        razorpay_netbanking | razorpay_wallet | cod
+  1039→  1039→status              ENUM              NN                created | authorized | captured | failed | refunded
+  1040→  1040→razorpay_order_id   VARCHAR(100)      NULL
+  1041→  1041→razorpay_payment_id VARCHAR(100)      NULL
+  1042→  1042→razorpay_signature  VARCHAR(300)      NULL
+  1043→  1043→gateway_response    JSONB             NULL              Full response from gateway
+  1044→  1044→refund_id           VARCHAR(100)      NULL
+  1045→  1045→refund_amount       DECIMAL(10,2)     NULL
+  1046→  1046→refund_reason       TEXT              NULL
+  1047→  1047→refunded_at         TIMESTAMPTZ       NULL
+  1048→  1048→created_at          TIMESTAMPTZ       DEF NOW()
+  1049→  1049→updated_at          TIMESTAMPTZ       DEF NOW()
+  1050→  1050→
+  1051→  1051→------------------------------------------------------------------------------
+  1052→  1052→DB-032: TABLE — returns
+  1053→  1053→------------------------------------------------------------------------------
+  1054→  1054→Column              Type              Constraints       Notes
+  1055→  1055→-------------------------------------------------------------------------------
+  1056→  1056→id                  UUID              PK
+  1057→  1057→return_number       VARCHAR(20)       UQ, NN            e.g. "GR-2024-001234"
+  1058→  1058→order_id            UUID              FK → orders.id, NN
+  1059→  1059→order_item_id       UUID              FK → order_items.id, NN
+  1060→  1060→user_id             UUID              FK → users.id, NN
+  1061→  1061→reason              ENUM              NN                damaged | wrong_item | quality_issue | other
+  1062→  1062→description         TEXT              NULL
+  1063→  1063→evidence_images     TEXT[]            NULL              Required for plants (within 24h)
+  1064→  1064→status              ENUM              DEF requested     requested | under_review | approved | rejected | completed
+  1065→  1065→resolution          ENUM              NULL              replacement | refund
+  1066→  1066→refund_amount       DECIMAL(10,2)     NULL
+  1067→  1067→admin_notes         TEXT              NULL
+  1068→  1068→reviewed_by         UUID              FK → users.id, NULL (admin)
+  1069→  1069→reviewed_at         TIMESTAMPTZ       NULL
+  1070→  1070→created_at          TIMESTAMPTZ       DEF NOW()
+  1071→  1071→updated_at          TIMESTAMPTZ       DEF NOW()
+  1072→  1072→
+  1073→  1073→------------------------------------------------------------------------------
+  1074→  1074→DB-033: TABLE — featured_providers (paid listings — Phase 2)
+  1075→  1075→------------------------------------------------------------------------------
+  1076→  1076→Column              Type              Constraints       Notes
+  1077→  1077→-------------------------------------------------------------------------------
+  1078→  1078→id                  UUID              PK
+  1079→  1079→provider_id         UUID              FK → service_providers.id, NN
+  1080→  1080→plan_type           ENUM              NN                basic | premium | platinum
+  1081→  1081→amount_paid         DECIMAL(10,2)     NN
+  1082→  1082→starts_at           TIMESTAMPTZ       NN
+  1083→  1083→ends_at             TIMESTAMPTZ       NN
+  1084→  1084→is_active           BOOLEAN           DEF true
+  1085→  1085→created_at          TIMESTAMPTZ       DEF NOW()
+  1086→  1086→
+  1087→  1087→------------------------------------------------------------------------------
+  1088→  1088→DB-034: TABLE — admin_settings
+  1089→  1089→------------------------------------------------------------------------------
+  1090→  1090→Column              Type              Constraints       Notes
+  1091→  1091→-------------------------------------------------------------------------------
+  1092→  1092→id                  UUID              PK
+  1093→  1093→key                 VARCHAR(100)      UQ, NN
+  1094→  1094→value               JSONB             NN
+  1095→  1095→description         TEXT              NULL
+  1096→  1096→updated_by          UUID              FK → users.id (admin)
+  1097→  1097→updated_at          TIMESTAMPTZ       DEF NOW()
+  1098→  1098→
+  1099→  1099→KEY-VALUE PAIRS TO SEED:
+  1100→  1100→  min_order_amount          → 0
+  1101→  1101→  free_shipping_threshold   → 499
+  1102→  1102→  default_shipping_charge   → 49
+  1103→  1103→  cod_available             → true
+  1104→  1104→  cod_min_amount            → 0
+  1105→  1105→  cod_max_amount            → 5000
+  1106→  1106→  razorpay_enabled          → true
+  1107→  1107→  maintenance_mode          → false
+  1108→  1108→  contact_phone             → "+91XXXXXXXXXX"
+  1109→  1109→  contact_email             → "hello@growplants.in"
+  1110→  1110→  business_hours            → {"start":"09:00","end":"18:00","days":["Mon","Tue","Wed","Thu","Fri","Sat"]}
+  1111→  1111→  max_cart_items            → 20
+  1112→  1112→  max_cart_quantity_per_item → 10
+  1113→  1113→  review_photo_max_count    → 5
+  1114→  1114→  return_window_plants_hrs  → 24
+  1115→  1115→  return_window_planters_days → 7
+  1116→  1116→
+  1117→  1117→================================================================================
+  1118→  1118→SECTION 06 — USER ROLES & PERMISSIONS MATRIX
+  1119→  1119→================================================================================
+  1120→  1120→
+  1121→  1121→6.1 ROLES
+  1122→  1122→----------
+  1123→  1123→Role 1: CUSTOMER
+  1124→  1124→  - Registered users who buy products or book services.
+  1125→  1125→  - Default role upon registration.
+  1126→  1126→
+  1127→  1127→Role 2: ADMIN
+  1128→  1128→  - Business owner or appointed admin.
+  1129→  1129→  - Full platform control.
+  1130→  1130→  - Maximum 3 admin accounts (Phase 1).
+  1131→  1131→
+  1132→  1132→Role 3: SERVICE_PROVIDER
+  1133→  1133→  - Verified gardeners/service professionals.
+  1134→  1134→  - Access their own bookings only.
+  1135→  1135→  - Cannot see other providers' data.
+  1136→  1136→
+  1137→  1137→6.2 PERMISSIONS MATRIX
+  1138→  1138→------------------------
+  1139→  1139→Feature                         CUSTOMER    ADMIN       PROVIDER
+  1140→  1140→--------------------------------------------------------------------
+  1141→  1141→Register/Login                  YES         YES         YES
+  1142→  1142→View Product Catalog            YES         YES         YES
+  1143→  1143→Add to Cart                     YES         NO          NO
+  1144→  1144→Place Order                     YES         NO          NO
+  1145→  1145→View Own Orders                 YES         YES (all)   NO
+  1146→  1146→Cancel Own Order                YES         YES         NO
+  1147→  1147→Request Return                  YES         YES         NO
+  1148→  1148→Book Service                    YES         NO          NO
+  1149→  1149→View Own Bookings               YES         YES (all)   YES (own)
+  1150→  1150→Write Review                    YES*        NO          NO
+  1151→  1151→View Reviews                    YES         YES         YES
+  1152→  1152→View Own Profile                YES         YES         YES
+  1153→  1153→Edit Own Profile                YES         YES         YES
+  1154→  1154→Add/Edit Products               NO          YES         NO
+  1155→  1155→Manage Inventory                NO          YES         NO
+  1156→  1156→Manage Categories               NO          YES         NO
+  1157→  1157→Manage Services                 NO          YES         NO
+  1158→  1158→Approve Providers               NO          YES         NO
+  1159→  1159→Manage Coupons                  NO          YES         NO
+  1160→  1160→View Analytics                  NO          YES         NO
+  1161→  1161→Manage Cities/Pincodes          NO          YES         NO
+  1162→  1162→Manage Admin Settings           NO          YES         NO
+  1163→  1163→View Provider Dashboard         NO          YES         YES**
+  1164→  1164→Update Booking Status           NO          YES         YES***
+  1165→  1165→Upload Completion Photos        NO          YES         YES (own bookings)
+  1166→  1166→View Commission Reports         NO          YES         YES (own)
+  1167→  1167→
+  1168→  1168→* Only for verified purchases (linked to order_item or booking)
+  1169→  1169→** Providers see only their own dashboard
+  1170→  1170→*** Providers can only mark: confirmed → in_progress → completed
+  1171→  1171→
+  1172→  1172→================================================================================
+  1173→  1173→SECTION 07 — AUTHENTICATION & ACCOUNT MANAGEMENT
+  1174→  1174→================================================================================
+  1175→  1175→
+  1176→  1176→7.1 REGISTRATION FLOW
+  1177→  1177→----------------------
+  1178→  1178→FR-AUTH-001 [REQUIRED]: Customer registers via phone number.
+  1179→  1179→FR-AUTH-002 [REQUIRED]: OTP sent via SMS to phone number.
+  1180→  1180→FR-AUTH-003 [REQUIRED]: OTP valid for 10 minutes, 6 digits.
+  1181→  1181→FR-AUTH-004 [REQUIRED]: After phone verification, user provides:
+  1182→  1182→  - Full Name (required)
+  1183→  1183→  - Email Address (required, must be unique)
+  1184→  1184→  - Password (min 8 chars, 1 uppercase, 1 number)
+  1185→  1185→  - Date of Birth (optional)
+  1186→  1186→  - Gender (optional)
+  1187→  1187→FR-AUTH-005 [REQUIRED]: Email verification link sent after registration.
+  1188→  1188→FR-AUTH-006 [REQUIRED]: Account created even if email not verified.
+  1189→  1189→FR-AUTH-007 [OPTIONAL]: Social login via Google (OAuth 2.0).
+  1190→  1190→
+  1191→  1191→7.2 LOGIN FLOW
+  1192→  1192→---------------
+  1193→  1193→FR-AUTH-010 [REQUIRED]: Login with phone + password.
+  1194→  1194→FR-AUTH-011 [REQUIRED]: Login with email + password.
+  1195→  1195→FR-AUTH-012 [REQUIRED]: Login with phone + OTP (passwordless option).
+  1196→  1196→FR-AUTH-013 [REQUIRED]: JWT access token issued on login (expires 15 min).
+  1197→  1197→FR-AUTH-014 [REQUIRED]: Refresh token stored in HTTP-only cookie (expires 7 days).
+  1198→  1198→FR-AUTH-015 [REQUIRED]: Refresh token rotated on every use (sliding window).
+  1199→  1199→FR-AUTH-016 [REQUIRED]: Multiple device sessions supported.
+  1200→  1200→FR-AUTH-017 [REQUIRED]: Max failed login attempts: 5 per hour per IP (after that, 30 min lockout).
+  1201→  1201→
+  1202→  1202→7.3 PASSWORD MANAGEMENT
+  1203→  1203→------------------------
+  1204→  1204→FR-AUTH-020 [REQUIRED]: Forgot password via phone (OTP) or email (link).
+  1205→  1205→FR-AUTH-021 [REQUIRED]: Password reset link expires in 30 minutes.
+  1206→  1206→FR-AUTH-022 [REQUIRED]: Password hashed with bcrypt (salt rounds: 12).
+  1207→  1207→FR-AUTH-023 [REQUIRED]: Change password requires current password.
+  1208→  1208→FR-AUTH-024 [REQUIRED]: After password change, all other sessions invalidated.
+  1209→  1209→
+  1210→  1210→7.4 PROFILE MANAGEMENT
+  1211→  1211→-----------------------
+  1212→  1212→FR-AUTH-030 [REQUIRED]: User can update: name, email, profile photo.
+  1213→  1213→FR-AUTH-031 [REQUIRED]: Phone number change requires OTP on new number.
+  1214→  1214→FR-AUTH-032 [REQUIRED]: Email change requires verification of new email.
+  1215→  1215→FR-AUTH-033 [REQUIRED]: User can add up to 5 saved addresses.
+  1216→  1216→FR-AUTH-034 [REQUIRED]: User can set one default address.
+  1217→  1217→FR-AUTH-035 [REQUIRED]: User can delete account (soft delete, data retained 30 days).
+  1218→  1218→
+  1219→  1219→7.5 SERVICE PROVIDER REGISTRATION
+  1220→  1220→-----------------------------------
+  1221→  1221→FR-AUTH-040 [REQUIRED]: Provider registers via separate onboarding flow.
+  1222→  1222→FR-AUTH-041 [REQUIRED]: Provider submits: name, phone, city, experience, 
+  1223→  1223→                         specializations, ID proof (upload).
+  1224→  1224→FR-AUTH-042 [REQUIRED]: Admin reviews and approves/rejects provider.
+  1225→  1225→FR-AUTH-043 [REQUIRED]: Provider notified via SMS/email about approval status.
+  1226→  1226→FR-AUTH-044 [REQUIRED]: Provider sets availability hours after approval.
+  1227→  1227→FR-AUTH-045 [REQUIRED]: Provider adds bank account / UPI for payment settlement.
+  1228→  1228→
+  1229→  1229→================================================================================
+  1230→  1230→SECTION 08 — CUSTOMER-FACING FRONTEND
+  1231→  1231→================================================================================
+  1232→  1232→
+  1233→  1233→8.1 SCREENS LIST
+  1234→  1234→-----------------
+  1235→  1235→UI-001  Splash Screen (Mobile only)
+  1236→  1236→UI-002  Onboarding (Mobile only — 3 slides: Plants, Services, Trusted)
+  1237→  1237→UI-003  Home Screen / Landing Page
+  1238→  1238→UI-004  Registration Screen
+  1239→  1239→UI-005  Login Screen
+  1240→  1240→UI-006  OTP Verification Screen
+  1241→  1241→UI-007  Forgot Password Screen
+  1242→  1242→UI-008  Product Listing Page (PLP)
+  1243→  1243→UI-009  Product Detail Page (PDP)
+  1244→  1244→UI-010  Service Listing Page
+  1245→  1245→UI-011  Service Detail Page
+  1246→  1246→UI-012  Cart Screen
+  1247→  1247→UI-013  Checkout Screen (Address + Slot + Payment)
+  1248→  1248→UI-014  Order Confirmation Screen
+  1249→  1249→UI-015  Order History Screen
+  1250→  1250→UI-016  Order Detail Screen
+  1251→  1251→UI-017  Booking Screen (Service Booking Form)
+  1252→  1252→UI-018  Booking Confirmation Screen
+  1253→  1253→UI-019  Booking History Screen
+  1254→  1254→UI-020  Booking Detail Screen
+  1255→  1255→UI-021  Profile Screen
+  1256→  1256→UI-022  Edit Profile Screen
+  1257→  1257→UI-023  Manage Addresses Screen
+  1258→  1258→UI-024  Add/Edit Address Screen
+  1259→  1259→UI-025  Wishlist Screen
+  1260→  1260→UI-026  My Reviews Screen
+  1261→  1261→UI-027  Write Review Screen
+  1262→  1262→UI-028  Return Request Screen
+  1263→  1263→UI-029  Notification Preferences Screen
+  1264→  1264→UI-030  Search Results Screen
+  1265→  1265→UI-031  Category Browse Screen
+  1266→  1266→UI-032  About Us Page
+  1267→  1267→UI-033  Contact Us Page
+  1268→  1268→UI-034  FAQ Page
+  1269→  1269→UI-035  Privacy Policy Page
+  1270→  1270→UI-036  Terms & Conditions Page
+  1271→  1271→UI-037  Refund Policy Page
+  1272→  1272→UI-038  404 / Error Page
+  1273→  1273→
+  1274→  1274→8.2 HOME SCREEN REQUIREMENTS
+  1275→  1275→-----------------------------
+  1276→  1276→FR-HOME-001 [REQUIRED]: Hero banner / carousel (admin-managed, max 5 banners).
+  1277→  1277→FR-HOME-002 [REQUIRED]: Quick category shortcuts (Plants, Planters, Products, Services).
+  1278→  1278→FR-HOME-003 [REQUIRED]: Featured Products section (admin-curated, max 8 products).
+  1279→  1279→FR-HOME-004 [REQUIRED]: Best Sellers section.
+  1280→  1280→FR-HOME-005 [REQUIRED]: New Arrivals section.
+  1281→  1281→FR-HOME-006 [REQUIRED]: Services highlight section (top 4 services).
+  1282→  1282→FR-HOME-007 [REQUIRED]: "Why GROWPLANTS" trust signals section.
+  1283→  1283→FR-HOME-008 [REQUIRED]: Testimonials / Reviews section.
+  1284→  1284→FR-HOME-009 [OPTIONAL]: Seasonal / promotional banner.
+  1285→  1285→FR-HOME-010 [REQUIRED]: Location indicator (current city shown, Sonipat default).
+  1286→  1286→FR-HOME-011 [REQUIRED]: Search bar prominently placed.
+  1287→  1287→FR-HOME-012 [OPTIONAL]: Recently viewed products (if logged in).
+  1288→  1288→
+  1289→  1289→8.3 NAVIGATION STRUCTURE
+  1290→  1290→--------------------------
+  1291→  1291→Web (Top Nav):
+  1292→  1292→  Logo | Search Bar | [Login/Profile] | [Wishlist] | [Cart]
+  1293→  1293→  
+  1294→  1294→  Main Nav: Home | Plants | Planters | Gardening Products | Services | About
+  1295→  1295→
+  1296→  1296→Mobile (Bottom Tab):
+  1297→  1297→  Home | Shop | Services | Orders | Profile
+  1298→  1298→
+  1299→  1299→Mobile (Hamburger / Drawer):
+  1300→  1300→  Categories, My Orders, My Bookings, Wishlist, Notifications, Settings, Help
+  1301→  1301→
+  1302→  1302→8.4 PRODUCT LISTING PAGE (PLP)
+  1303→  1303→--------------------------------
+  1304→  1304→FR-PLP-001 [REQUIRED]: Display products in grid (2-col mobile, 3-col tablet, 4-col desktop).
+  1305→  1305→FR-PLP-002 [REQUIRED]: Product card shows: image, name, price, rating, add-to-cart button.
+  1306→  1306→FR-PLP-003 [REQUIRED]: Breadcrumb navigation.
+  1307→  1307→FR-PLP-004 [REQUIRED]: Category filter sidebar (desktop) / bottom sheet (mobile).
+  1308→  1308→FR-PLP-005 [REQUIRED]: Filter options:
+  1309→  1309→  - Category (multi-select)
+  1310→  1310→  - Price range (slider)
+  1311→  1311→  - Rating (min rating filter)
+  1312→  1312→  - Suitable for (indoor/outdoor/balcony)
+  1313→  1313→  - Sunlight requirement
+  1314→  1314→  - Difficulty level
+  1315→  1315→  - In stock only (toggle)
+  1316→  1316→FR-PLP-006 [REQUIRED]: Sort options: Featured, Price Low→High, Price High→Low, 
+  1317→  1317→                         Newest First, Best Rated, Best Sellers.
+  1318→  1318→FR-PLP-007 [REQUIRED]: Pagination (20 products per page) OR infinite scroll.
+  1319→  1319→FR-PLP-008 [REQUIRED]: "X results found" count shown.
+  1320→  1320→FR-PLP-009 [REQUIRED]: Out-of-stock products shown with "Notify Me" button.
+  1321→  1321→FR-PLP-010 [REQUIRED]: Wishlist toggle on product card (heart icon).
+  1322→  1322→FR-PLP-011 [REQUIRED]: "Sale" / "New" / "Best Seller" badges on product cards.
+  1323→  1323→
+  1324→  1324→8.5 PRODUCT DETAIL PAGE (PDP)
+  1325→  1325→-------------------------------
+  1326→  1326→FR-PDP-001 [REQUIRED]: Image gallery (thumbnail + full view, zoom on hover/pinch).
+  1327→  1327→FR-PDP-002 [REQUIRED]: Product name, price (original + discounted), discount %.
+  1328→  1328→FR-PDP-003 [REQUIRED]: Stock status ("In Stock" / "Only X left" / "Out of Stock").
+  1329→  1329→FR-PDP-004 [REQUIRED]: Variant selector (size, pot type, etc.) if variants exist.
+  1330→  1330→FR-PDP-005 [REQUIRED]: Quantity selector (1 to available stock, max 10 per item).
+  1331→  1331→FR-PDP-006 [REQUIRED]: "Add to Cart" + "Buy Now" buttons.
+  1332→  1332→FR-PDP-007 [REQUIRED]: "Add to Wishlist" button.
+  1333→  1333→FR-PDP-008 [REQUIRED]: Product description (rich text, expandable if long).
+  1334→  1334→FR-PDP-009 [REQUIRED]: Care information tab (sunlight, water, difficulty, pet-safe).
+  1335→  1335→FR-PDP-010 [REQUIRED]: Delivery info (estimated days based on user pincode).
+  1336→  1336→FR-PDP-011 [REQUIRED]: Return policy summary.
+  1337→  1337→FR-PDP-012 [REQUIRED]: Reviews section (rating summary, individual reviews, filter by stars).
+  1338→  1338→FR-PDP-013 [REQUIRED]: "Customers also bought" (related products — same category).
+  1339→  1339→FR-PDP-014 [REQUIRED]: Share button (WhatsApp, copy link).
+  1340→  1340→FR-PDP-015 [OPTIONAL]: "Notify Me" when out of stock.
+  1341→  1341→FR-PDP-016 [OPTIONAL]: Recently viewed section.
+  1342→  1342→
+  1343→  1343→================================================================================
+  1344→  1344→SECTION 09 — PRODUCT CATALOG MODULE
+  1345→  1345→================================================================================
+  1346→  1346→
+  1347→  1347→9.1 CATEGORY MANAGEMENT
+  1348→  1348→-------------------------
+  1349→  1349→FR-CAT-001 [REQUIRED]: Two-level category hierarchy (parent → child).
+  1350→  1350→FR-CAT-002 [REQUIRED]: Each category has: name, slug, icon, banner, description.
+  1351→  1351→FR-CAT-003 [REQUIRED]: Categories can be enabled/disabled without deletion.
+  1352→  1352→FR-CAT-004 [REQUIRED]: Categories have display_order for sorting.
+  1353→  1353→FR-CAT-005 [REQUIRED]: Category pages are SEO-optimized (unique title, meta description).
+  1354→  1354→
+  1355→  1355→9.2 PRODUCT MANAGEMENT (Admin)
+  1356→  1356→--------------------------------
+  1357→  1357→FR-PROD-001 [REQUIRED]: Admin can add new product with all fields.
+  1358→  1358→FR-PROD-002 [REQUIRED]: Admin can upload up to 10 images per product.
+  1359→  1359→FR-PROD-003 [REQUIRED]: Image upload: max 5MB per image, formats: JPG/PNG/WEBP.
+  1360→  1360→FR-PROD-004 [REQUIRED]: Images auto-resized and compressed on upload:
+  1361→  1361→  - Thumbnail: 200×200px
+  1362→  1362→  - Card: 400×400px
+  1363→  1363→  - Full: 800×800px
+  1364→  1364→FR-PROD-005 [REQUIRED]: Admin can add up to 10 variants per product.
+  1365→  1365→FR-PROD-006 [REQUIRED]: Admin can set featured/bestseller/new arrival flags.
+  1366→  1366→FR-PROD-007 [REQUIRED]: Admin can set SEO fields (title, description, keywords).
+  1367→  1367→FR-PROD-008 [REQUIRED]: Product can be duplicated (to create similar products quickly).
+  1368→  1368→FR-PROD-009 [REQUIRED]: Bulk activate/deactivate products.
+  1369→  1369→FR-PROD-010 [REQUIRED]: Product CSV import (for bulk addition).
+  1370→  1370→FR-PROD-011 [REQUIRED]: Product CSV export.
+  1371→  1371→FR-PROD-012 [OPTIONAL]: Schedule product to go live at a future date.
+  1372→  1372→
+  1373→  1373→9.3 PRICING RULES
+  1374→  1374→------------------
+  1375→  1375→FR-PRICE-001 [REQUIRED]: Base price (MRP) and selling price (actual charged) always stored.
+  1376→  1376→FR-PRICE-002 [REQUIRED]: Discount percent auto-calculated: ((base - selling) / base) × 100.
+  1377→  1377→FR-PRICE-003 [REQUIRED]: GST (18% default) shown separately on receipt.
+  1378→  1378→FR-PRICE-004 [REQUIRED]: Admin can set per-product tax rate.
+  1379→  1379→FR-PRICE-005 [OPTIONAL]: Flash sale: time-limited price reduction.
+  1380→  1380→
+  1381→  1381→================================================================================
+  1382→  1382→SECTION 10 — SHOPPING CART & CHECKOUT
+  1383→  1383→================================================================================
+  1384→  1384→
+  1385→  1385→10.1 CART BEHAVIOR
+  1386→  1386→-------------------
+  1387→  1387→FR-CART-001 [REQUIRED]: Cart persists across sessions (DB-backed, not just localStorage).
+  1388→  1388→FR-CART-002 [REQUIRED]: Cart syncs if user logs in on a new device.
+  1389→  1389→FR-CART-003 [REQUIRED]: Real-time stock validation when adding to cart.
+  1390→  1390→FR-CART-004 [REQUIRED]: Max 10 units of same product per cart.
+  1391→  1391→FR-CART-005 [REQUIRED]: Max 20 unique items per cart.
+  1392→  1392→FR-CART-006 [REQUIRED]: Cart shows: image, name, variant, price, quantity, line total.
+  1393→  1393→FR-CART-007 [REQUIRED]: Cart shows: subtotal, shipping, discount, tax, GRAND TOTAL.
+  1394→  1394→FR-CART-008 [REQUIRED]: Cart validates stock before checkout (re-check at payment).
+  1395→  1395→FR-CART-009 [REQUIRED]: Out-of-stock items in cart are flagged (not blocking, but highlighted).
+  1396→  1396→FR-CART-010 [REQUIRED]: Cart abandoned after 7 days (items removed, notification sent).
+  1397→  1397→FR-CART-011 [REQUIRED]: Coupon code field in cart.
+  1398→  1398→FR-CART-012 [REQUIRED]: Free shipping threshold message ("Add ₹X more for free shipping!").
+  1399→  1399→
+  1400→  1400→10.2 CHECKOUT FLOW
+  1401→  1401→-------------------
+  1402→  1402→STEP 1: Address Selection
+  1403→  1403→  FR-CHECKOUT-001 [REQUIRED]: User selects from saved addresses or adds new address.
+  1404→  1404→  FR-CHECKOUT-002 [REQUIRED]: Delivery availability checked against pincode.
+  1405→  1405→  FR-CHECKOUT-003 [REQUIRED]: Delivery charge shown based on pincode + order amount.
+  1406→  1406→  FR-CHECKOUT-004 [REQUIRED]: Estimated delivery date shown.
+  1407→  1407→
+  1408→  1408→STEP 2: Order Review
+  1409→  1409→  FR-CHECKOUT-010 [REQUIRED]: All items, quantities, prices listed.
+  1410→  1410→  FR-CHECKOUT-011 [REQUIRED]: Price breakdown: subtotal + shipping + tax - discount = total.
+  1411→  1411→  FR-CHECKOUT-012 [REQUIRED]: Edit option (returns to cart).
+  1412→  1412→  FR-CHECKOUT-013 [OPTIONAL]: Special instructions field.
+  1413→  1413→
+  1414→  1414→STEP 3: Payment
+  1415→  1415→  FR-CHECKOUT-020 [REQUIRED]: Payment via Razorpay (UPI, Card, Net Banking, Wallet).
+  1416→  1416→  FR-CHECKOUT-021 [REQUIRED]: Cash on Delivery (COD) option if pincode supports it.
+  1417→  1417→  FR-CHECKOUT-022 [REQUIRED]: COD confirmation page (explains COD policy).
+  1418→  1418→  FR-CHECKOUT-023 [REQUIRED]: Razorpay checkout modal (do not redirect to separate page).
+  1419→  1419→  FR-CHECKOUT-024 [REQUIRED]: Final stock check before payment capture.
+  1420→  1420→  FR-CHECKOUT-025 [REQUIRED]: If payment fails, order is NOT created. User retries.
+  1421→  1421→  FR-CHECKOUT-026 [REQUIRED]: Payment webhook from Razorpay confirms payment.
+  1422→  1422→
+  1423→  1423→STEP 4: Order Confirmation
+  1424→  1424→  FR-CHECKOUT-030 [REQUIRED]: Order confirmation screen with order number.
+  1425→  1425→  FR-CHECKOUT-031 [REQUIRED]: Confirmation SMS + Email sent immediately.
+  1426→  1426→  FR-CHECKOUT-032 [REQUIRED]: Admin notified of new order (push + email).
+  1427→  1427→  FR-CHECKOUT-033 [REQUIRED]: Inventory reserved (quantity_reserved++) immediately on order.
+  1428→  1428→
+  1429→  1429→10.3 SHIPPING LOGIC
+  1430→  1430→--------------------
+  1431→  1431→FR-SHIP-001 [REQUIRED]: Shipping charge from serviceable_pincodes table.
+  1432→  1432→FR-SHIP-002 [REQUIRED]: Free shipping if order subtotal >= free_shipping_threshold (admin setting).
+  1433→  1433→FR-SHIP-003 [REQUIRED]: COD charge (if applicable) shown separately.
+  1434→  1434→FR-SHIP-004 [REQUIRED]: Delivery estimate = scheduled_date based on min/max_delivery_days.
+  1435→  1435→
+  1436→  1436→================================================================================
+  1437→  1437→SECTION 11 — ORDER MANAGEMENT SYSTEM
+  1438→  1438→================================================================================
+  1439→  1439→
+  1440→  1440→11.1 ORDER LIFECYCLE (ADMIN)
+  1441→  1441→------------------------------
+  1442→  1442→FR-ORD-001 [REQUIRED]: Admin views all orders in filterable, sortable list.
+  1443→  1443→FR-ORD-002 [REQUIRED]: Admin can filter by: status, date range, payment status, city.
+  1444→  1444→FR-ORD-003 [REQUIRED]: Admin confirms orders (status: pending → confirmed).
+  1445→  1445→FR-ORD-004 [REQUIRED]: Admin updates order to "processing" when packing.
+  1446→  1446→FR-ORD-005 [REQUIRED]: Admin updates to "out_for_delivery" + adds delivery person info.
+  1447→  1447→FR-ORD-006 [REQUIRED]: Admin marks "delivered" after confirmation.
+  1448→  1448→FR-ORD-007 [REQUIRED]: Every status change logged in order_status_history.
+  1449→  1449→FR-ORD-008 [REQUIRED]: Customer notified (SMS + push) at each status change.
+  1450→  1450→FR-ORD-009 [REQUIRED]: Admin can add internal notes to order.
+  1451→  1451→FR-ORD-010 [REQUIRED]: Admin can cancel order with reason (before dispatch only).
+  1452→  1452→
+  1453→  1453→11.2 ORDER LIFECYCLE (CUSTOMER)
+  1454→  1454→---------------------------------
+  1455→  1455→FR-ORD-020 [REQUIRED]: Customer views order list with search and filter.
+  1456→  1456→FR-ORD-021 [REQUIRED]: Customer views order detail: items, status, delivery info.
+  1457→  1457→FR-ORD-022 [REQUIRED]: Customer can cancel order ONLY if status = pending or confirmed.
+  1458→  1458→FR-ORD-023 [REQUIRED]: Cancellation reason required from customer.
+  1459→  1459→FR-ORD-024 [REQUIRED]: Cancelled order triggers inventory release (quantity_reserved--).
+  1460→  1460→FR-ORD-025 [REQUIRED]: Refund initiated automatically for paid cancelled orders.
+  1461→  1461→FR-ORD-026 [REQUIRED]: Customer receives invoice PDF via email.
+  1462→  1462→
+  1463→  1463→11.3 INVOICE GENERATION
+  1464→  1464→------------------------
+  1465→  1465→FR-INV-001 [REQUIRED]: Invoice generated for every confirmed paid order.
+  1466→  1466→FR-INV-002 [REQUIRED]: Invoice contains: order number, date, items, GST breakdown, total.
+  1467→  1467→FR-INV-003 [REQUIRED]: Invoice stored in S3, URL linked to order.
+  1468→  1468→FR-INV-004 [REQUIRED]: Invoice downloadable from order detail page.
+  1469→  1469→FR-INV-005 [OPTIONAL]: Business GST number on invoice (if GST registered).
+  1470→  1470→
+  1471→  1471→================================================================================
+  1472→  1472→SECTION 12 — SERVICE MARKETPLACE MODULE
+  1473→  1473→================================================================================
+  1474→  1474→
+  1475→  1475→12.1 SERVICE LISTING PAGE
+  1476→  1476→--------------------------
+  1477→  1477→FR-SVC-001 [REQUIRED]: Services listed by category.
+  1478→  1478→FR-SVC-002 [REQUIRED]: Service card shows: image, name, price, rating, "Book Now" button.
+  1479→  1479→FR-SVC-003 [REQUIRED]: Filter by: category, price range, rating, city.
+  1480→  1480→FR-SVC-004 [REQUIRED]: Sort by: featured, price, rating.
+  1481→  1481→FR-SVC-005 [REQUIRED]: City filter (only show services available in customer's city).
+  1482→  1482→FR-SVC-006 [REQUIRED]: If quote-based service, show "Get Quote" instead of price.
+  1483→  1483→
+  1484→  1484→12.2 SERVICE DETAIL PAGE
+  1485→  1485→-------------------------
+  1486→  1486→FR-SVC-010 [REQUIRED]: Full description, what's included/excluded.
+  1487→  1487→FR-SVC-011 [REQUIRED]: Gallery images.
+  1488→  1488→FR-SVC-012 [REQUIRED]: Pricing details and available time slots.
+  1489→  1489→FR-SVC-013 [REQUIRED]: Available service providers (names, ratings — for customer to pick).
+  1490→  1490→FR-SVC-014 [REQUIRED]: Review section (reviews for this service).
+  1491→  1491→FR-SVC-015 [REQUIRED]: "Book Now" CTA button.
+  1492→  1492→FR-SVC-016 [OPTIONAL]: FAQ section specific to service.
+  1493→  1493→
+  1494→  1494→12.3 SERVICE PROVIDER PROFILE PAGE
+  1495→  1495→-------------------------------------
+  1496→  1496→FR-PROV-001 [REQUIRED]: Public profile: name, photo, bio, specializations, rating.
+  1497→  1497→FR-PROV-002 [REQUIRED]: Services offered with prices.
+  1498→  1498→FR-PROV-003 [REQUIRED]: Reviews received.
+  1499→  1499→FR-PROV-004 [REQUIRED]: "Book This Provider" CTA.
+  1500→  1500→FR-PROV-005 [REQUIRED]: Experience years and verification badge.
+  1501→  1501→
+  1502→  1502→================================================================================
+  1503→  1503→SECTION 13 — BOOKING SYSTEM
+  1504→  1504→================================================================================
+  1505→  1505→
+  1506→  1506→13.1 BOOKING FLOW
+  1507→  1507→------------------
+  1508→  1508→STEP 1: Service Selection
+  1509→  1509→  FR-BOOK-001 [REQUIRED]: Customer selects service from catalog.
+  1510→  1510→  FR-BOOK-002 [REQUIRED]: Customer selects (optional) specific provider.
+  1511→  1511→  FR-BOOK-003 [REQUIRED]: If no provider selected, admin assigns later.
+  1512→  1512→
+  1513→  1513→STEP 2: Location & Schedule
+  1514→  1514→  FR-BOOK-010 [REQUIRED]: Customer enters service location (address + map pin).
+  1515→  1515→  FR-BOOK-011 [REQUIRED]: Customer location coordinates captured and stored.
+  1516→  1516→  FR-BOOK-012 [REQUIRED]: Customer selects date (min 1 day advance booking).
+  1517→  1517→  FR-BOOK-013 [REQUIRED]: Customer selects time slot (from available slots).
+  1518→  1518→  FR-BOOK-014 [REQUIRED]: Available time slots: 9AM-11AM, 11AM-1PM, 2PM-4PM, 4PM-6PM.
+  1519→  1519→  FR-BOOK-015 [REQUIRED]: Slots unavailable if provider already booked.
+  1520→  1520→
+  1521→  1521→STEP 3: Booking Summary
+  1522→  1522→  FR-BOOK-020 [REQUIRED]: Service name, provider (if selected), date, time, location.
+  1523→  1523→  FR-BOOK-021 [REQUIRED]: Price breakdown (advance required vs total).
+  1524→  1524→  FR-BOOK-022 [REQUIRED]: Notes / special instructions field.
+  1525→  1525→
+  1526→  1526→STEP 4: Payment
+  1527→  1527→  FR-BOOK-030 [REQUIRED]: Advance payment (if required by service) via Razorpay.
+  1528→  1528→  FR-BOOK-031 [REQUIRED]: COD booking allowed for some services (admin setting per service).
+  1529→  1529→  FR-BOOK-032 [REQUIRED]: Booking number generated on confirmation.
+  1530→  1530→
+  1531→  1531→STEP 5: Confirmation
+  1532→  1532→  FR-BOOK-040 [REQUIRED]: Booking confirmation screen + SMS + Email.
+  1533→  1533→  FR-BOOK-041 [REQUIRED]: Provider notified via SMS + app notification.
+  1534→  1534→  FR-BOOK-042 [REQUIRED]: Admin notified of new booking.
+  1535→  1535→
+  1536→  1536→13.2 BOOKING MANAGEMENT (Customer)
+  1537→  1537→------------------------------------
+  1538→  1538→FR-BOOK-050 [REQUIRED]: View all bookings with status.
+  1539→  1539→FR-BOOK-051 [REQUIRED]: Booking detail: service, provider, date, time, location, status.
+  1540→  1540→FR-BOOK-052 [REQUIRED]: Cancel booking if status is pending or confirmed.
+  1541→  1541→FR-BOOK-053 [REQUIRED]: Cancellation >24h before: full refund.
+  1542→  1542→FR-BOOK-054 [REQUIRED]: Cancellation <24h before: partial/no refund (per policy).
+  1543→  1543→FR-BOOK-055 [REQUIRED]: Reschedule booking (if status = pending or confirmed).
+  1544→  1544→
+  1545→  1545→13.3 BOOKING MANAGEMENT (Provider)
+  1546→  1546→------------------------------------
+  1547→  1547→FR-BOOK-060 [REQUIRED]: Provider views assigned bookings.
+  1548→  1548→FR-BOOK-061 [REQUIRED]: Provider confirms booking (pending → confirmed).
+  1549→  1549→FR-BOOK-062 [REQUIRED]: Provider marks "in_progress" when service starts.
+  1550→  1550→FR-BOOK-063 [REQUIRED]: Provider marks "completed" + uploads photos.
+  1551→  1551→FR-BOOK-064 [REQUIRED]: Provider can raise "no_show_customer" if customer absent.
+  1552→  1552→FR-BOOK-065 [REQUIRED]: Provider cannot cancel after confirming (must contact admin).
+  1553→  1553→
+  1554→  1554→13.4 BOOKING MANAGEMENT (Admin)
+  1555→  1555→---------------------------------
+  1556→  1556→FR-BOOK-070 [REQUIRED]: View all bookings, filter by status/date/provider/city.
+  1557→  1557→FR-BOOK-071 [REQUIRED]: Assign/reassign provider to booking.
+  1558→  1558→FR-BOOK-072 [REQUIRED]: Override any booking status.
+  1559→  1559→FR-BOOK-073 [REQUIRED]: Handle disputes.
+  1560→  1560→FR-BOOK-074 [REQUIRED]: Process refunds for cancelled bookings.
+  1561→  1561→
+  1562→  1562→================================================================================
+  1563→  1563→SECTION 14 — PAYMENT INTEGRATION
+  1564→  1564→================================================================================
+  1565→  1565→
+  1566→  1566→14.1 RAZORPAY INTEGRATION
+  1567→  1567→--------------------------
+  1568→  1568→FR-PAY-001 [REQUIRED]: Razorpay standard checkout integration.
+  1569→  1569→FR-PAY-002 [REQUIRED]: Supported methods: UPI, Credit/Debit Card, Net Banking, 
+  1570→  1570→                         Paytm/PhonePe Wallets, EMI.
+  1571→  1571→FR-PAY-003 [REQUIRED]: Create Razorpay Order from backend (never expose key on frontend).
+  1572→  1572→FR-PAY-004 [REQUIRED]: Razorpay payment captured server-side on webhook.
+  1573→  1573→FR-PAY-005 [REQUIRED]: Payment signature verification on every webhook.
+  1574→  1574→FR-PAY-006 [REQUIRED]: Store full gateway response in payments table.
+  1575→  1575→FR-PAY-007 [REQUIRED]: Idempotency: same Razorpay order_id cannot be paid twice.
+  1576→  1576→
+  1577→  1577→14.2 COD (CASH ON DELIVERY)
+  1578→  1578→-----------------------------
+  1579→  1579→FR-PAY-010 [REQUIRED]: COD available for orders ≤ ₹5000 (configurable in admin settings).
+  1580→  1580→FR-PAY-011 [REQUIRED]: COD not available for all pincodes (admin configures per pincode).
+  1581→  1581→FR-PAY-012 [REQUIRED]: COD orders confirmed without payment (payment_status = pending).
+  1582→  1582→FR-PAY-013 [REQUIRED]: Admin marks COD orders as "paid" manually after collection.
+  1583→  1583→
+  1584→  1584→14.3 REFUND FLOW
+  1585→  1585→-----------------
+  1586→  1586→FR-PAY-020 [REQUIRED]: Refunds processed via Razorpay Refund API.
+  1587→  1587→FR-PAY-021 [REQUIRED]: Refund initiated by admin manually after return approval.
+  1588→  1588→FR-PAY-022 [REQUIRED]: Refund reflects in customer's original payment method (3-5 days).
+  1589→  1589→FR-PAY-023 [REQUIRED]: Customer notified of refund initiation + expected timeline.
+  1590→  1590→FR-PAY-024 [REQUIRED]: Refund amount stored in payments table (refund_id, refund_amount).
+  1591→  1591→FR-PAY-025 [REQUIRED]: COD orders: refund processed offline (NEFT / UPI to customer).
+  1592→  1592→
+  1593→  1593→14.4 PAYMENT SECURITY
+  1594→  1594→----------------------
+  1595→  1595→FR-PAY-030 [REQUIRED]: Never log card numbers, CVV, or UPI PINs.
+  1596→  1596→FR-PAY-031 [REQUIRED]: Razorpay handles PCI-DSS compliance.
+  1597→  1597→FR-PAY-032 [REQUIRED]: All payment API calls from backend only (never frontend).
+  1598→  1598→FR-PAY-033 [REQUIRED]: Webhook endpoint protected with HMAC signature verification.
+  1599→  1599→FR-PAY-034 [REQUIRED]: Use Razorpay test mode in staging, live mode in production.
+  1600→  1600→
+  1601→  1601→================================================================================
+  1602→  1602→SECTION 15 — INVENTORY MANAGEMENT SYSTEM
+  1603→  1603→================================================================================
+  1604→  1604→
+  1605→  1605→15.1 STOCK TRACKING
+  1606→  1606→--------------------
+  1607→  1607→FR-INV-001 [REQUIRED]: Real-time stock tracking per product (and per variant if applicable).
+  1608→  1608→FR-INV-002 [REQUIRED]: Stock levels: quantity_available, quantity_reserved, quantity_sold.
+  1609→  1609→FR-INV-003 [REQUIRED]: Stock decremented when order confirmed (quantity_available--).
+  1610→  1610→FR-INV-004 [REQUIRED]: Stock released when order cancelled (quantity_available++).
+  1611→  1611→FR-INV-005 [REQUIRED]: Reservation system: on checkout, reserve stock until payment capture.
+  1612→  1612→FR-INV-006 [REQUIRED]: Reservation expires in 30 minutes if payment not completed.
+  1613→  1613→FR-INV-007 [REQUIRED]: Out-of-stock products visible but not purchasable.
+  1614→  1614→
+  1615→  1615→15.2 LOW STOCK ALERTS
+  1616→  1616→----------------------
+  1617→  1617→FR-INV-010 [REQUIRED]: Alert admin when product hits low_stock_threshold.
+  1618→  1618→FR-INV-011 [REQUIRED]: Alert method: email + admin dashboard notification.
+  1619→  1619→FR-INV-012 [REQUIRED]: Low stock products highlighted in admin inventory view.
+  1620→  1620→FR-INV-013 [REQUIRED]: Admin can configure low_stock_threshold per product.
+  1621→  1621→
+  1622→  1622→15.3 STOCK NOTIFICATIONS (CUSTOMERS)
+  1623→  1623→--------------------------------------
+  1624→  1624→FR-INV-020 [REQUIRED]: "Notify Me" button on out-of-stock products.
+  1625→  1625→FR-INV-021 [REQUIRED]: When product restocked: auto-notify all waitlisted customers.
+  1626→  1626→FR-INV-022 [REQUIRED]: Notification sent via: SMS + Email + Push.
+  1627→  1627→FR-INV-023 [REQUIRED]: Max 100 notifications per restock event (rate limiting).
+  1628→  1628→
+  1629→  1629→15.4 INVENTORY TRANSACTIONS
+  1630→  1630→----------------------------
+  1631→  1631→FR-INV-030 [REQUIRED]: Every stock change creates inventory_transaction record.
+  1632→  1632→FR-INV-031 [REQUIRED]: Admin can manually adjust stock with reason.
+  1633→  1633→FR-INV-032 [REQUIRED]: Admin can record damaged/lost stock.
+  1634→  1634→FR-INV-033 [REQUIRED]: Admin can view complete transaction history per product.
+  1635→  1635→
+  1636→  1636→15.5 INVENTORY REPORTS
+  1637→  1637→------------------------
+  1638→  1638→FR-INV-040 [REQUIRED]: Current stock levels report (all products).
+  1639→  1639→FR-INV-041 [REQUIRED]: Low stock report.
+  1640→  1640→FR-INV-042 [REQUIRED]: Movement report (stock in/out over time period).
+  1641→  1641→FR-INV-043 [OPTIONAL]: Dead stock report (no sales in 30+ days).
+  1642→  1642→
+  1643→  1643→================================================================================
+  1644→  1644→SECTION 16 — NOTIFICATIONS SYSTEM
+  1645→  1645→================================================================================
+  1646→  1646→
+  1647→  1647→16.1 NOTIFICATION CHANNELS
+  1648→  1648→----------------------------
+  1649→  1649→CHANNEL 1: SMS (MSG91 / Textlocal)
+  1650→  1650→  → For: OTP, order confirmed, order dispatched, booking confirmed, booking reminder.
+  1651→  1651→  → Character limit: 160 chars per SMS.
+  1652→  1652→
+  1653→  1653→CHANNEL 2: Email (SendGrid / AWS SES)
+  1654→  1654→  → For: Registration, OTP, order confirmation + invoice, booking confirmation,
+  1655→  1655→          status updates, review requests, promotional.
+  1656→  1656→  → HTML templates required.
+  1657→  1657→
+  1658→  1658→CHANNEL 3: Push Notification (Firebase FCM)
+  1659→  1659→  → For: Order updates, booking updates, back-in-stock, promotions, reminders.
+  1660→  1660→  → Deep link to relevant screen.
+  1661→  1661→
+  1662→  1662→CHANNEL 4: In-App Notification (Bell icon)
+  1663→  1663→  → All notification types shown in-app notification center.
+  1664→  1664→  → Unread count badge on bell icon.
+  1665→  1665→
+  1666→  1666→16.2 NOTIFICATION TRIGGERS
+  1667→  1667→----------------------------
+  1668→  1668→Trigger                       Channels              Recipient
+  1669→  1669→----------------------------------------------------------------------
+  1670→  1670→Registration OTP              SMS                   Customer
+  1671→  1671→Email Verification            Email                 Customer
+  1672→  1672→Order Placed                  SMS + Email + Push    Customer
+  1673→  1673→Order Confirmed               SMS + Push            Customer
+  1674→  1674→Order Out for Delivery        SMS + Push            Customer
+  1675→  1675→Order Delivered               SMS + Push + Email    Customer
+  1676→  1676→Order Cancelled               SMS + Email           Customer
+  1677→  1677→Refund Initiated              Email + Push          Customer
+  1678→  1678→Return Approved               SMS + Email           Customer
+  1679→  1679→Booking Confirmed             SMS + Push            Customer, Provider
+  1680→  1680→Booking Reminder (24h prior)  SMS + Push            Customer, Provider
+  1681→  1681→Booking Completed             Push + Email          Customer
+  1682→  1682→Review Request                Email + Push          Customer (24h after delivery)
+  1683→  1683→Low Stock Alert               Email                 Admin
+  1684→  1684→New Order Alert               Push + Email          Admin
+  1685→  1685→New Booking Alert             Push + Email          Admin
+  1686→  1686→Back in Stock                 SMS + Email + Push    Waitlisted Customers
+  1687→  1687→Provider Approved             SMS + Email           Provider
+  1688→  1688→New Booking Assigned          SMS + Push            Provider
+  1689→  1689→
+  1690→  1690→16.3 EMAIL TEMPLATES
+  1691→  1691→---------------------
+  1692→  1692→All emails use HTML template with:
+  1693→  1693→  - GROWPLANTS logo (header)
+  1694→  1694→  - Brand green color (#2E7D32 or custom)
+  1695→  1695→  - Responsive design (mobile-friendly)
+  1696→  1696→  - Footer with unsubscribe link, contact info, social links
+  1697→  1697→
+  1698→  1698→Required templates:
+  1699→  1699→  TMP-001  Welcome / Registration Confirmation
+  1700→  1700→  TMP-002  OTP Email
+  1701→  1701→  TMP-003  Email Verification
+  1702→  1702→  TMP-004  Password Reset
+  1703→  1703→  TMP-005  Order Confirmation (with order summary table)
+  1704→  1704→  TMP-006  Order Status Update
+  1705→  1705→  TMP-007  Order Invoice (PDF attachment)
+  1706→  1706→  TMP-008  Booking Confirmation
+  1707→  1707→  TMP-009  Booking Reminder
+  1708→  1708→  TMP-010  Review Request
+  1709→  1709→  TMP-011  Refund Confirmation
+  1710→  1710→  TMP-012  Back in Stock
+  1711→  1711→  TMP-013  Promotional Email
+  1712→  1712→  TMP-014  Provider Approval / Rejection
+  1713→  1713→
+  1714→  1714→================================================================================
+  1715→  1715→SECTION 17 — REVIEW & RATING SYSTEM
+  1716→  1716→================================================================================
+  1717→  1717→
+  1718→  1718→17.1 REVIEW RULES
+  1719→  1719→------------------
+  1720→  1720→FR-REV-001 [REQUIRED]: Only verified purchasers can review (linked to order_item/booking).
+  1721→  1721→FR-REV-002 [REQUIRED]: One review per purchase/booking.
+  1722→  1722→FR-REV-003 [REQUIRED]: Rating: 1-5 stars (required field).
+  1723→  1723→FR-REV-004 [REQUIRED]: Text review: optional, min 10 chars if provided.
+  1724→  1724→FR-REV-005 [REQUIRED]: Image upload: optional, max 5 images, max 5MB each.
+  1725→  1725→FR-REV-006 [REQUIRED]: Review moderation: auto-approved by default.
+  1726→  1726→FR-REV-007 [REQUIRED]: Admin can hide/remove inappropriate reviews.
+  1727→  1727→FR-REV-008 [REQUIRED]: Admin can respond to reviews.
+  1728→  1728→FR-REV-009 [REQUIRED]: Review period: reviewable for 30 days after delivery/completion.
+  1729→  1729→FR-REV-010 [REQUIRED]: Prompt: 24h after order delivery, automated review request.
+  1730→  1730→
+  1731→  1731→17.2 RATING CALCULATION
+  1732→  1732→------------------------
+  1733→  1733→FR-REV-020 [REQUIRED]: Average rating on products updated after each new review.
+  1734→  1734→FR-REV-021 [REQUIRED]: Review count displayed alongside rating.
+  1735→  1735→FR-REV-022 [REQUIRED]: Rating breakdown (% of 5-star, 4-star, etc.) shown on PDP.
+  1736→  1736→FR-REV-023 [REQUIRED]: Same for service and provider ratings.
+  1737→  1737→
+  1738→  1738→17.3 REVIEW DISPLAY
+  1739→  1739→--------------------
+  1740→  1740→FR-REV-030 [REQUIRED]: Most recent reviews shown first by default.
+  1741→  1741→FR-REV-031 [REQUIRED]: Filter reviews by star rating.
+  1742→  1742→FR-REV-032 [REQUIRED]: "Verified Purchase" badge on reviews.
+  1743→  1743→FR-REV-033 [REQUIRED]: Helpful/Not Helpful voting on reviews (Phase 2).
+  1744→  1744→FR-REV-034 [OPTIONAL]: Featured review pinned at top (admin curates).
+  1745→  1745→
+  1746→  1746→================================================================================
+  1747→  1747→SECTION 18 — SEARCH & FILTER SYSTEM
+  1748→  1748→================================================================================
+  1749→  1749→
+  1750→  1750→18.1 SEARCH BEHAVIOR
+  1751→  1751→---------------------
+  1752→  1752→FR-SEARCH-001 [REQUIRED]: Search bar available on all pages (sticky in header).
+  1753→  1753→FR-SEARCH-002 [REQUIRED]: Search covers: product names, descriptions, categories, tags.
+  1754→  1754→FR-SEARCH-003 [REQUIRED]: Autocomplete suggestions (as user types, min 2 chars).
+  1755→  1755→FR-SEARCH-004 [REQUIRED]: Autocomplete shows: products (with thumbnail), categories.
+  1756→  1756→FR-SEARCH-005 [REQUIRED]: Search results page with filter and sort capabilities.
+  1757→  1757→FR-SEARCH-006 [REQUIRED]: "No results found" shows suggestions / popular products.
+  1758→  1758→FR-SEARCH-007 [REQUIRED]: Search analytics tracked (what people search for).
+  1759→  1759→FR-SEARCH-008 [REQUIRED]: Recent searches stored per user (max 10, local + server).
+  1760→  1760→FR-SEARCH-009 [OPTIONAL]: Typo tolerance (fuzzy search for minor misspellings).
+  1761→  1761→FR-SEARCH-010 [OPTIONAL]: Hindi search support (Devanagari input).
+  1762→  1762→
+  1763→  1763→18.2 FILTER IMPLEMENTATION
+  1764→  1764→----------------------------
+  1765→  1765→All filter states are URL-encoded (?category=plants&min_price=100&max_price=500&rating=4).
+  1766→  1766→This enables shareable filtered URLs and proper browser back/forward behavior.
+  1767→  1767→
+  1768→  1768→Filter parameters (products):
+  1769→  1769→  category_id     → UUID (multi-select)
+  1770→  1770→  min_price       → integer
+  1771→  1771→  max_price       → integer
+  1772→  1772→  min_rating      → 1 to 5
+  1773→  1773→  suitable_for    → indoor | outdoor | balcony | office (multi-select)
+  1774→  1774→  sunlight        → full_sun | partial_shade | shade | indirect (multi-select)
+  1775→  1775→  difficulty      → easy | moderate | expert (multi-select)
+  1776→  1776→  in_stock        → boolean
+  1777→  1777→  tags            → array
+  1778→  1778→
+  1779→  1779→Filter parameters (services):
+  1780→  1780→  category_id     → UUID (multi-select)
+  1781→  1781→  min_price       → integer
+  1782→  1782→  max_price       → integer
+  1783→  1783→  min_rating      → 1 to 5
+  1784→  1784→  city            → city name
+  1785→  1785→
+  1786→  1786→================================================================================
+  1787→  1787→SECTION 19 — ADMIN PANEL (FULL SPECIFICATION)
+  1788→  1788→================================================================================
+  1789→  1789→
+  1790→  1790→19.1 ADMIN DASHBOARD HOME
+  1791→  1791→--------------------------
+  1792→  1792→FR-ADMIN-001 [REQUIRED]: Key metrics summary cards:
+  1793→  1793→  - Total Orders Today / This Week / This Month
+  1794→  1794→  - Total Revenue Today / This Week / This Month
+  1795→  1795→  - Total Bookings Today
+  1796→  1796→  - New Customers This Week
+  1797→  1797→  - Pending Orders (badge count)
+  1798→  1798→  - Low Stock Products (badge count)
+  1799→  1799→FR-ADMIN-002 [REQUIRED]: Recent orders list (last 10, with quick action).
+  1800→  1800→FR-ADMIN-003 [REQUIRED]: Recent bookings list (last 10).
+  1801→  1801→FR-ADMIN-004 [REQUIRED]: Revenue chart (line chart, daily/weekly/monthly toggle).
+  1802→  1802→FR-ADMIN-005 [REQUIRED]: Top selling products (this month).
+  1803→  1803→FR-ADMIN-006 [REQUIRED]: Top services (this month).
+  1804→  1804→FR-ADMIN-007 [REQUIRED]: New registrations chart.
+  1805→  1805→
+  1806→  1806→19.2 ORDER MANAGEMENT (ADMIN)
+  1807→  1807→-------------------------------
+  1808→  1808→FR-ADMIN-010 [REQUIRED]: List all orders with columns: 
+  1809→  1809→  Order#, Customer, Amount, Status, Payment, Date, Actions.
+  1810→  1810→FR-ADMIN-011 [REQUIRED]: Filters: status, payment status, date range, search by order/customer.
+  1811→  1811→FR-ADMIN-012 [REQUIRED]: Bulk actions: confirm selected, export selected to CSV.
+  1812→  1812→FR-ADMIN-013 [REQUIRED]: Order detail view with full timeline.
+  1813→  1813→FR-ADMIN-014 [REQUIRED]: Status update buttons per current status.
+  1814→  1814→FR-ADMIN-015 [REQUIRED]: Add delivery person details (name + phone + tracking URL).
+  1815→  1815→FR-ADMIN-016 [REQUIRED]: Add internal notes.
+  1816→  1816→FR-ADMIN-017 [REQUIRED]: Print packing slip.
+  1817→  1817→FR-ADMIN-018 [REQUIRED]: Export orders to Excel/CSV with date range filter.
+  1818→  1818→
+  1819→  1819→19.3 BOOKING MANAGEMENT (ADMIN)
+  1820→  1820→---------------------------------
+  1821→  1821→FR-ADMIN-020 [REQUIRED]: List all bookings with columns:
+  1822→  1822→  Booking#, Customer, Service, Provider, Date, Status, Actions.
+  1823→  1823→FR-ADMIN-021 [REQUIRED]: Assign provider to unassigned bookings.
+  1824→  1824→FR-ADMIN-022 [REQUIRED]: Override booking status.
+  1825→  1825→FR-ADMIN-023 [REQUIRED]: View customer location on map.
+  1826→  1826→FR-ADMIN-024 [REQUIRED]: Handle disputes (dispute resolution notes).
+  1827→  1827→FR-ADMIN-025 [REQUIRED]: Process booking refunds.
+  1828→  1828→
+  1829→  1829→19.4 PRODUCT MANAGEMENT (ADMIN)
+  1830→  1830→---------------------------------
+  1831→  1831→FR-ADMIN-030 [REQUIRED]: Product list with: image, name, category, price, stock, status.
+  1832→  1832→FR-ADMIN-031 [REQUIRED]: Add product form (all fields from DB-006).
+  1833→  1833→FR-ADMIN-032 [REQUIRED]: Edit product.
+  1834→  1834→FR-ADMIN-033 [REQUIRED]: Image gallery management (upload, reorder, set primary, delete).
+  1835→  1835→FR-ADMIN-034 [REQUIRED]: Variant management per product.
+  1836→  1836→FR-ADMIN-035 [REQUIRED]: Duplicate product.
+  1837→  1837→FR-ADMIN-036 [REQUIRED]: Activate/deactivate product.
+  1838→  1838→FR-ADMIN-037 [REQUIRED]: CSV import for bulk product upload.
+  1839→  1839→FR-ADMIN-038 [REQUIRED]: CSV export.
+  1840→  1840→
+  1841→  1841→19.5 INVENTORY MANAGEMENT (ADMIN)
+  1842→  1842→-----------------------------------
+  1843→  1843→FR-ADMIN-040 [REQUIRED]: Inventory list: product, variant, current stock, reserved, sold.
+  1844→  1844→FR-ADMIN-041 [REQUIRED]: Quick stock update (inline edit).
+  1845→  1845→FR-ADMIN-042 [REQUIRED]: Full restock form (quantity + notes).
+  1846→  1846→FR-ADMIN-043 [REQUIRED]: Stock adjustment (positive/negative) with reason.
+  1847→  1847→FR-ADMIN-044 [REQUIRED]: Transaction history per product.
+  1848→  1848→FR-ADMIN-045 [REQUIRED]: Low stock filter/alert view.
+  1849→  1849→FR-ADMIN-046 [REQUIRED]: Bulk restock via CSV.
+  1850→  1850→
+  1851→  1851→19.6 SERVICE MANAGEMENT (ADMIN)
+  1852→  1852→---------------------------------
+  1853→  1853→FR-ADMIN-050 [REQUIRED]: Service list and CRUD operations.
+  1854→  1854→FR-ADMIN-051 [REQUIRED]: Service category management.
+  1855→  1855→FR-ADMIN-052 [REQUIRED]: Set service availability by city.
+  1856→  1856→FR-ADMIN-053 [REQUIRED]: Featured service toggle.
+  1857→  1857→
+  1858→  1858→19.7 PROVIDER MANAGEMENT (ADMIN)
+  1859→  1859→----------------------------------
+  1860→  1860→FR-ADMIN-060 [REQUIRED]: Provider list with verification status.
+  1861→  1861→FR-ADMIN-061 [REQUIRED]: View provider application details.
+  1862→  1862→FR-ADMIN-062 [REQUIRED]: Approve or reject provider (with reason for rejection).
+  1863→  1863→FR-ADMIN-063 [REQUIRED]: Suspend active provider.
+  1864→  1864→FR-ADMIN-064 [REQUIRED]: View provider's booking history.
+  1865→  1865→FR-ADMIN-065 [REQUIRED]: View provider's reviews.
+  1866→  1866→FR-ADMIN-066 [REQUIRED]: Commission rate override per provider.
+  1867→  1867→FR-ADMIN-067 [REQUIRED]: View provider's earnings report.
+  1868→  1868→FR-ADMIN-068 [REQUIRED]: Mark provider payout as processed (manual settlement).
+  1869→  1869→
+  1870→  1870→19.8 CUSTOMER MANAGEMENT (ADMIN)
+  1871→  1871→----------------------------------
+  1872→  1872→FR-ADMIN-070 [REQUIRED]: Customer list with: name, phone, email, orders, bookings, status.
+  1873→  1873→FR-ADMIN-071 [REQUIRED]: Customer detail: profile + order history + booking history + reviews.
+  1874→  1874→FR-ADMIN-072 [REQUIRED]: Suspend/reactivate customer account.
+  1875→  1875→FR-ADMIN-073 [REQUIRED]: Export customer list (for CRM / marketing).
+  1876→  1876→
+  1877→  1877→19.9 RETURN MANAGEMENT (ADMIN)
+  1878→  1878→--------------------------------
+  1879→  1879→FR-ADMIN-080 [REQUIRED]: Return request list.
+  1880→  1880→FR-ADMIN-081 [REQUIRED]: View return request with evidence images.
+  1881→  1881→FR-ADMIN-082 [REQUIRED]: Approve/reject return with notes.
+  1882→  1882→FR-ADMIN-083 [REQUIRED]: Select resolution: replacement or refund.
+  1883→  1883→FR-ADMIN-084 [REQUIRED]: Initiate refund from return approval.
+  1884→  1884→
+  1885→  1885→19.10 COUPON MANAGEMENT (ADMIN)
+  1886→  1886→---------------------------------
+  1887→  1887→FR-ADMIN-090 [REQUIRED]: Create, edit, deactivate coupons.
+  1888→  1888→FR-ADMIN-091 [REQUIRED]: View coupon usage statistics.
+  1889→  1889→FR-ADMIN-092 [REQUIRED]: Set: code, discount type, value, min order, validity.
+  1890→  1890→
+  1891→  1891→19.11 BANNER MANAGEMENT (ADMIN)
+  1892→  1892→---------------------------------
+  1893→  1893→FR-ADMIN-100 [REQUIRED]: Upload homepage banners.
+  1894→  1894→FR-ADMIN-101 [REQUIRED]: Set banner order.
+  1895→  1895→FR-ADMIN-102 [REQUIRED]: Link banner to category or product or URL.
+  1896→  1896→FR-ADMIN-103 [REQUIRED]: Activate/deactivate banners.
+  1897→  1897→FR-ADMIN-104 [REQUIRED]: Max 5 active banners.
+  1898→  1898→
+  1899→  1899→19.12 CITY & PINCODE MANAGEMENT (ADMIN)
+  1900→  1900→-----------------------------------------
+  1901→  1901→FR-ADMIN-110 [REQUIRED]: Add/edit cities and their service availability.
+  1902→  1902→FR-ADMIN-111 [REQUIRED]: Add/edit serviceable pincodes per city.
+  1903→  1903→FR-ADMIN-112 [REQUIRED]: Set delivery charges per pincode.
+  1904→  1904→FR-ADMIN-113 [REQUIRED]: Enable/disable COD per pincode.
+  1905→  1905→
+  1906→  1906→19.13 SETTINGS (ADMIN)
+  1907→  1907→------------------------
+  1908→  1908→FR-ADMIN-120 [REQUIRED]: Edit all key-value settings (from admin_settings table).
+  1909→  1909→FR-ADMIN-121 [REQUIRED]: Enable/disable maintenance mode.
+  1910→  1910→FR-ADMIN-122 [REQUIRED]: Toggle payment methods (Razorpay / COD).
+  1911→  1911→FR-ADMIN-123 [REQUIRED]: Manage notification templates.
+  1912→  1912→FR-ADMIN-124 [REQUIRED]: Change own admin password.
+  1913→  1913→
+  1914→  1914→19.14 ANALYTICS & REPORTS (ADMIN)
+  1915→  1915→-----------------------------------
+  1916→  1916→FR-ADMIN-130 [REQUIRED]: Revenue report (daily/weekly/monthly/custom range).
+  1917→  1917→FR-ADMIN-131 [REQUIRED]: Orders report (count by status, by city).
+  1918→  1918→FR-ADMIN-132 [REQUIRED]: Products report (top sellers, low performers).
+  1919→  1919→FR-ADMIN-133 [REQUIRED]: Customer report (new vs returning, city-wise).
+  1920→  1920→FR-ADMIN-134 [REQUIRED]: Bookings report (count by service, by provider).
+  1921→  1921→FR-ADMIN-135 [REQUIRED]: Inventory report (current levels, turnover).
+  1922→  1922→FR-ADMIN-136 [REQUIRED]: All reports exportable to CSV/Excel.
+  1923→  1923→
+  1924→  1924→================================================================================
+  1925→  1925→SECTION 20 — SERVICE PROVIDER PANEL
+  1926→  1926→================================================================================
+  1927→  1927→
+  1928→  1928→20.1 PROVIDER DASHBOARD
+  1929→  1929→-------------------------
+  1930→  1930→FR-PROV-010 [REQUIRED]: Summary: upcoming bookings count, today's bookings, earnings.
+  1931→  1931→FR-PROV-011 [REQUIRED]: Upcoming bookings (next 7 days) list.
+  1932→  1932→FR-PROV-012 [REQUIRED]: Earnings: this week, this month, pending payout.
+  1933→  1933→
+  1934→  1934→20.2 BOOKING MANAGEMENT
+  1935→  1935→-------------------------
+  1936→  1936→FR-PROV-020 [REQUIRED]: View all assigned bookings.
+  1937→  1937→FR-PROV-021 [REQUIRED]: Filter by: date, status.
+  1938→  1938→FR-PROV-022 [REQUIRED]: Booking detail: service, customer info (phone shown after confirmation),
+  1939→  1939→                          address, date, time, notes.
+  1940→  1940→FR-PROV-023 [REQUIRED]: Confirm booking (pending → confirmed).
+  1941→  1941→FR-PROV-024 [REQUIRED]: Start service (confirmed → in_progress).
+  1942→  1942→FR-PROV-025 [REQUIRED]: Complete booking (in_progress → completed) + upload photos.
+  1943→  1943→FR-PROV-026 [REQUIRED]: Mark no-show (customer not available).
+  1944→  1944→FR-PROV-027 [REQUIRED]: Calendar view of bookings.
+  1945→  1945→
+  1946→  1946→20.3 PROFILE MANAGEMENT
+  1947→  1947→-------------------------
+  1948→  1948→FR-PROV-030 [REQUIRED]: Edit: bio, profile photo, specializations, experience.
+  1949→  1949→FR-PROV-031 [REQUIRED]: Manage availability hours.
+  1950→  1950→FR-PROV-032 [REQUIRED]: Mark self as unavailable for specific dates.
+  1951→  1951→FR-PROV-033 [REQUIRED]: Update bank account / UPI details.
+  1952→  1952→
+  1953→  1953→20.4 EARNINGS & PAYOUTS
+  1954→  1954→-------------------------
+  1955→  1955→FR-PROV-040 [REQUIRED]: Earnings breakdown per booking.
+  1956→  1956→FR-PROV-041 [REQUIRED]: Commission deducted shown clearly.
+  1957→  1957→FR-PROV-042 [REQUIRED]: Payout history (admin processes manually in Phase 1).
+  1958→  1958→FR-PROV-043 [REQUIRED]: Request payout button (triggers admin notification).
+  1959→  1959→
+  1960→  1960→================================================================================
+  1961→  1961→SECTION 21 — RETURN & REFUND MANAGEMENT
+  1962→  1962→================================================================================
+  1963→  1963→
+  1964→  1964→21.1 RETURN POLICY RULES (FROM BRD)
+  1965→  1965→--------------------------------------
+  1966→  1966→Plants:
+  1967→  1967→  - Damage claim must be raised within 24 hours of delivery.
+  1968→  1968→  - Photo evidence required (at least 1 image).
+  1969→  1969→  - Resolution: replacement preferred over refund.
+  1970→  1970→  - If replacement not available: full refund.
+  1971→  1971→
+  1972→  1972→Planters & Accessories:
+  1973→  1973→  - Return window: 7 days from delivery.
+  1974→  1974→  - Only for manufacturing defect or shipping damage.
+  1975→  1975→  - Condition: item must be unused (for non-damaged items).
+  1976→  1976→
+  1977→  1977→Services:
+  1978→  1978→  - Cancellation allowed before service start.
+  1979→  1979→  - Refund after service completion subject to admin review.
+  1980→  1980→  - If provider no-show: full refund guaranteed.
+  1981→  1981→
+  1982→  1982→21.2 RETURN REQUEST FLOW (CUSTOMER)
+  1983→  1983→--------------------------------------
+  1984→  1984→FR-RET-001 [REQUIRED]: Return option available on order item (within policy window).
+  1985→  1985→FR-RET-002 [REQUIRED]: Customer selects reason: damaged | wrong_item | quality_issue | other.
+  1986→  1986→FR-RET-003 [REQUIRED]: Customer provides description.
+  1987→  1987→FR-RET-004 [REQUIRED]: For plants: photo upload mandatory.
+  1988→  1988→FR-RET-005 [REQUIRED]: For others: photo upload optional but recommended.
+  1989→  1989→FR-RET-006 [REQUIRED]: System validates return window (plants: <24h, others: <7 days).
+  1990→  1990→FR-RET-007 [REQUIRED]: Return request submitted → admin notified immediately.
+  1991→  1991→FR-RET-008 [REQUIRED]: Customer sees return status in order detail.
+  1992→  1992→
+  1993→  1993→21.3 REFUND TIMELINE
+  1994→  1994→---------------------
+  1995→  1995→Payment Method        Refund Timeline
+  1996→  1996→Razorpay (Card/UPI)   3-5 business days (auto via Razorpay API)
+  1997→  1997→Net Banking           5-7 business days
+  1998→  1998→COD                   Manual transfer within 7 business days
+  1999→  1999→
+  2000→  2000→================================================================================
+
+[showing lines 1-2000 of 2002; use offset=2001 with limit to continue reading]

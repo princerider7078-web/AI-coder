@@ -1,0 +1,2829 @@
+================================================================================
+        GROWPLANTS — PRODUCT REQUIREMENTS DOCUMENT (PRD)
+================================================================================
+Document Version  : 1.0
+BRD Reference     : GROWPLANTS BRD v1.0
+Status            : Draft — For Developer Review
+Prepared For      : Development Team / AI Coding Tools
+Date              : 2025
+================================================================================
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+SECTION 01 — Document Overview & Conventions
+SECTION 02 — Product Vision & Scope
+SECTION 03 — System Architecture Overview
+SECTION 04 — Tech Stack Recommendations
+SECTION 05 — Database Schema (Full)
+SECTION 06 — User Roles & Permissions Matrix
+SECTION 07 — Authentication & Account Management
+SECTION 08 — Customer-Facing Frontend (Web + Mobile)
+SECTION 09 — Product Catalog Module
+SECTION 10 — Shopping Cart & Checkout Flow
+SECTION 11 — Order Management System
+SECTION 12 — Service Marketplace Module
+SECTION 13 — Booking System
+SECTION 14 — Payment Integration
+SECTION 15 — Inventory Management System
+SECTION 16 — Notifications System
+SECTION 17 — Review & Rating System
+SECTION 18 — Search & Filter System
+SECTION 19 — Admin Panel (Full Specification)
+SECTION 20 — Service Provider Panel
+SECTION 21 — Return & Refund Management
+SECTION 22 — Delivery & Logistics
+SECTION 23 — Location & City Management
+SECTION 24 — SEO & Performance Requirements
+SECTION 25 — Security Requirements
+SECTION 26 — API Specification (REST Endpoints)
+SECTION 27 — Third-Party Integrations
+SECTION 28 — Future Modules (AI Roadmap)
+SECTION 29 — Non-Functional Requirements
+SECTION 30 — Acceptance Criteria & Testing Guidelines
+SECTION 31 — Deployment & DevOps
+SECTION 32 — Appendix: Enums, Constants & Config
+
+================================================================================
+SECTION 01 — DOCUMENT OVERVIEW & CONVENTIONS
+================================================================================
+
+1.1 PURPOSE
+-----------
+This Product Requirements Document (PRD) defines the complete functional and
+non-functional requirements for the GROWPLANTS platform. It is intended as the
+single source of truth for:
+  - Frontend developers (Web & Mobile)
+  - Backend developers (API & Database)
+  - AI coding tools (Cursor, GitHub Copilot, Claude, etc.)
+  - QA engineers
+  - DevOps engineers
+
+This document translates the Business Requirements Document (BRD v1.0) into
+precise, implementable specifications. Every feature described here maps to a
+business goal. No feature in this document exists without a BRD justification.
+
+1.2 DOCUMENT CONVENTIONS
+--------------------------
+- [REQUIRED]   = Must be built in Phase 1 (MVP Launch)
+- [PHASE-2]    = Required for Haryana expansion
+- [PHASE-3]    = Required for national expansion
+- [FUTURE-AI]  = AI-powered features in future roadmap
+- [OPTIONAL]   = Nice-to-have, build if time permits
+- FR-XXX       = Functional Requirement ID
+- NFR-XXX      = Non-Functional Requirement ID
+- API-XXX      = API Endpoint ID
+- DB-XXX       = Database Table/Model ID
+- UI-XXX       = UI Screen/Component ID
+
+1.3 ASSUMPTIONS
+---------------
+1. Platform launches in Sonipat, Haryana first.
+2. Business owner manages inventory directly (no multi-vendor product marketplace).
+3. Service providers are third-party freelancers onboarded by admin.
+4. Payment gateway: Razorpay (India-first, supports UPI, cards, wallets).
+5. Delivery is managed in-house or via local courier for Phase 1.
+6. Mobile app: React Native (single codebase, Android + iOS).
+7. Backend: Node.js + Express or NestJS (developer's choice, must be RESTful).
+8. Database: PostgreSQL (primary) + Redis (caching/sessions).
+9. File storage: AWS S3 or Cloudflare R2.
+10. All prices in Indian Rupees (INR).
+11. Language: Hindi + English bilingual support (UI labels bilingual).
+12. Guest checkout is NOT allowed — account required for all purchases.
+
+1.4 OUT OF SCOPE (Phase 1)
+---------------------------
+- Multi-vendor product marketplace (sellers listing their own products)
+- International shipping
+- Cryptocurrency payments
+- AR plant preview (future)
+- AI plant doctor / recommendations (future)
+- Loyalty points / rewards program
+- Affiliate marketing module
+- Live chat with gardeners
+
+================================================================================
+SECTION 02 — PRODUCT VISION & SCOPE
+================================================================================
+
+2.1 PRODUCT OVERVIEW
+---------------------
+GROWPLANTS is a location-based eCommerce and Service Marketplace platform for
+the gardening ecosystem in India. It combines:
+
+  PILLAR 1: PRODUCT STORE
+    → Online store for plants, planters, gardening supplies.
+    → Owner-managed inventory.
+    → Delivery within serviceable pincodes.
+
+  PILLAR 2: SERVICE MARKETPLACE
+    → Customers can book gardening services.
+    → Services fulfilled by verified service providers.
+    → Admin approves all service providers.
+    → Commission-based revenue model.
+
+  PILLAR 3: ADMIN CONTROL CENTER
+    → Full platform management by business owner/admin.
+    → Order, booking, inventory, provider, and customer management.
+
+2.2 PHASE SCOPE
+----------------
+PHASE 1 (MVP — 0-6 months):
+  - Customer Web App + Mobile App
+  - Product Catalog (Plants, Planters, Gardening Products)
+  - Cart + Checkout + Payment
+  - Order Management
+  - Service Booking (basic)
+  - Service Provider Panel (basic)
+  - Admin Panel (full)
+  - Inventory Management
+  - Review & Rating
+  - Notification System (Email + Push + SMS)
+  - Sonipat city only
+
+PHASE 2 (6-18 months):
+  - Multi-city support (Haryana)
+  - Advanced analytics dashboard
+  - Featured listings for service providers
+  - Vendor subscription model
+
+PHASE 3 (18-36 months):
+  - National expansion
+  - AI recommendation engine
+  - AI plant doctor
+  - AR plant preview
+  - Advanced B2B features
+
+2.3 PLATFORM TYPES
+-------------------
+1. Customer Web App       → React.js (responsive, works on mobile browsers too)
+2. Customer Mobile App    → React Native (Android + iOS)
+3. Admin Web Panel        → React.js (desktop-first, separate app)
+4. Service Provider App   → React Native (shared with customer app, role-based)
+5. Backend API            → Node.js / NestJS (REST API)
+6. Database               → PostgreSQL + Redis
+7. File Storage           → AWS S3 / Cloudflare R2
+
+================================================================================
+SECTION 03 — SYSTEM ARCHITECTURE OVERVIEW
+================================================================================
+
+3.1 HIGH-LEVEL ARCHITECTURE
+-----------------------------
+
+  [Customer Web/Mobile App]
+           |
+           | HTTPS REST API
+           ↓
+  [API Gateway / Load Balancer]
+           |
+           ↓
+  [Backend API Server (Node.js)]
+     |          |          |
+     ↓          ↓          ↓
+[PostgreSQL]  [Redis]   [AWS S3]
+(main DB)   (cache/    (images/
+             sessions)  files)
+     |
+     ↓
+[Razorpay API]  [Firebase (Push)]  [Twilio/MSG91 (SMS)]  [SendGrid (Email)]
+
+3.2 MODULE BREAKDOWN
+---------------------
+Backend modules (separate services or route groups):
+  - auth           → Authentication, sessions, OTP
+  - users          → Customer profiles, addresses
+  - products       → Catalog, categories, variants
+  - inventory      → Stock management
+  - cart           → Shopping cart (Redis-backed)
+  - orders         → Order lifecycle management
+  - services       → Service catalog
+  - bookings       → Booking lifecycle
+  - providers      → Service provider profiles
+  - payments       → Razorpay integration
+  - reviews        → Reviews and ratings
+  - notifications  → Email, SMS, push
+  - admin          → Admin-only endpoints
+  - search         → Search and filter
+  - locations      → City, pincode, area management
+  - uploads        → File/image upload to S3
+  - returns        → Return and refund management
+  - reports        → Analytics and reporting
+
+3.3 DATA FLOW: PRODUCT ORDER
+-----------------------------
+Customer → Browse Products → Add to Cart → Enter Address
+→ Select Delivery Slot (if applicable) → Review Order
+→ Payment (Razorpay) → Payment Webhook → Order Created
+→ Admin Notified → Admin Confirms → Delivery Assigned
+→ Customer Notified → Delivered → Order Completed
+→ Review Prompt Sent
+
+3.4 DATA FLOW: SERVICE BOOKING
+--------------------------------
+Customer → Browse Services → Select Service
+→ Enter Location (coordinates captured) → Select Date/Time
+→ Select Service Provider (or auto-assign) → Review & Confirm
+→ Payment (advance or COD) → Booking Created
+→ Provider Notified → Provider Confirms → Service Delivered
+→ Booking Completed → Review Prompt Sent
+
+================================================================================
+SECTION 04 — TECH STACK RECOMMENDATIONS
+================================================================================
+
+4.1 FRONTEND (Customer Web)
+-----------------------------
+Framework        : React.js 18+
+State Management : Redux Toolkit + RTK Query (for API calls)
+Styling          : Tailwind CSS + shadcn/ui component library
+Routing          : React Router v6
+Forms            : React Hook Form + Zod (validation)
+Maps             : Google Maps API (location picker, delivery area)
+Payments         : Razorpay Web SDK
+SEO              : React Helmet / Next.js (consider Next.js for SEO benefits)
+Image Handling   : React-image-crop (for uploads), Cloudinary/S3 URLs
+Build Tool       : Vite or Next.js
+PWA              : Yes (add to home screen, offline capability for basic browsing)
+
+RECOMMENDATION: Use Next.js 14+ (App Router) for better SEO, server-side
+rendering, and image optimization — critical for a product eCommerce site.
+
+4.2 MOBILE APP
+---------------
+Framework     : React Native (Expo managed workflow)
+Navigation    : React Navigation v6
+State         : Redux Toolkit
+Payments      : Razorpay React Native SDK
+Maps          : react-native-maps + Google Maps
+Push Notifs   : Firebase Cloud Messaging (FCM)
+Storage       : AsyncStorage (local), Redux Persist
+Camera        : Expo Camera (for review photos, plant photos)
+Platform      : Android 8.0+ and iOS 13+
+
+4.3 BACKEND API
+----------------
+Runtime       : Node.js 20 LTS
+Framework     : NestJS (TypeScript, modular, enterprise-grade)
+              OR Express.js + TypeScript (simpler, faster to build)
+ORM           : Prisma (PostgreSQL)
+Auth          : JWT (access token 15min) + Refresh Token (7 days) + HTTP-only cookies
+Validation    : Joi or class-validator (NestJS)
+File Upload   : Multer → AWS S3 SDK
+Caching       : Redis (ioredis)
+Queues        : Bull (Redis-based) for background jobs (emails, notifications)
+Logging       : Winston + Morgan
+API Docs      : Swagger / OpenAPI 3.0
+
+4.4 DATABASE
+-------------
+Primary DB    : PostgreSQL 15+
+Cache / Queue : Redis 7+
+ORM           : Prisma
+Migrations    : Prisma Migrate
+Search        : PostgreSQL Full-Text Search (Phase 1), Elasticsearch (Phase 3)
+
+4.5 INFRASTRUCTURE
+-------------------
+Cloud         : AWS / DigitalOcean / Railway (Phase 1 — cost-effective)
+Web Server    : Nginx (reverse proxy)
+SSL           : Let's Encrypt / AWS Certificate Manager
+CDN           : Cloudflare
+File Storage  : AWS S3 / Cloudflare R2
+Domain        : growplants.in (recommended)
+Email         : SendGrid or AWS SES
+SMS           : MSG91 or Textlocal (India-specific, cheap)
+Push Notifs   : Firebase Cloud Messaging (free tier sufficient for Phase 1)
+Monitoring    : PM2 (process manager) + Sentry (error tracking)
+
+4.6 DEVELOPMENT TOOLS
+----------------------
+Version Control : Git + GitHub / GitLab
+CI/CD           : GitHub Actions
+Containerization: Docker + Docker Compose (local dev)
+API Testing     : Postman / Thunder Client
+Code Quality    : ESLint + Prettier + Husky (pre-commit hooks)
+
+================================================================================
+SECTION 05 — DATABASE SCHEMA (FULL)
+================================================================================
+
+NOTATION:
+  PK  = Primary Key
+  FK  = Foreign Key
+  UQ  = Unique
+  IDX = Index
+  NN  = Not Null
+  DEF = Default Value
+
+All tables use UUID as primary key (uuid_generate_v4()) unless noted otherwise.
+All tables include: created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ
+
+------------------------------------------------------------------------------
+DB-001: TABLE — users
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK, NN            
+full_name           VARCHAR(100)      NN
+email               VARCHAR(150)      UQ, NN
+phone               VARCHAR(15)       UQ, NN            Indian format +91XXXXXXXXXX
+phone_verified      BOOLEAN           DEF false
+email_verified      BOOLEAN           DEF false
+password_hash       VARCHAR(255)      NN
+role                ENUM              NN                customer | admin | provider
+status              ENUM              DEF active        active | suspended | deleted
+profile_image_url   TEXT              NULL
+date_of_birth       DATE              NULL
+gender              ENUM              NULL              male | female | other | prefer_not
+preferred_language  ENUM              DEF en            en | hi
+last_login_at       TIMESTAMPTZ       NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+INDEXES: email, phone, role, status
+
+------------------------------------------------------------------------------
+DB-002: TABLE — user_addresses
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id, NN
+label               VARCHAR(50)       NULL              e.g. "Home", "Office"
+full_name           VARCHAR(100)      NN                recipient name
+phone               VARCHAR(15)       NN                recipient phone
+address_line_1      VARCHAR(255)      NN
+address_line_2      VARCHAR(255)      NULL
+landmark            VARCHAR(100)      NULL
+city                VARCHAR(100)      NN                DEF "Sonipat"
+state               VARCHAR(100)      NN                DEF "Haryana"
+pincode             VARCHAR(10)       NN
+latitude            DECIMAL(10,8)     NULL
+longitude           DECIMAL(11,8)     NULL
+is_default          BOOLEAN           DEF false
+created_at          TIMESTAMPTZ       DEF NOW()
+
+INDEXES: user_id, pincode
+
+------------------------------------------------------------------------------
+DB-003: TABLE — otp_verifications
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+identifier          VARCHAR(150)      NN, IDX           phone or email
+identifier_type     ENUM              NN                phone | email
+otp_code            VARCHAR(10)       NN
+purpose             ENUM              NN                registration | login | password_reset | phone_change
+is_used             BOOLEAN           DEF false
+attempts            INT               DEF 0
+expires_at          TIMESTAMPTZ       NN
+created_at          TIMESTAMPTZ       DEF NOW()
+
+NOTE: OTP expires in 10 minutes. Max 3 failed attempts before lockout.
+
+------------------------------------------------------------------------------
+DB-004: TABLE — refresh_tokens
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id
+token_hash          VARCHAR(255)      UQ, NN
+device_info         JSONB             NULL              {device, OS, app_version, ip}
+expires_at          TIMESTAMPTZ       NN
+is_revoked          BOOLEAN           DEF false
+created_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-005: TABLE — product_categories
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+name                VARCHAR(100)      NN
+slug                VARCHAR(120)      UQ, NN
+name_hi             VARCHAR(100)      NULL              Hindi name
+description         TEXT              NULL
+description_hi      TEXT              NULL
+parent_id           UUID              FK → product_categories.id (self-ref)
+icon_url            TEXT              NULL
+banner_url          TEXT              NULL
+display_order       INT               DEF 0
+is_active           BOOLEAN           DEF true
+seo_title           VARCHAR(160)      NULL
+seo_description     VARCHAR(320)      NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+SEED DATA:
+  Level 1 (parent_id = null):
+    - Plants
+    - Planters
+    - Gardening Products
+  
+  Level 2 (Plants):
+    - Indoor Plants
+    - Outdoor Plants
+    - Flowering Plants
+    - Succulents
+    - Bonsai
+    - Medicinal Plants
+    - Air Purifying Plants
+    - Seasonal Plants
+  
+  Level 2 (Planters):
+    - Ceramic Planters
+    - Plastic Planters
+    - Metal Planters
+    - Hanging Planters
+    - Decorative Planters
+    - Terracotta Planters
+    - Fiber Planters
+  
+  Level 2 (Gardening Products):
+    - Pots & Containers
+    - Seeds & Bulbs
+    - Fertilizers & Manure
+    - Soil & Cocopeat
+    - Tools & Equipment
+    - Accessories & Decor
+    - Pest Control
+    - Plant Food & Growth
+
+------------------------------------------------------------------------------
+DB-006: TABLE — products
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+name                VARCHAR(200)      NN
+name_hi             VARCHAR(200)      NULL
+slug                VARCHAR(220)      UQ, NN
+short_description   VARCHAR(500)      NULL
+description         TEXT              NULL              Rich text / HTML
+description_hi      TEXT              NULL
+category_id         UUID              FK → product_categories.id, NN
+sku                 VARCHAR(100)      UQ, NN            Stock Keeping Unit
+barcode             VARCHAR(100)      NULL
+base_price          DECIMAL(10,2)     NN
+selling_price       DECIMAL(10,2)     NN
+discount_percent    DECIMAL(5,2)      DEF 0
+cost_price          DECIMAL(10,2)     NULL              For margin calculation (admin only)
+tax_rate            DECIMAL(5,2)      DEF 18            GST %
+tax_included        BOOLEAN           DEF true          Is tax included in selling_price?
+weight_grams        INT               NULL              For shipping calculation
+dimensions_cm       JSONB             NULL              {length, width, height}
+care_instructions   TEXT              NULL              Plant care info
+sunlight_req        ENUM              NULL              full_sun | partial_shade | shade | indirect
+water_freq          ENUM              NULL              daily | alternate_day | weekly | monthly
+difficulty_level    ENUM              NULL              easy | moderate | expert
+is_pet_safe         BOOLEAN           NULL
+is_air_purifying    BOOLEAN           NULL
+suitable_for        TEXT[]            NULL              ['indoor','outdoor','balcony','office']
+seasonal            BOOLEAN           DEF false
+season_available    TEXT[]            NULL              ['spring','summer','monsoon','winter']
+primary_image_url   TEXT              NN
+is_active           BOOLEAN           DEF true
+is_featured         BOOLEAN           DEF false
+is_bestseller       BOOLEAN           DEF false
+is_new_arrival      BOOLEAN           DEF false
+tags                TEXT[]            NULL              For search
+seo_title           VARCHAR(160)      NULL
+seo_description     VARCHAR(320)      NULL
+meta_keywords       TEXT[]            NULL
+total_sold          INT               DEF 0             Denormalized counter
+average_rating      DECIMAL(3,2)      DEF 0
+review_count        INT               DEF 0
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+INDEXES: slug, category_id, is_active, is_featured, tags (GIN), suitable_for (GIN)
+FULL TEXT SEARCH INDEX on: name, description, tags
+
+------------------------------------------------------------------------------
+DB-007: TABLE — product_images
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+product_id          UUID              FK → products.id, NN
+image_url           TEXT              NN
+alt_text            VARCHAR(200)      NULL
+display_order       INT               DEF 0
+is_primary          BOOLEAN           DEF false
+created_at          TIMESTAMPTZ       DEF NOW()
+
+MAX 10 IMAGES PER PRODUCT. First image = primary by default.
+
+------------------------------------------------------------------------------
+DB-008: TABLE — product_variants
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+product_id          UUID              FK → products.id, NN
+variant_name        VARCHAR(100)      NN                e.g. "Large - Ceramic Pot"
+sku                 VARCHAR(100)      UQ, NN
+attributes          JSONB             NN                {size:"Large", pot_type:"Ceramic", color:"White"}
+price_adjustment    DECIMAL(10,2)     DEF 0             Added to base selling_price
+is_active           BOOLEAN           DEF true
+sort_order          INT               DEF 0
+created_at          TIMESTAMPTZ       DEF NOW()
+
+NOTE: If product has no variants, all inventory is tracked on products table.
+If variants exist, inventory is tracked per variant.
+
+------------------------------------------------------------------------------
+DB-009: TABLE — inventory
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+product_id          UUID              FK → products.id, NN, IDX
+variant_id          UUID              FK → product_variants.id, NULL, IDX
+quantity_available  INT               NN, DEF 0
+quantity_reserved   INT               NN, DEF 0         In cart / pending order
+quantity_sold       INT               NN, DEF 0
+low_stock_threshold INT               DEF 5
+reorder_point       INT               DEF 10
+reorder_quantity    INT               DEF 50
+last_restocked_at   TIMESTAMPTZ       NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+RULE: quantity_available must never go below 0 (use DB-level CHECK constraint).
+RULE: quantity_reserved is decremented when order is confirmed/cancelled.
+
+------------------------------------------------------------------------------
+DB-010: TABLE — inventory_transactions
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+product_id          UUID              FK → products.id, NN
+variant_id          UUID              FK → product_variants.id, NULL
+transaction_type    ENUM              NN                restock | sale | return | adjustment | damage
+quantity_change     INT               NN                Positive = added, Negative = reduced
+quantity_before     INT               NN
+quantity_after      INT               NN
+reference_type      ENUM              NULL              order | return | manual
+reference_id        UUID              NULL              order_id or return_id
+notes               TEXT              NULL
+performed_by        UUID              FK → users.id     Admin who made the change
+created_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-011: TABLE — carts
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id, UQ (one cart per user)
+session_id          VARCHAR(100)      NULL              For anonymous tracking before login
+coupon_code         VARCHAR(50)       NULL
+coupon_discount     DECIMAL(10,2)     DEF 0
+notes               TEXT              NULL
+expires_at          TIMESTAMPTZ       NULL              Auto-clear abandoned carts after 7 days
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+NOTE: Cart is Redis-backed for performance. PostgreSQL is source of truth.
+Redis key: "cart:{user_id}" → JSON of cart items.
+
+------------------------------------------------------------------------------
+DB-012: TABLE — cart_items
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+cart_id             UUID              FK → carts.id, NN
+product_id          UUID              FK → products.id, NN
+variant_id          UUID              FK → product_variants.id, NULL
+quantity            INT               NN, CHECK > 0
+unit_price          DECIMAL(10,2)     NN                Snapshot at time of add
+notes               TEXT              NULL              Special instructions
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+UQ CONSTRAINT: (cart_id, product_id, variant_id) — prevent duplicate line items.
+
+------------------------------------------------------------------------------
+DB-013: TABLE — orders
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+order_number        VARCHAR(20)       UQ, NN            e.g. "GP-2024-001234"
+user_id             UUID              FK → users.id, NN
+status              ENUM              NN                See Order Status Enum below
+payment_status      ENUM              NN                pending | paid | failed | refunded | partial_refund
+delivery_address    JSONB             NN                Snapshot of address at order time
+subtotal            DECIMAL(10,2)     NN                Before discounts + shipping
+discount_amount     DECIMAL(10,2)     DEF 0
+coupon_code         VARCHAR(50)       NULL
+coupon_discount     DECIMAL(10,2)     DEF 0
+shipping_charge     DECIMAL(10,2)     DEF 0
+tax_amount          DECIMAL(10,2)     DEF 0
+total_amount        DECIMAL(10,2)     NN
+payment_method      ENUM              NULL              razorpay | cod | wallet
+razorpay_order_id   VARCHAR(100)      NULL
+razorpay_payment_id VARCHAR(100)      NULL
+delivery_slot       JSONB             NULL              {date, time_start, time_end}
+estimated_delivery  DATE              NULL
+actual_delivery     TIMESTAMPTZ       NULL
+delivery_person     JSONB             NULL              {name, phone, tracking_url}
+internal_notes      TEXT              NULL              Admin notes
+customer_notes      TEXT              NULL
+cancellation_reason TEXT              NULL
+cancelled_by        UUID              FK → users.id, NULL
+cancelled_at        TIMESTAMPTZ       NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+ORDER NUMBER FORMAT: "GP-YYYY-XXXXXX" where XXXXXX is zero-padded sequential.
+
+ORDER STATUS ENUM:
+  pending           → Order placed, payment pending
+  confirmed         → Payment received, order confirmed by admin
+  processing        → Being prepared/packed
+  out_for_delivery  → With delivery person
+  delivered         → Successfully delivered
+  cancelled         → Cancelled (before dispatch)
+  return_requested  → Customer raised return
+  return_approved   → Admin approved return
+  return_completed  → Return picked up and processed
+  refunded          → Refund issued
+
+INDEXES: user_id, status, payment_status, order_number, created_at
+
+------------------------------------------------------------------------------
+DB-014: TABLE — order_items
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+order_id            UUID              FK → orders.id, NN
+product_id          UUID              FK → products.id, NN
+variant_id          UUID              FK → product_variants.id, NULL
+product_snapshot    JSONB             NN                Full product data at order time
+quantity            INT               NN
+unit_price          DECIMAL(10,2)     NN
+total_price         DECIMAL(10,2)     NN
+tax_amount          DECIMAL(10,2)     DEF 0
+is_reviewed         BOOLEAN           DEF false
+return_status       ENUM              NULL              none | requested | approved | rejected | completed
+return_reason       TEXT              NULL
+return_images       TEXT[]            NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-015: TABLE — order_status_history
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+order_id            UUID              FK → orders.id, NN
+status              ENUM              NN                (same enum as orders.status)
+notes               TEXT              NULL
+changed_by          UUID              FK → users.id, NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-016: TABLE — service_categories
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+name                VARCHAR(100)      NN
+name_hi             VARCHAR(100)      NULL
+slug                VARCHAR(120)      UQ
+description         TEXT              NULL
+icon_url            TEXT              NULL
+display_order       INT               DEF 0
+is_active           BOOLEAN           DEF true
+created_at          TIMESTAMPTZ       DEF NOW()
+
+SEED DATA:
+  - Gardener Hiring
+  - Plant Installation
+  - Balcony Garden Setup
+  - Terrace Garden Setup
+  - Garden Maintenance
+  - Lawn Maintenance
+  - Landscape Design
+  - Plant Health Inspection
+
+------------------------------------------------------------------------------
+DB-017: TABLE — services
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+name                VARCHAR(200)      NN
+name_hi             VARCHAR(200)      NULL
+slug                VARCHAR(220)      UQ
+description         TEXT              NULL
+description_hi      TEXT              NULL
+category_id         UUID              FK → service_categories.id, NN
+service_type        ENUM              NN                one_time | recurring | subscription
+pricing_type        ENUM              NN                fixed | hourly | quote_based
+base_price          DECIMAL(10,2)     NULL              NULL if quote_based
+price_unit          VARCHAR(50)       NULL              "per visit", "per hour", "per sq.ft"
+min_duration_hrs    DECIMAL(4,2)      NULL
+max_duration_hrs    DECIMAL(4,2)      NULL
+advance_required    BOOLEAN           DEF false
+advance_percent     INT               NULL              % of total as advance
+cancellation_policy TEXT              NULL
+requirements        TEXT[]            NULL              What customer must provide
+includes            TEXT[]            NULL              What service includes
+excludes            TEXT[]            NULL              What service excludes
+primary_image_url   TEXT              NULL
+gallery_images      TEXT[]            NULL
+is_active           BOOLEAN           DEF true
+is_featured         BOOLEAN           DEF false
+available_cities    TEXT[]            NN                ['Sonipat']
+tags                TEXT[]            NULL
+average_rating      DECIMAL(3,2)      DEF 0
+review_count        INT               DEF 0
+total_bookings      INT               DEF 0
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-018: TABLE — service_providers
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id, UQ, NN
+display_name        VARCHAR(100)      NN                Business/personal name
+bio                 TEXT              NULL
+profile_image_url   TEXT              NULL
+experience_years    INT               NULL
+specializations     TEXT[]            NULL
+id_proof_type       ENUM              NULL              aadhar | pan | passport | driving_license
+id_proof_url        TEXT              NULL              S3 URL
+id_proof_number     VARCHAR(50)       NULL
+address             TEXT              NULL
+city                VARCHAR(100)      NN
+serviceable_areas   TEXT[]            NULL              Pincodes or area names
+service_radius_km   INT               DEF 10
+verification_status ENUM              DEF pending       pending | approved | rejected | suspended
+verification_notes  TEXT              NULL
+verified_by         UUID              FK → users.id, NULL (admin)
+verified_at         TIMESTAMPTZ       NULL
+bank_account_name   VARCHAR(100)      NULL
+bank_account_number VARCHAR(50)       NULL              Encrypted
+bank_ifsc           VARCHAR(20)       NULL
+upi_id              VARCHAR(100)      NULL
+commission_rate     DECIMAL(5,2)      DEF 20            Platform commission %
+is_available        BOOLEAN           DEF true
+available_hours     JSONB             NULL              {mon:{start:"09:00",end:"18:00"}, ...}
+average_rating      DECIMAL(3,2)      DEF 0
+review_count        INT               DEF 0
+total_bookings      INT               DEF 0
+joined_at           TIMESTAMPTZ       DEF NOW()
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+INDEXES: user_id, verification_status, city
+
+------------------------------------------------------------------------------
+DB-019: TABLE — provider_services (many-to-many)
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+provider_id         UUID              FK → service_providers.id, NN
+service_id          UUID              FK → services.id, NN
+custom_price        DECIMAL(10,2)     NULL              If provider charges differently
+is_active           BOOLEAN           DEF true
+created_at          TIMESTAMPTZ       DEF NOW()
+
+UQ CONSTRAINT: (provider_id, service_id)
+
+------------------------------------------------------------------------------
+DB-020: TABLE — bookings
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+booking_number      VARCHAR(20)       UQ, NN            e.g. "GB-2024-001234"
+user_id             UUID              FK → users.id, NN
+service_id          UUID              FK → services.id, NN
+provider_id         UUID              FK → service_providers.id, NULL (auto-assign or manual)
+status              ENUM              NN                See Booking Status Enum
+payment_status      ENUM              NN                pending | advance_paid | fully_paid | refunded
+service_address     JSONB             NN                Where service will be delivered
+latitude            DECIMAL(10,8)     NULL
+longitude           DECIMAL(11,8)     NULL
+scheduled_date      DATE              NN
+scheduled_time_start TIME             NN
+scheduled_time_end  TIME              NULL
+actual_start        TIMESTAMPTZ       NULL
+actual_end          TIMESTAMPTZ       NULL
+service_area_sqft   DECIMAL(10,2)     NULL              For area-based pricing
+quoted_amount       DECIMAL(10,2)     NULL
+advance_amount      DECIMAL(10,2)     DEF 0
+total_amount        DECIMAL(10,2)     NULL
+payment_method      ENUM              NULL
+razorpay_order_id   VARCHAR(100)      NULL
+razorpay_payment_id VARCHAR(100)      NULL
+customer_notes      TEXT              NULL
+provider_notes      TEXT              NULL
+completion_photos   TEXT[]            NULL              Provider uploads after completion
+cancellation_reason TEXT              NULL
+cancelled_by        UUID              FK → users.id, NULL
+cancelled_at        TIMESTAMPTZ       NULL
+is_reviewed         BOOLEAN           DEF false
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+BOOKING STATUS ENUM:
+  pending           → Booking created, awaiting provider confirmation
+  confirmed         → Provider confirmed
+  provider_assigned → Admin assigned provider
+  in_progress       → Service started
+  completed         → Service completed
+  cancelled         → Cancelled before start
+  no_show_provider  → Provider didn't show up
+  no_show_customer  → Customer not available
+  disputed          → Under dispute
+
+------------------------------------------------------------------------------
+DB-021: TABLE — booking_status_history
+------------------------------------------------------------------------------
+(Same structure as order_status_history but with booking_id FK)
+
+------------------------------------------------------------------------------
+DB-022: TABLE — reviews
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+reviewer_id         UUID              FK → users.id, NN
+reviewable_type     ENUM              NN                product | service | provider
+reviewable_id       UUID              NN                product_id or service_id or provider_id
+reference_type      ENUM              NN                order_item | booking
+reference_id        UUID              NN                order_item_id or booking_id
+rating              INT               NN                CHECK between 1 and 5
+title               VARCHAR(100)      NULL
+body                TEXT              NULL
+images              TEXT[]            NULL              Max 5 images
+is_verified_purchase BOOLEAN          DEF true
+is_approved         BOOLEAN           DEF true          Admin moderation flag
+admin_response      TEXT              NULL
+is_featured         BOOLEAN           DEF false
+helpful_count       INT               DEF 0
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+UQ CONSTRAINT: (reviewer_id, reference_type, reference_id) — one review per purchase.
+
+INDEXES: reviewable_type, reviewable_id, reviewer_id, rating
+
+------------------------------------------------------------------------------
+DB-023: TABLE — notifications
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id, NN
+type                ENUM              NN                order_update | booking_update | payment | 
+                                                        promotional | system | review_request
+title               VARCHAR(200)      NN
+body                TEXT              NN
+channel             ENUM              NN                email | sms | push | in_app
+reference_type      ENUM              NULL              order | booking | product | general
+reference_id        UUID              NULL
+is_read             BOOLEAN           DEF false
+is_sent             BOOLEAN           DEF false
+sent_at             TIMESTAMPTZ       NULL
+read_at             TIMESTAMPTZ       NULL
+metadata            JSONB             NULL              Extra data for deep linking
+created_at          TIMESTAMPTZ       DEF NOW()
+
+INDEXES: user_id, is_read, created_at
+
+------------------------------------------------------------------------------
+DB-024: TABLE — notification_preferences
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id, UQ
+email_order_updates BOOLEAN           DEF true
+email_promotions    BOOLEAN           DEF true
+sms_order_updates   BOOLEAN           DEF true
+sms_promotions      BOOLEAN           DEF false
+push_order_updates  BOOLEAN           DEF true
+push_promotions     BOOLEAN           DEF true
+push_booking_updates BOOLEAN          DEF true
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-025: TABLE — coupons
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+code                VARCHAR(50)       UQ, NN
+description         VARCHAR(200)      NULL
+discount_type       ENUM              NN                percentage | flat
+discount_value      DECIMAL(10,2)     NN
+min_order_amount    DECIMAL(10,2)     DEF 0
+max_discount_amount DECIMAL(10,2)     NULL              Cap for percentage discounts
+applicable_to       ENUM              DEF all           all | products | services
+usage_limit_total   INT               NULL              NULL = unlimited
+usage_limit_per_user INT              DEF 1
+times_used          INT               DEF 0
+valid_from          TIMESTAMPTZ       NN
+valid_until         TIMESTAMPTZ       NN
+is_active           BOOLEAN           DEF true
+created_by          UUID              FK → users.id (admin)
+created_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-026: TABLE — coupon_usages
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+coupon_id           UUID              FK → coupons.id, NN
+user_id             UUID              FK → users.id, NN
+order_id            UUID              FK → orders.id, NULL
+booking_id          UUID              FK → bookings.id, NULL
+discount_applied    DECIMAL(10,2)     NN
+used_at             TIMESTAMPTZ       DEF NOW()
+
+UQ CONSTRAINT: (coupon_id, user_id, order_id)
+
+------------------------------------------------------------------------------
+DB-027: TABLE — wishlists
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id, NN
+product_id          UUID              FK → products.id, NN
+created_at          TIMESTAMPTZ       DEF NOW()
+
+UQ CONSTRAINT: (user_id, product_id)
+
+------------------------------------------------------------------------------
+DB-028: TABLE — stock_notifications (Notify Me)
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id, NN
+product_id          UUID              FK → products.id, NN
+variant_id          UUID              FK → product_variants.id, NULL
+is_notified         BOOLEAN           DEF false
+notified_at         TIMESTAMPTZ       NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+
+UQ CONSTRAINT: (user_id, product_id, variant_id)
+
+------------------------------------------------------------------------------
+DB-029: TABLE — cities
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+name                VARCHAR(100)      NN
+name_hi             VARCHAR(100)      NULL
+state               VARCHAR(100)      NN
+is_active           BOOLEAN           DEF true
+is_serviceable      BOOLEAN           DEF true
+launch_date         DATE              NULL
+center_lat          DECIMAL(10,8)     NULL
+center_lng          DECIMAL(11,8)     NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+
+SEED DATA: {name:"Sonipat", state:"Haryana", is_active:true, is_serviceable:true}
+
+------------------------------------------------------------------------------
+DB-030: TABLE — serviceable_pincodes
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+pincode             VARCHAR(10)       UQ, NN
+city_id             UUID              FK → cities.id, NN
+area_name           VARCHAR(100)      NULL
+delivery_charge     DECIMAL(10,2)     DEF 0
+min_delivery_days   INT               DEF 1
+max_delivery_days   INT               DEF 3
+cod_available       BOOLEAN           DEF true
+is_active           BOOLEAN           DEF true
+created_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-031: TABLE — payments
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+user_id             UUID              FK → users.id, NN
+reference_type      ENUM              NN                order | booking
+reference_id        UUID              NN
+amount              DECIMAL(10,2)     NN
+currency            VARCHAR(5)        DEF INR
+payment_method      ENUM              NN                razorpay_upi | razorpay_card | 
+                                                        razorpay_netbanking | razorpay_wallet | cod
+status              ENUM              NN                created | authorized | captured | failed | refunded
+razorpay_order_id   VARCHAR(100)      NULL
+razorpay_payment_id VARCHAR(100)      NULL
+razorpay_signature  VARCHAR(300)      NULL
+gateway_response    JSONB             NULL              Full response from gateway
+refund_id           VARCHAR(100)      NULL
+refund_amount       DECIMAL(10,2)     NULL
+refund_reason       TEXT              NULL
+refunded_at         TIMESTAMPTZ       NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-032: TABLE — returns
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+return_number       VARCHAR(20)       UQ, NN            e.g. "GR-2024-001234"
+order_id            UUID              FK → orders.id, NN
+order_item_id       UUID              FK → order_items.id, NN
+user_id             UUID              FK → users.id, NN
+reason              ENUM              NN                damaged | wrong_item | quality_issue | other
+description         TEXT              NULL
+evidence_images     TEXT[]            NULL              Required for plants (within 24h)
+status              ENUM              DEF requested     requested | under_review | approved | rejected | completed
+resolution          ENUM              NULL              replacement | refund
+refund_amount       DECIMAL(10,2)     NULL
+admin_notes         TEXT              NULL
+reviewed_by         UUID              FK → users.id, NULL (admin)
+reviewed_at         TIMESTAMPTZ       NULL
+created_at          TIMESTAMPTZ       DEF NOW()
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-033: TABLE — featured_providers (paid listings — Phase 2)
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+provider_id         UUID              FK → service_providers.id, NN
+plan_type           ENUM              NN                basic | premium | platinum
+amount_paid         DECIMAL(10,2)     NN
+starts_at           TIMESTAMPTZ       NN
+ends_at             TIMESTAMPTZ       NN
+is_active           BOOLEAN           DEF true
+created_at          TIMESTAMPTZ       DEF NOW()
+
+------------------------------------------------------------------------------
+DB-034: TABLE — admin_settings
+------------------------------------------------------------------------------
+Column              Type              Constraints       Notes
+-------------------------------------------------------------------------------
+id                  UUID              PK
+key                 VARCHAR(100)      UQ, NN
+value               JSONB             NN
+description         TEXT              NULL
+updated_by          UUID              FK → users.id (admin)
+updated_at          TIMESTAMPTZ       DEF NOW()
+
+KEY-VALUE PAIRS TO SEED:
+  min_order_amount          → 0
+  free_shipping_threshold   → 499
+  default_shipping_charge   → 49
+  cod_available             → true
+  cod_min_amount            → 0
+  cod_max_amount            → 5000
+  razorpay_enabled          → true
+  maintenance_mode          → false
+  contact_phone             → "+91XXXXXXXXXX"
+  contact_email             → "hello@growplants.in"
+  business_hours            → {"start":"09:00","end":"18:00","days":["Mon","Tue","Wed","Thu","Fri","Sat"]}
+  max_cart_items            → 20
+  max_cart_quantity_per_item → 10
+  review_photo_max_count    → 5
+  return_window_plants_hrs  → 24
+  return_window_planters_days → 7
+
+================================================================================
+SECTION 06 — USER ROLES & PERMISSIONS MATRIX
+================================================================================
+
+6.1 ROLES
+----------
+Role 1: CUSTOMER
+  - Registered users who buy products or book services.
+  - Default role upon registration.
+
+Role 2: ADMIN
+  - Business owner or appointed admin.
+  - Full platform control.
+  - Maximum 3 admin accounts (Phase 1).
+
+Role 3: SERVICE_PROVIDER
+  - Verified gardeners/service professionals.
+  - Access their own bookings only.
+  - Cannot see other providers' data.
+
+6.2 PERMISSIONS MATRIX
+------------------------
+Feature                         CUSTOMER    ADMIN       PROVIDER
+--------------------------------------------------------------------
+Register/Login                  YES         YES         YES
+View Product Catalog            YES         YES         YES
+Add to Cart                     YES         NO          NO
+Place Order                     YES         NO          NO
+View Own Orders                 YES         YES (all)   NO
+Cancel Own Order                YES         YES         NO
+Request Return                  YES         YES         NO
+Book Service                    YES         NO          NO
+View Own Bookings               YES         YES (all)   YES (own)
+Write Review                    YES*        NO          NO
+View Reviews                    YES         YES         YES
+View Own Profile                YES         YES         YES
+Edit Own Profile                YES         YES         YES
+Add/Edit Products               NO          YES         NO
+Manage Inventory                NO          YES         NO
+Manage Categories               NO          YES         NO
+Manage Services                 NO          YES         NO
+Approve Providers               NO          YES         NO
+Manage Coupons                  NO          YES         NO
+View Analytics                  NO          YES         NO
+Manage Cities/Pincodes          NO          YES         NO
+Manage Admin Settings           NO          YES         NO
+View Provider Dashboard         NO          YES         YES**
+Update Booking Status           NO          YES         YES***
+Upload Completion Photos        NO          YES         YES (own bookings)
+View Commission Reports         NO          YES         YES (own)
+
+* Only for verified purchases (linked to order_item or booking)
+** Providers see only their own dashboard
+*** Providers can only mark: confirmed → in_progress → completed
+
+================================================================================
+SECTION 07 — AUTHENTICATION & ACCOUNT MANAGEMENT
+================================================================================
+
+7.1 REGISTRATION FLOW
+----------------------
+FR-AUTH-001 [REQUIRED]: Customer registers via phone number.
+FR-AUTH-002 [REQUIRED]: OTP sent via SMS to phone number.
+FR-AUTH-003 [REQUIRED]: OTP valid for 10 minutes, 6 digits.
+FR-AUTH-004 [REQUIRED]: After phone verification, user provides:
+  - Full Name (required)
+  - Email Address (required, must be unique)
+  - Password (min 8 chars, 1 uppercase, 1 number)
+  - Date of Birth (optional)
+  - Gender (optional)
+FR-AUTH-005 [REQUIRED]: Email verification link sent after registration.
+FR-AUTH-006 [REQUIRED]: Account created even if email not verified.
+FR-AUTH-007 [OPTIONAL]: Social login via Google (OAuth 2.0).
+
+7.2 LOGIN FLOW
+---------------
+FR-AUTH-010 [REQUIRED]: Login with phone + password.
+FR-AUTH-011 [REQUIRED]: Login with email + password.
+FR-AUTH-012 [REQUIRED]: Login with phone + OTP (passwordless option).
+FR-AUTH-013 [REQUIRED]: JWT access token issued on login (expires 15 min).
+FR-AUTH-014 [REQUIRED]: Refresh token stored in HTTP-only cookie (expires 7 days).
+FR-AUTH-015 [REQUIRED]: Refresh token rotated on every use (sliding window).
+FR-AUTH-016 [REQUIRED]: Multiple device sessions supported.
+FR-AUTH-017 [REQUIRED]: Max failed login attempts: 5 per hour per IP (after that, 30 min lockout).
+
+7.3 PASSWORD MANAGEMENT
+------------------------
+FR-AUTH-020 [REQUIRED]: Forgot password via phone (OTP) or email (link).
+FR-AUTH-021 [REQUIRED]: Password reset link expires in 30 minutes.
+FR-AUTH-022 [REQUIRED]: Password hashed with bcrypt (salt rounds: 12).
+FR-AUTH-023 [REQUIRED]: Change password requires current password.
+FR-AUTH-024 [REQUIRED]: After password change, all other sessions invalidated.
+
+7.4 PROFILE MANAGEMENT
+-----------------------
+FR-AUTH-030 [REQUIRED]: User can update: name, email, profile photo.
+FR-AUTH-031 [REQUIRED]: Phone number change requires OTP on new number.
+FR-AUTH-032 [REQUIRED]: Email change requires verification of new email.
+FR-AUTH-033 [REQUIRED]: User can add up to 5 saved addresses.
+FR-AUTH-034 [REQUIRED]: User can set one default address.
+FR-AUTH-035 [REQUIRED]: User can delete account (soft delete, data retained 30 days).
+
+7.5 SERVICE PROVIDER REGISTRATION
+-----------------------------------
+FR-AUTH-040 [REQUIRED]: Provider registers via separate onboarding flow.
+FR-AUTH-041 [REQUIRED]: Provider submits: name, phone, city, experience, 
+                         specializations, ID proof (upload).
+FR-AUTH-042 [REQUIRED]: Admin reviews and approves/rejects provider.
+FR-AUTH-043 [REQUIRED]: Provider notified via SMS/email about approval status.
+FR-AUTH-044 [REQUIRED]: Provider sets availability hours after approval.
+FR-AUTH-045 [REQUIRED]: Provider adds bank account / UPI for payment settlement.
+
+================================================================================
+SECTION 08 — CUSTOMER-FACING FRONTEND
+================================================================================
+
+8.1 SCREENS LIST
+-----------------
+UI-001  Splash Screen (Mobile only)
+UI-002  Onboarding (Mobile only — 3 slides: Plants, Services, Trusted)
+UI-003  Home Screen / Landing Page
+UI-004  Registration Screen
+UI-005  Login Screen
+UI-006  OTP Verification Screen
+UI-007  Forgot Password Screen
+UI-008  Product Listing Page (PLP)
+UI-009  Product Detail Page (PDP)
+UI-010  Service Listing Page
+UI-011  Service Detail Page
+UI-012  Cart Screen
+UI-013  Checkout Screen (Address + Slot + Payment)
+UI-014  Order Confirmation Screen
+UI-015  Order History Screen
+UI-016  Order Detail Screen
+UI-017  Booking Screen (Service Booking Form)
+UI-018  Booking Confirmation Screen
+UI-019  Booking History Screen
+UI-020  Booking Detail Screen
+UI-021  Profile Screen
+UI-022  Edit Profile Screen
+UI-023  Manage Addresses Screen
+UI-024  Add/Edit Address Screen
+UI-025  Wishlist Screen
+UI-026  My Reviews Screen
+UI-027  Write Review Screen
+UI-028  Return Request Screen
+UI-029  Notification Preferences Screen
+UI-030  Search Results Screen
+UI-031  Category Browse Screen
+UI-032  About Us Page
+UI-033  Contact Us Page
+UI-034  FAQ Page
+UI-035  Privacy Policy Page
+UI-036  Terms & Conditions Page
+UI-037  Refund Policy Page
+UI-038  404 / Error Page
+
+8.2 HOME SCREEN REQUIREMENTS
+-----------------------------
+FR-HOME-001 [REQUIRED]: Hero banner / carousel (admin-managed, max 5 banners).
+FR-HOME-002 [REQUIRED]: Quick category shortcuts (Plants, Planters, Products, Services).
+FR-HOME-003 [REQUIRED]: Featured Products section (admin-curated, max 8 products).
+FR-HOME-004 [REQUIRED]: Best Sellers section.
+FR-HOME-005 [REQUIRED]: New Arrivals section.
+FR-HOME-006 [REQUIRED]: Services highlight section (top 4 services).
+FR-HOME-007 [REQUIRED]: "Why GROWPLANTS" trust signals section.
+FR-HOME-008 [REQUIRED]: Testimonials / Reviews section.
+FR-HOME-009 [OPTIONAL]: Seasonal / promotional banner.
+FR-HOME-010 [REQUIRED]: Location indicator (current city shown, Sonipat default).
+FR-HOME-011 [REQUIRED]: Search bar prominently placed.
+FR-HOME-012 [OPTIONAL]: Recently viewed products (if logged in).
+
+8.3 NAVIGATION STRUCTURE
+--------------------------
+Web (Top Nav):
+  Logo | Search Bar | [Login/Profile] | [Wishlist] | [Cart]
+  
+  Main Nav: Home | Plants | Planters | Gardening Products | Services | About
+
+Mobile (Bottom Tab):
+  Home | Shop | Services | Orders | Profile
+
+Mobile (Hamburger / Drawer):
+  Categories, My Orders, My Bookings, Wishlist, Notifications, Settings, Help
+
+8.4 PRODUCT LISTING PAGE (PLP)
+--------------------------------
+FR-PLP-001 [REQUIRED]: Display products in grid (2-col mobile, 3-col tablet, 4-col desktop).
+FR-PLP-002 [REQUIRED]: Product card shows: image, name, price, rating, add-to-cart button.
+FR-PLP-003 [REQUIRED]: Breadcrumb navigation.
+FR-PLP-004 [REQUIRED]: Category filter sidebar (desktop) / bottom sheet (mobile).
+FR-PLP-005 [REQUIRED]: Filter options:
+  - Category (multi-select)
+  - Price range (slider)
+  - Rating (min rating filter)
+  - Suitable for (indoor/outdoor/balcony)
+  - Sunlight requirement
+  - Difficulty level
+  - In stock only (toggle)
+FR-PLP-006 [REQUIRED]: Sort options: Featured, Price Low→High, Price High→Low, 
+                         Newest First, Best Rated, Best Sellers.
+FR-PLP-007 [REQUIRED]: Pagination (20 products per page) OR infinite scroll.
+FR-PLP-008 [REQUIRED]: "X results found" count shown.
+FR-PLP-009 [REQUIRED]: Out-of-stock products shown with "Notify Me" button.
+FR-PLP-010 [REQUIRED]: Wishlist toggle on product card (heart icon).
+FR-PLP-011 [REQUIRED]: "Sale" / "New" / "Best Seller" badges on product cards.
+
+8.5 PRODUCT DETAIL PAGE (PDP)
+-------------------------------
+FR-PDP-001 [REQUIRED]: Image gallery (thumbnail + full view, zoom on hover/pinch).
+FR-PDP-002 [REQUIRED]: Product name, price (original + discounted), discount %.
+FR-PDP-003 [REQUIRED]: Stock status ("In Stock" / "Only X left" / "Out of Stock").
+FR-PDP-004 [REQUIRED]: Variant selector (size, pot type, etc.) if variants exist.
+FR-PDP-005 [REQUIRED]: Quantity selector (1 to available stock, max 10 per item).
+FR-PDP-006 [REQUIRED]: "Add to Cart" + "Buy Now" buttons.
+FR-PDP-007 [REQUIRED]: "Add to Wishlist" button.
+FR-PDP-008 [REQUIRED]: Product description (rich text, expandable if long).
+FR-PDP-009 [REQUIRED]: Care information tab (sunlight, water, difficulty, pet-safe).
+FR-PDP-010 [REQUIRED]: Delivery info (estimated days based on user pincode).
+FR-PDP-011 [REQUIRED]: Return policy summary.
+FR-PDP-012 [REQUIRED]: Reviews section (rating summary, individual reviews, filter by stars).
+FR-PDP-013 [REQUIRED]: "Customers also bought" (related products — same category).
+FR-PDP-014 [REQUIRED]: Share button (WhatsApp, copy link).
+FR-PDP-015 [OPTIONAL]: "Notify Me" when out of stock.
+FR-PDP-016 [OPTIONAL]: Recently viewed section.
+
+================================================================================
+SECTION 09 — PRODUCT CATALOG MODULE
+================================================================================
+
+9.1 CATEGORY MANAGEMENT
+-------------------------
+FR-CAT-001 [REQUIRED]: Two-level category hierarchy (parent → child).
+FR-CAT-002 [REQUIRED]: Each category has: name, slug, icon, banner, description.
+FR-CAT-003 [REQUIRED]: Categories can be enabled/disabled without deletion.
+FR-CAT-004 [REQUIRED]: Categories have display_order for sorting.
+FR-CAT-005 [REQUIRED]: Category pages are SEO-optimized (unique title, meta description).
+
+9.2 PRODUCT MANAGEMENT (Admin)
+--------------------------------
+FR-PROD-001 [REQUIRED]: Admin can add new product with all fields.
+FR-PROD-002 [REQUIRED]: Admin can upload up to 10 images per product.
+FR-PROD-003 [REQUIRED]: Image upload: max 5MB per image, formats: JPG/PNG/WEBP.
+FR-PROD-004 [REQUIRED]: Images auto-resized and compressed on upload:
+  - Thumbnail: 200×200px
+  - Card: 400×400px
+  - Full: 800×800px
+FR-PROD-005 [REQUIRED]: Admin can add up to 10 variants per product.
+FR-PROD-006 [REQUIRED]: Admin can set featured/bestseller/new arrival flags.
+FR-PROD-007 [REQUIRED]: Admin can set SEO fields (title, description, keywords).
+FR-PROD-008 [REQUIRED]: Product can be duplicated (to create similar products quickly).
+FR-PROD-009 [REQUIRED]: Bulk activate/deactivate products.
+FR-PROD-010 [REQUIRED]: Product CSV import (for bulk addition).
+FR-PROD-011 [REQUIRED]: Product CSV export.
+FR-PROD-012 [OPTIONAL]: Schedule product to go live at a future date.
+
+9.3 PRICING RULES
+------------------
+FR-PRICE-001 [REQUIRED]: Base price (MRP) and selling price (actual charged) always stored.
+FR-PRICE-002 [REQUIRED]: Discount percent auto-calculated: ((base - selling) / base) × 100.
+FR-PRICE-003 [REQUIRED]: GST (18% default) shown separately on receipt.
+FR-PRICE-004 [REQUIRED]: Admin can set per-product tax rate.
+FR-PRICE-005 [OPTIONAL]: Flash sale: time-limited price reduction.
+
+================================================================================
+SECTION 10 — SHOPPING CART & CHECKOUT
+================================================================================
+
+10.1 CART BEHAVIOR
+-------------------
+FR-CART-001 [REQUIRED]: Cart persists across sessions (DB-backed, not just localStorage).
+FR-CART-002 [REQUIRED]: Cart syncs if user logs in on a new device.
+FR-CART-003 [REQUIRED]: Real-time stock validation when adding to cart.
+FR-CART-004 [REQUIRED]: Max 10 units of same product per cart.
+FR-CART-005 [REQUIRED]: Max 20 unique items per cart.
+FR-CART-006 [REQUIRED]: Cart shows: image, name, variant, price, quantity, line total.
+FR-CART-007 [REQUIRED]: Cart shows: subtotal, shipping, discount, tax, GRAND TOTAL.
+FR-CART-008 [REQUIRED]: Cart validates stock before checkout (re-check at payment).
+FR-CART-009 [REQUIRED]: Out-of-stock items in cart are flagged (not blocking, but highlighted).
+FR-CART-010 [REQUIRED]: Cart abandoned after 7 days (items removed, notification sent).
+FR-CART-011 [REQUIRED]: Coupon code field in cart.
+FR-CART-012 [REQUIRED]: Free shipping threshold message ("Add ₹X more for free shipping!").
+
+10.2 CHECKOUT FLOW
+-------------------
+STEP 1: Address Selection
+  FR-CHECKOUT-001 [REQUIRED]: User selects from saved addresses or adds new address.
+  FR-CHECKOUT-002 [REQUIRED]: Delivery availability checked against pincode.
+  FR-CHECKOUT-003 [REQUIRED]: Delivery charge shown based on pincode + order amount.
+  FR-CHECKOUT-004 [REQUIRED]: Estimated delivery date shown.
+
+STEP 2: Order Review
+  FR-CHECKOUT-010 [REQUIRED]: All items, quantities, prices listed.
+  FR-CHECKOUT-011 [REQUIRED]: Price breakdown: subtotal + shipping + tax - discount = total.
+  FR-CHECKOUT-012 [REQUIRED]: Edit option (returns to cart).
+  FR-CHECKOUT-013 [OPTIONAL]: Special instructions field.
+
+STEP 3: Payment
+  FR-CHECKOUT-020 [REQUIRED]: Payment via Razorpay (UPI, Card, Net Banking, Wallet).
+  FR-CHECKOUT-021 [REQUIRED]: Cash on Delivery (COD) option if pincode supports it.
+  FR-CHECKOUT-022 [REQUIRED]: COD confirmation page (explains COD policy).
+  FR-CHECKOUT-023 [REQUIRED]: Razorpay checkout modal (do not redirect to separate page).
+  FR-CHECKOUT-024 [REQUIRED]: Final stock check before payment capture.
+  FR-CHECKOUT-025 [REQUIRED]: If payment fails, order is NOT created. User retries.
+  FR-CHECKOUT-026 [REQUIRED]: Payment webhook from Razorpay confirms payment.
+
+STEP 4: Order Confirmation
+  FR-CHECKOUT-030 [REQUIRED]: Order confirmation screen with order number.
+  FR-CHECKOUT-031 [REQUIRED]: Confirmation SMS + Email sent immediately.
+  FR-CHECKOUT-032 [REQUIRED]: Admin notified of new order (push + email).
+  FR-CHECKOUT-033 [REQUIRED]: Inventory reserved (quantity_reserved++) immediately on order.
+
+10.3 SHIPPING LOGIC
+--------------------
+FR-SHIP-001 [REQUIRED]: Shipping charge from serviceable_pincodes table.
+FR-SHIP-002 [REQUIRED]: Free shipping if order subtotal >= free_shipping_threshold (admin setting).
+FR-SHIP-003 [REQUIRED]: COD charge (if applicable) shown separately.
+FR-SHIP-004 [REQUIRED]: Delivery estimate = scheduled_date based on min/max_delivery_days.
+
+================================================================================
+SECTION 11 — ORDER MANAGEMENT SYSTEM
+================================================================================
+
+11.1 ORDER LIFECYCLE (ADMIN)
+------------------------------
+FR-ORD-001 [REQUIRED]: Admin views all orders in filterable, sortable list.
+FR-ORD-002 [REQUIRED]: Admin can filter by: status, date range, payment status, city.
+FR-ORD-003 [REQUIRED]: Admin confirms orders (status: pending → confirmed).
+FR-ORD-004 [REQUIRED]: Admin updates order to "processing" when packing.
+FR-ORD-005 [REQUIRED]: Admin updates to "out_for_delivery" + adds delivery person info.
+FR-ORD-006 [REQUIRED]: Admin marks "delivered" after confirmation.
+FR-ORD-007 [REQUIRED]: Every status change logged in order_status_history.
+FR-ORD-008 [REQUIRED]: Customer notified (SMS + push) at each status change.
+FR-ORD-009 [REQUIRED]: Admin can add internal notes to order.
+FR-ORD-010 [REQUIRED]: Admin can cancel order with reason (before dispatch only).
+
+11.2 ORDER LIFECYCLE (CUSTOMER)
+---------------------------------
+FR-ORD-020 [REQUIRED]: Customer views order list with search and filter.
+FR-ORD-021 [REQUIRED]: Customer views order detail: items, status, delivery info.
+FR-ORD-022 [REQUIRED]: Customer can cancel order ONLY if status = pending or confirmed.
+FR-ORD-023 [REQUIRED]: Cancellation reason required from customer.
+FR-ORD-024 [REQUIRED]: Cancelled order triggers inventory release (quantity_reserved--).
+FR-ORD-025 [REQUIRED]: Refund initiated automatically for paid cancelled orders.
+FR-ORD-026 [REQUIRED]: Customer receives invoice PDF via email.
+
+11.3 INVOICE GENERATION
+------------------------
+FR-INV-001 [REQUIRED]: Invoice generated for every confirmed paid order.
+FR-INV-002 [REQUIRED]: Invoice contains: order number, date, items, GST breakdown, total.
+FR-INV-003 [REQUIRED]: Invoice stored in S3, URL linked to order.
+FR-INV-004 [REQUIRED]: Invoice downloadable from order detail page.
+FR-INV-005 [OPTIONAL]: Business GST number on invoice (if GST registered).
+
+================================================================================
+SECTION 12 — SERVICE MARKETPLACE MODULE
+================================================================================
+
+12.1 SERVICE LISTING PAGE
+--------------------------
+FR-SVC-001 [REQUIRED]: Services listed by category.
+FR-SVC-002 [REQUIRED]: Service card shows: image, name, price, rating, "Book Now" button.
+FR-SVC-003 [REQUIRED]: Filter by: category, price range, rating, city.
+FR-SVC-004 [REQUIRED]: Sort by: featured, price, rating.
+FR-SVC-005 [REQUIRED]: City filter (only show services available in customer's city).
+FR-SVC-006 [REQUIRED]: If quote-based service, show "Get Quote" instead of price.
+
+12.2 SERVICE DETAIL PAGE
+-------------------------
+FR-SVC-010 [REQUIRED]: Full description, what's included/excluded.
+FR-SVC-011 [REQUIRED]: Gallery images.
+FR-SVC-012 [REQUIRED]: Pricing details and available time slots.
+FR-SVC-013 [REQUIRED]: Available service providers (names, ratings — for customer to pick).
+FR-SVC-014 [REQUIRED]: Review section (reviews for this service).
+FR-SVC-015 [REQUIRED]: "Book Now" CTA button.
+FR-SVC-016 [OPTIONAL]: FAQ section specific to service.
+
+12.3 SERVICE PROVIDER PROFILE PAGE
+-------------------------------------
+FR-PROV-001 [REQUIRED]: Public profile: name, photo, bio, specializations, rating.
+FR-PROV-002 [REQUIRED]: Services offered with prices.
+FR-PROV-003 [REQUIRED]: Reviews received.
+FR-PROV-004 [REQUIRED]: "Book This Provider" CTA.
+FR-PROV-005 [REQUIRED]: Experience years and verification badge.
+
+================================================================================
+SECTION 13 — BOOKING SYSTEM
+================================================================================
+
+13.1 BOOKING FLOW
+------------------
+STEP 1: Service Selection
+  FR-BOOK-001 [REQUIRED]: Customer selects service from catalog.
+  FR-BOOK-002 [REQUIRED]: Customer selects (optional) specific provider.
+  FR-BOOK-003 [REQUIRED]: If no provider selected, admin assigns later.
+
+STEP 2: Location & Schedule
+  FR-BOOK-010 [REQUIRED]: Customer enters service location (address + map pin).
+  FR-BOOK-011 [REQUIRED]: Customer location coordinates captured and stored.
+  FR-BOOK-012 [REQUIRED]: Customer selects date (min 1 day advance booking).
+  FR-BOOK-013 [REQUIRED]: Customer selects time slot (from available slots).
+  FR-BOOK-014 [REQUIRED]: Available time slots: 9AM-11AM, 11AM-1PM, 2PM-4PM, 4PM-6PM.
+  FR-BOOK-015 [REQUIRED]: Slots unavailable if provider already booked.
+
+STEP 3: Booking Summary
+  FR-BOOK-020 [REQUIRED]: Service name, provider (if selected), date, time, location.
+  FR-BOOK-021 [REQUIRED]: Price breakdown (advance required vs total).
+  FR-BOOK-022 [REQUIRED]: Notes / special instructions field.
+
+STEP 4: Payment
+  FR-BOOK-030 [REQUIRED]: Advance payment (if required by service) via Razorpay.
+  FR-BOOK-031 [REQUIRED]: COD booking allowed for some services (admin setting per service).
+  FR-BOOK-032 [REQUIRED]: Booking number generated on confirmation.
+
+STEP 5: Confirmation
+  FR-BOOK-040 [REQUIRED]: Booking confirmation screen + SMS + Email.
+  FR-BOOK-041 [REQUIRED]: Provider notified via SMS + app notification.
+  FR-BOOK-042 [REQUIRED]: Admin notified of new booking.
+
+13.2 BOOKING MANAGEMENT (Customer)
+------------------------------------
+FR-BOOK-050 [REQUIRED]: View all bookings with status.
+FR-BOOK-051 [REQUIRED]: Booking detail: service, provider, date, time, location, status.
+FR-BOOK-052 [REQUIRED]: Cancel booking if status is pending or confirmed.
+FR-BOOK-053 [REQUIRED]: Cancellation >24h before: full refund.
+FR-BOOK-054 [REQUIRED]: Cancellation <24h before: partial/no refund (per policy).
+FR-BOOK-055 [REQUIRED]: Reschedule booking (if status = pending or confirmed).
+
+13.3 BOOKING MANAGEMENT (Provider)
+------------------------------------
+FR-BOOK-060 [REQUIRED]: Provider views assigned bookings.
+FR-BOOK-061 [REQUIRED]: Provider confirms booking (pending → confirmed).
+FR-BOOK-062 [REQUIRED]: Provider marks "in_progress" when service starts.
+FR-BOOK-063 [REQUIRED]: Provider marks "completed" + uploads photos.
+FR-BOOK-064 [REQUIRED]: Provider can raise "no_show_customer" if customer absent.
+FR-BOOK-065 [REQUIRED]: Provider cannot cancel after confirming (must contact admin).
+
+13.4 BOOKING MANAGEMENT (Admin)
+---------------------------------
+FR-BOOK-070 [REQUIRED]: View all bookings, filter by status/date/provider/city.
+FR-BOOK-071 [REQUIRED]: Assign/reassign provider to booking.
+FR-BOOK-072 [REQUIRED]: Override any booking status.
+FR-BOOK-073 [REQUIRED]: Handle disputes.
+FR-BOOK-074 [REQUIRED]: Process refunds for cancelled bookings.
+
+================================================================================
+SECTION 14 — PAYMENT INTEGRATION
+================================================================================
+
+14.1 RAZORPAY INTEGRATION
+--------------------------
+FR-PAY-001 [REQUIRED]: Razorpay standard checkout integration.
+FR-PAY-002 [REQUIRED]: Supported methods: UPI, Credit/Debit Card, Net Banking, 
+                         Paytm/PhonePe Wallets, EMI.
+FR-PAY-003 [REQUIRED]: Create Razorpay Order from backend (never expose key on frontend).
+FR-PAY-004 [REQUIRED]: Razorpay payment captured server-side on webhook.
+FR-PAY-005 [REQUIRED]: Payment signature verification on every webhook.
+FR-PAY-006 [REQUIRED]: Store full gateway response in payments table.
+FR-PAY-007 [REQUIRED]: Idempotency: same Razorpay order_id cannot be paid twice.
+
+14.2 COD (CASH ON DELIVERY)
+-----------------------------
+FR-PAY-010 [REQUIRED]: COD available for orders ≤ ₹5000 (configurable in admin settings).
+FR-PAY-011 [REQUIRED]: COD not available for all pincodes (admin configures per pincode).
+FR-PAY-012 [REQUIRED]: COD orders confirmed without payment (payment_status = pending).
+FR-PAY-013 [REQUIRED]: Admin marks COD orders as "paid" manually after collection.
+
+14.3 REFUND FLOW
+-----------------
+FR-PAY-020 [REQUIRED]: Refunds processed via Razorpay Refund API.
+FR-PAY-021 [REQUIRED]: Refund initiated by admin manually after return approval.
+FR-PAY-022 [REQUIRED]: Refund reflects in customer's original payment method (3-5 days).
+FR-PAY-023 [REQUIRED]: Customer notified of refund initiation + expected timeline.
+FR-PAY-024 [REQUIRED]: Refund amount stored in payments table (refund_id, refund_amount).
+FR-PAY-025 [REQUIRED]: COD orders: refund processed offline (NEFT / UPI to customer).
+
+14.4 PAYMENT SECURITY
+----------------------
+FR-PAY-030 [REQUIRED]: Never log card numbers, CVV, or UPI PINs.
+FR-PAY-031 [REQUIRED]: Razorpay handles PCI-DSS compliance.
+FR-PAY-032 [REQUIRED]: All payment API calls from backend only (never frontend).
+FR-PAY-033 [REQUIRED]: Webhook endpoint protected with HMAC signature verification.
+FR-PAY-034 [REQUIRED]: Use Razorpay test mode in staging, live mode in production.
+
+================================================================================
+SECTION 15 — INVENTORY MANAGEMENT SYSTEM
+================================================================================
+
+15.1 STOCK TRACKING
+--------------------
+FR-INV-001 [REQUIRED]: Real-time stock tracking per product (and per variant if applicable).
+FR-INV-002 [REQUIRED]: Stock levels: quantity_available, quantity_reserved, quantity_sold.
+FR-INV-003 [REQUIRED]: Stock decremented when order confirmed (quantity_available--).
+FR-INV-004 [REQUIRED]: Stock released when order cancelled (quantity_available++).
+FR-INV-005 [REQUIRED]: Reservation system: on checkout, reserve stock until payment capture.
+FR-INV-006 [REQUIRED]: Reservation expires in 30 minutes if payment not completed.
+FR-INV-007 [REQUIRED]: Out-of-stock products visible but not purchasable.
+
+15.2 LOW STOCK ALERTS
+----------------------
+FR-INV-010 [REQUIRED]: Alert admin when product hits low_stock_threshold.
+FR-INV-011 [REQUIRED]: Alert method: email + admin dashboard notification.
+FR-INV-012 [REQUIRED]: Low stock products highlighted in admin inventory view.
+FR-INV-013 [REQUIRED]: Admin can configure low_stock_threshold per product.
+
+15.3 STOCK NOTIFICATIONS (CUSTOMERS)
+--------------------------------------
+FR-INV-020 [REQUIRED]: "Notify Me" button on out-of-stock products.
+FR-INV-021 [REQUIRED]: When product restocked: auto-notify all waitlisted customers.
+FR-INV-022 [REQUIRED]: Notification sent via: SMS + Email + Push.
+FR-INV-023 [REQUIRED]: Max 100 notifications per restock event (rate limiting).
+
+15.4 INVENTORY TRANSACTIONS
+----------------------------
+FR-INV-030 [REQUIRED]: Every stock change creates inventory_transaction record.
+FR-INV-031 [REQUIRED]: Admin can manually adjust stock with reason.
+FR-INV-032 [REQUIRED]: Admin can record damaged/lost stock.
+FR-INV-033 [REQUIRED]: Admin can view complete transaction history per product.
+
+15.5 INVENTORY REPORTS
+------------------------
+FR-INV-040 [REQUIRED]: Current stock levels report (all products).
+FR-INV-041 [REQUIRED]: Low stock report.
+FR-INV-042 [REQUIRED]: Movement report (stock in/out over time period).
+FR-INV-043 [OPTIONAL]: Dead stock report (no sales in 30+ days).
+
+================================================================================
+SECTION 16 — NOTIFICATIONS SYSTEM
+================================================================================
+
+16.1 NOTIFICATION CHANNELS
+----------------------------
+CHANNEL 1: SMS (MSG91 / Textlocal)
+  → For: OTP, order confirmed, order dispatched, booking confirmed, booking reminder.
+  → Character limit: 160 chars per SMS.
+
+CHANNEL 2: Email (SendGrid / AWS SES)
+  → For: Registration, OTP, order confirmation + invoice, booking confirmation,
+          status updates, review requests, promotional.
+  → HTML templates required.
+
+CHANNEL 3: Push Notification (Firebase FCM)
+  → For: Order updates, booking updates, back-in-stock, promotions, reminders.
+  → Deep link to relevant screen.
+
+CHANNEL 4: In-App Notification (Bell icon)
+  → All notification types shown in-app notification center.
+  → Unread count badge on bell icon.
+
+16.2 NOTIFICATION TRIGGERS
+----------------------------
+Trigger                       Channels              Recipient
+----------------------------------------------------------------------
+Registration OTP              SMS                   Customer
+Email Verification            Email                 Customer
+Order Placed                  SMS + Email + Push    Customer
+Order Confirmed               SMS + Push            Customer
+Order Out for Delivery        SMS + Push            Customer
+Order Delivered               SMS + Push + Email    Customer
+Order Cancelled               SMS + Email           Customer
+Refund Initiated              Email + Push          Customer
+Return Approved               SMS + Email           Customer
+Booking Confirmed             SMS + Push            Customer, Provider
+Booking Reminder (24h prior)  SMS + Push            Customer, Provider
+Booking Completed             Push + Email          Customer
+Review Request                Email + Push          Customer (24h after delivery)
+Low Stock Alert               Email                 Admin
+New Order Alert               Push + Email          Admin
+New Booking Alert             Push + Email          Admin
+Back in Stock                 SMS + Email + Push    Waitlisted Customers
+Provider Approved             SMS + Email           Provider
+New Booking Assigned          SMS + Push            Provider
+
+16.3 EMAIL TEMPLATES
+---------------------
+All emails use HTML template with:
+  - GROWPLANTS logo (header)
+  - Brand green color (#2E7D32 or custom)
+  - Responsive design (mobile-friendly)
+  - Footer with unsubscribe link, contact info, social links
+
+Required templates:
+  TMP-001  Welcome / Registration Confirmation
+  TMP-002  OTP Email
+  TMP-003  Email Verification
+  TMP-004  Password Reset
+  TMP-005  Order Confirmation (with order summary table)
+  TMP-006  Order Status Update
+  TMP-007  Order Invoice (PDF attachment)
+  TMP-008  Booking Confirmation
+  TMP-009  Booking Reminder
+  TMP-010  Review Request
+  TMP-011  Refund Confirmation
+  TMP-012  Back in Stock
+  TMP-013  Promotional Email
+  TMP-014  Provider Approval / Rejection
+
+================================================================================
+SECTION 17 — REVIEW & RATING SYSTEM
+================================================================================
+
+17.1 REVIEW RULES
+------------------
+FR-REV-001 [REQUIRED]: Only verified purchasers can review (linked to order_item/booking).
+FR-REV-002 [REQUIRED]: One review per purchase/booking.
+FR-REV-003 [REQUIRED]: Rating: 1-5 stars (required field).
+FR-REV-004 [REQUIRED]: Text review: optional, min 10 chars if provided.
+FR-REV-005 [REQUIRED]: Image upload: optional, max 5 images, max 5MB each.
+FR-REV-006 [REQUIRED]: Review moderation: auto-approved by default.
+FR-REV-007 [REQUIRED]: Admin can hide/remove inappropriate reviews.
+FR-REV-008 [REQUIRED]: Admin can respond to reviews.
+FR-REV-009 [REQUIRED]: Review period: reviewable for 30 days after delivery/completion.
+FR-REV-010 [REQUIRED]: Prompt: 24h after order delivery, automated review request.
+
+17.2 RATING CALCULATION
+------------------------
+FR-REV-020 [REQUIRED]: Average rating on products updated after each new review.
+FR-REV-021 [REQUIRED]: Review count displayed alongside rating.
+FR-REV-022 [REQUIRED]: Rating breakdown (% of 5-star, 4-star, etc.) shown on PDP.
+FR-REV-023 [REQUIRED]: Same for service and provider ratings.
+
+17.3 REVIEW DISPLAY
+--------------------
+FR-REV-030 [REQUIRED]: Most recent reviews shown first by default.
+FR-REV-031 [REQUIRED]: Filter reviews by star rating.
+FR-REV-032 [REQUIRED]: "Verified Purchase" badge on reviews.
+FR-REV-033 [REQUIRED]: Helpful/Not Helpful voting on reviews (Phase 2).
+FR-REV-034 [OPTIONAL]: Featured review pinned at top (admin curates).
+
+================================================================================
+SECTION 18 — SEARCH & FILTER SYSTEM
+================================================================================
+
+18.1 SEARCH BEHAVIOR
+---------------------
+FR-SEARCH-001 [REQUIRED]: Search bar available on all pages (sticky in header).
+FR-SEARCH-002 [REQUIRED]: Search covers: product names, descriptions, categories, tags.
+FR-SEARCH-003 [REQUIRED]: Autocomplete suggestions (as user types, min 2 chars).
+FR-SEARCH-004 [REQUIRED]: Autocomplete shows: products (with thumbnail), categories.
+FR-SEARCH-005 [REQUIRED]: Search results page with filter and sort capabilities.
+FR-SEARCH-006 [REQUIRED]: "No results found" shows suggestions / popular products.
+FR-SEARCH-007 [REQUIRED]: Search analytics tracked (what people search for).
+FR-SEARCH-008 [REQUIRED]: Recent searches stored per user (max 10, local + server).
+FR-SEARCH-009 [OPTIONAL]: Typo tolerance (fuzzy search for minor misspellings).
+FR-SEARCH-010 [OPTIONAL]: Hindi search support (Devanagari input).
+
+18.2 FILTER IMPLEMENTATION
+----------------------------
+All filter states are URL-encoded (?category=plants&min_price=100&max_price=500&rating=4).
+This enables shareable filtered URLs and proper browser back/forward behavior.
+
+Filter parameters (products):
+  category_id     → UUID (multi-select)
+  min_price       → integer
+  max_price       → integer
+  min_rating      → 1 to 5
+  suitable_for    → indoor | outdoor | balcony | office (multi-select)
+  sunlight        → full_sun | partial_shade | shade | indirect (multi-select)
+  difficulty      → easy | moderate | expert (multi-select)
+  in_stock        → boolean
+  tags            → array
+
+Filter parameters (services):
+  category_id     → UUID (multi-select)
+  min_price       → integer
+  max_price       → integer
+  min_rating      → 1 to 5
+  city            → city name
+
+================================================================================
+SECTION 19 — ADMIN PANEL (FULL SPECIFICATION)
+================================================================================
+
+19.1 ADMIN DASHBOARD HOME
+--------------------------
+FR-ADMIN-001 [REQUIRED]: Key metrics summary cards:
+  - Total Orders Today / This Week / This Month
+  - Total Revenue Today / This Week / This Month
+  - Total Bookings Today
+  - New Customers This Week
+  - Pending Orders (badge count)
+  - Low Stock Products (badge count)
+FR-ADMIN-002 [REQUIRED]: Recent orders list (last 10, with quick action).
+FR-ADMIN-003 [REQUIRED]: Recent bookings list (last 10).
+FR-ADMIN-004 [REQUIRED]: Revenue chart (line chart, daily/weekly/monthly toggle).
+FR-ADMIN-005 [REQUIRED]: Top selling products (this month).
+FR-ADMIN-006 [REQUIRED]: Top services (this month).
+FR-ADMIN-007 [REQUIRED]: New registrations chart.
+
+19.2 ORDER MANAGEMENT (ADMIN)
+-------------------------------
+FR-ADMIN-010 [REQUIRED]: List all orders with columns: 
+  Order#, Customer, Amount, Status, Payment, Date, Actions.
+FR-ADMIN-011 [REQUIRED]: Filters: status, payment status, date range, search by order/customer.
+FR-ADMIN-012 [REQUIRED]: Bulk actions: confirm selected, export selected to CSV.
+FR-ADMIN-013 [REQUIRED]: Order detail view with full timeline.
+FR-ADMIN-014 [REQUIRED]: Status update buttons per current status.
+FR-ADMIN-015 [REQUIRED]: Add delivery person details (name + phone + tracking URL).
+FR-ADMIN-016 [REQUIRED]: Add internal notes.
+FR-ADMIN-017 [REQUIRED]: Print packing slip.
+FR-ADMIN-018 [REQUIRED]: Export orders to Excel/CSV with date range filter.
+
+19.3 BOOKING MANAGEMENT (ADMIN)
+---------------------------------
+FR-ADMIN-020 [REQUIRED]: List all bookings with columns:
+  Booking#, Customer, Service, Provider, Date, Status, Actions.
+FR-ADMIN-021 [REQUIRED]: Assign provider to unassigned bookings.
+FR-ADMIN-022 [REQUIRED]: Override booking status.
+FR-ADMIN-023 [REQUIRED]: View customer location on map.
+FR-ADMIN-024 [REQUIRED]: Handle disputes (dispute resolution notes).
+FR-ADMIN-025 [REQUIRED]: Process booking refunds.
+
+19.4 PRODUCT MANAGEMENT (ADMIN)
+---------------------------------
+FR-ADMIN-030 [REQUIRED]: Product list with: image, name, category, price, stock, status.
+FR-ADMIN-031 [REQUIRED]: Add product form (all fields from DB-006).
+FR-ADMIN-032 [REQUIRED]: Edit product.
+FR-ADMIN-033 [REQUIRED]: Image gallery management (upload, reorder, set primary, delete).
+FR-ADMIN-034 [REQUIRED]: Variant management per product.
+FR-ADMIN-035 [REQUIRED]: Duplicate product.
+FR-ADMIN-036 [REQUIRED]: Activate/deactivate product.
+FR-ADMIN-037 [REQUIRED]: CSV import for bulk product upload.
+FR-ADMIN-038 [REQUIRED]: CSV export.
+
+19.5 INVENTORY MANAGEMENT (ADMIN)
+-----------------------------------
+FR-ADMIN-040 [REQUIRED]: Inventory list: product, variant, current stock, reserved, sold.
+FR-ADMIN-041 [REQUIRED]: Quick stock update (inline edit).
+FR-ADMIN-042 [REQUIRED]: Full restock form (quantity + notes).
+FR-ADMIN-043 [REQUIRED]: Stock adjustment (positive/negative) with reason.
+FR-ADMIN-044 [REQUIRED]: Transaction history per product.
+FR-ADMIN-045 [REQUIRED]: Low stock filter/alert view.
+FR-ADMIN-046 [REQUIRED]: Bulk restock via CSV.
+
+19.6 SERVICE MANAGEMENT (ADMIN)
+---------------------------------
+FR-ADMIN-050 [REQUIRED]: Service list and CRUD operations.
+FR-ADMIN-051 [REQUIRED]: Service category management.
+FR-ADMIN-052 [REQUIRED]: Set service availability by city.
+FR-ADMIN-053 [REQUIRED]: Featured service toggle.
+
+19.7 PROVIDER MANAGEMENT (ADMIN)
+----------------------------------
+FR-ADMIN-060 [REQUIRED]: Provider list with verification status.
+FR-ADMIN-061 [REQUIRED]: View provider application details.
+FR-ADMIN-062 [REQUIRED]: Approve or reject provider (with reason for rejection).
+FR-ADMIN-063 [REQUIRED]: Suspend active provider.
+FR-ADMIN-064 [REQUIRED]: View provider's booking history.
+FR-ADMIN-065 [REQUIRED]: View provider's reviews.
+FR-ADMIN-066 [REQUIRED]: Commission rate override per provider.
+FR-ADMIN-067 [REQUIRED]: View provider's earnings report.
+FR-ADMIN-068 [REQUIRED]: Mark provider payout as processed (manual settlement).
+
+19.8 CUSTOMER MANAGEMENT (ADMIN)
+----------------------------------
+FR-ADMIN-070 [REQUIRED]: Customer list with: name, phone, email, orders, bookings, status.
+FR-ADMIN-071 [REQUIRED]: Customer detail: profile + order history + booking history + reviews.
+FR-ADMIN-072 [REQUIRED]: Suspend/reactivate customer account.
+FR-ADMIN-073 [REQUIRED]: Export customer list (for CRM / marketing).
+
+19.9 RETURN MANAGEMENT (ADMIN)
+--------------------------------
+FR-ADMIN-080 [REQUIRED]: Return request list.
+FR-ADMIN-081 [REQUIRED]: View return request with evidence images.
+FR-ADMIN-082 [REQUIRED]: Approve/reject return with notes.
+FR-ADMIN-083 [REQUIRED]: Select resolution: replacement or refund.
+FR-ADMIN-084 [REQUIRED]: Initiate refund from return approval.
+
+19.10 COUPON MANAGEMENT (ADMIN)
+---------------------------------
+FR-ADMIN-090 [REQUIRED]: Create, edit, deactivate coupons.
+FR-ADMIN-091 [REQUIRED]: View coupon usage statistics.
+FR-ADMIN-092 [REQUIRED]: Set: code, discount type, value, min order, validity.
+
+19.11 BANNER MANAGEMENT (ADMIN)
+---------------------------------
+FR-ADMIN-100 [REQUIRED]: Upload homepage banners.
+FR-ADMIN-101 [REQUIRED]: Set banner order.
+FR-ADMIN-102 [REQUIRED]: Link banner to category or product or URL.
+FR-ADMIN-103 [REQUIRED]: Activate/deactivate banners.
+FR-ADMIN-104 [REQUIRED]: Max 5 active banners.
+
+19.12 CITY & PINCODE MANAGEMENT (ADMIN)
+-----------------------------------------
+FR-ADMIN-110 [REQUIRED]: Add/edit cities and their service availability.
+FR-ADMIN-111 [REQUIRED]: Add/edit serviceable pincodes per city.
+FR-ADMIN-112 [REQUIRED]: Set delivery charges per pincode.
+FR-ADMIN-113 [REQUIRED]: Enable/disable COD per pincode.
+
+19.13 SETTINGS (ADMIN)
+------------------------
+FR-ADMIN-120 [REQUIRED]: Edit all key-value settings (from admin_settings table).
+FR-ADMIN-121 [REQUIRED]: Enable/disable maintenance mode.
+FR-ADMIN-122 [REQUIRED]: Toggle payment methods (Razorpay / COD).
+FR-ADMIN-123 [REQUIRED]: Manage notification templates.
+FR-ADMIN-124 [REQUIRED]: Change own admin password.
+
+19.14 ANALYTICS & REPORTS (ADMIN)
+-----------------------------------
+FR-ADMIN-130 [REQUIRED]: Revenue report (daily/weekly/monthly/custom range).
+FR-ADMIN-131 [REQUIRED]: Orders report (count by status, by city).
+FR-ADMIN-132 [REQUIRED]: Products report (top sellers, low performers).
+FR-ADMIN-133 [REQUIRED]: Customer report (new vs returning, city-wise).
+FR-ADMIN-134 [REQUIRED]: Bookings report (count by service, by provider).
+FR-ADMIN-135 [REQUIRED]: Inventory report (current levels, turnover).
+FR-ADMIN-136 [REQUIRED]: All reports exportable to CSV/Excel.
+
+================================================================================
+SECTION 20 — SERVICE PROVIDER PANEL
+================================================================================
+
+20.1 PROVIDER DASHBOARD
+-------------------------
+FR-PROV-010 [REQUIRED]: Summary: upcoming bookings count, today's bookings, earnings.
+FR-PROV-011 [REQUIRED]: Upcoming bookings (next 7 days) list.
+FR-PROV-012 [REQUIRED]: Earnings: this week, this month, pending payout.
+
+20.2 BOOKING MANAGEMENT
+-------------------------
+FR-PROV-020 [REQUIRED]: View all assigned bookings.
+FR-PROV-021 [REQUIRED]: Filter by: date, status.
+FR-PROV-022 [REQUIRED]: Booking detail: service, customer info (phone shown after confirmation),
+                          address, date, time, notes.
+FR-PROV-023 [REQUIRED]: Confirm booking (pending → confirmed).
+FR-PROV-024 [REQUIRED]: Start service (confirmed → in_progress).
+FR-PROV-025 [REQUIRED]: Complete booking (in_progress → completed) + upload photos.
+FR-PROV-026 [REQUIRED]: Mark no-show (customer not available).
+FR-PROV-027 [REQUIRED]: Calendar view of bookings.
+
+20.3 PROFILE MANAGEMENT
+-------------------------
+FR-PROV-030 [REQUIRED]: Edit: bio, profile photo, specializations, experience.
+FR-PROV-031 [REQUIRED]: Manage availability hours.
+FR-PROV-032 [REQUIRED]: Mark self as unavailable for specific dates.
+FR-PROV-033 [REQUIRED]: Update bank account / UPI details.
+
+20.4 EARNINGS & PAYOUTS
+-------------------------
+FR-PROV-040 [REQUIRED]: Earnings breakdown per booking.
+FR-PROV-041 [REQUIRED]: Commission deducted shown clearly.
+FR-PROV-042 [REQUIRED]: Payout history (admin processes manually in Phase 1).
+FR-PROV-043 [REQUIRED]: Request payout button (triggers admin notification).
+
+================================================================================
+SECTION 21 — RETURN & REFUND MANAGEMENT
+================================================================================
+
+21.1 RETURN POLICY RULES (FROM BRD)
+--------------------------------------
+Plants:
+  - Damage claim must be raised within 24 hours of delivery.
+  - Photo evidence required (at least 1 image).
+  - Resolution: replacement preferred over refund.
+  - If replacement not available: full refund.
+
+Planters & Accessories:
+  - Return window: 7 days from delivery.
+  - Only for manufacturing defect or shipping damage.
+  - Condition: item must be unused (for non-damaged items).
+
+Services:
+  - Cancellation allowed before service start.
+  - Refund after service completion subject to admin review.
+  - If provider no-show: full refund guaranteed.
+
+21.2 RETURN REQUEST FLOW (CUSTOMER)
+--------------------------------------
+FR-RET-001 [REQUIRED]: Return option available on order item (within policy window).
+FR-RET-002 [REQUIRED]: Customer selects reason: damaged | wrong_item | quality_issue | other.
+FR-RET-003 [REQUIRED]: Customer provides description.
+FR-RET-004 [REQUIRED]: For plants: photo upload mandatory.
+FR-RET-005 [REQUIRED]: For others: photo upload optional but recommended.
+FR-RET-006 [REQUIRED]: System validates return window (plants: <24h, others: <7 days).
+FR-RET-007 [REQUIRED]: Return request submitted → admin notified immediately.
+FR-RET-008 [REQUIRED]: Customer sees return status in order detail.
+
+21.3 REFUND TIMELINE
+---------------------
+Payment Method        Refund Timeline
+Razorpay (Card/UPI)   3-5 business days (auto via Razorpay API)
+Net Banking           5-7 business days
+COD                   Manual transfer within 7 business days
+
+================================================================================
+SECTION 22 — DELIVERY & LOGISTICS
+================================================================================
+
+22.1 DELIVERY MODEL (PHASE 1)
+-------------------------------
+FR-DEL-001 [REQUIRED]: Owner manages delivery in-house or via local courier.
+FR-DEL-002 [REQUIRED]: Admin manually assigns delivery person to each order.
+FR-DEL-003 [REQUIRED]: Delivery person info (name + phone) stored on order.
+FR-DEL-004 [REQUIRED]: Customer notified with delivery person contact when dispatched.
+FR-DEL-005 [OPTIONAL]: External tracking URL field (if using courier service).
+FR-DEL-006 [REQUIRED]: Delivery available Mon-Sun (configurable in settings).
+FR-DEL-007 [REQUIRED]: Delivery slots: Morning (9AM-12PM), Afternoon (2PM-5PM), 
+                         Evening (5PM-8PM) — optional, customer preference.
+
+22.2 DELIVERY ZONES
+--------------------
+FR-DEL-010 [REQUIRED]: Delivery only within serviceable_pincodes.
+FR-DEL-011 [REQUIRED]: At checkout, validate pincode before allowing order.
+FR-DEL-012 [REQUIRED]: Show "Not deliverable to your area" message for unsupported pincodes.
+FR-DEL-013 [REQUIRED]: Delivery charge varies by pincode (set by admin).
+FR-DEL-014 [REQUIRED]: Free delivery above configurable threshold.
+
+22.3 PACKAGING NOTES
+---------------------
+FR-DEL-020 [REQUIRED]: Product detail page should show packaging information.
+FR-DEL-021 [OPTIONAL]: Special handling instructions for fragile items (e.g., ceramic planters).
+FR-DEL-022 [OPTIONAL]: Eco-friendly packaging highlight (marketing point).
+
+================================================================================
+SECTION 23 — LOCATION & CITY MANAGEMENT
+================================================================================
+
+23.1 GEOLOCATION
+-----------------
+FR-LOC-001 [REQUIRED]: Request user's GPS location on first visit / when needed.
+FR-LOC-002 [REQUIRED]: Use coordinates for: delivery validation, service booking, 
+                         showing nearby providers.
+FR-LOC-003 [REQUIRED]: Fallback to manual city selection if GPS denied.
+FR-LOC-004 [REQUIRED]: Default city: Sonipat.
+FR-LOC-005 [REQUIRED]: City persisted in user session.
+
+23.2 MULTI-CITY SUPPORT (PHASE 2)
+-----------------------------------
+FR-LOC-010 [PHASE-2]: City selector in header.
+FR-LOC-011 [PHASE-2]: Products filterable by delivery city.
+FR-LOC-012 [PHASE-2]: Services filterable by city.
+FR-LOC-013 [PHASE-2]: Admin can add new cities with pincodes.
+FR-LOC-014 [PHASE-2]: City-specific inventory (optional — can be centralized).
+
+================================================================================
+SECTION 24 — SEO & PERFORMANCE REQUIREMENTS
+================================================================================
+
+24.1 SEO REQUIREMENTS
+----------------------
+FR-SEO-001 [REQUIRED]: Server-side rendering (SSR) or static generation for product pages.
+FR-SEO-002 [REQUIRED]: Unique <title> and <meta description> per page.
+FR-SEO-003 [REQUIRED]: Structured data (JSON-LD) for:
+  - Products (Product schema)
+  - Breadcrumbs (BreadcrumbList schema)
+  - Reviews (Review schema)
+  - LocalBusiness schema (for GROWPLANTS as a local business)
+FR-SEO-004 [REQUIRED]: Canonical URLs on all pages.
+FR-SEO-005 [REQUIRED]: XML sitemap auto-generated and updated.
+FR-SEO-006 [REQUIRED]: robots.txt file.
+FR-SEO-007 [REQUIRED]: Open Graph tags for social sharing.
+FR-SEO-008 [REQUIRED]: Image alt tags on all product images.
+FR-SEO-009 [REQUIRED]: Clean, readable URLs (slugs — no query params for pages).
+FR-SEO-010 [REQUIRED]: 301 redirects for deleted products/categories.
+FR-SEO-011 [OPTIONAL]: Blog section for gardening content (SEO traffic driver).
+
+24.2 PERFORMANCE REQUIREMENTS
+-------------------------------
+NFR-PERF-001: Page load time < 3 seconds on 4G connection.
+NFR-PERF-002: Core Web Vitals: LCP < 2.5s, FID < 100ms, CLS < 0.1.
+NFR-PERF-003: Images served in WebP format with lazy loading.
+NFR-PERF-004: API response time < 500ms for 95% of requests.
+NFR-PERF-005: Paginated endpoints return max 20 items per page.
+NFR-PERF-006: Database queries must use indexes; no full table scans on large tables.
+NFR-PERF-007: Redis caching for: product catalog, category list, homepage data (TTL: 5 min).
+NFR-PERF-008: Cart operations cached in Redis with DB sync.
+NFR-PERF-009: CDN for all static assets and product images.
+NFR-PERF-010: Backend must handle 100 concurrent users without degradation (Phase 1).
+
+================================================================================
+SECTION 25 — SECURITY REQUIREMENTS
+================================================================================
+
+NFR-SEC-001: All API endpoints require authentication except public catalog and auth endpoints.
+NFR-SEC-002: HTTPS enforced on all endpoints (HSTS header).
+NFR-SEC-003: JWT tokens signed with RS256 (asymmetric keys, not HS256).
+NFR-SEC-004: Access tokens expire in 15 minutes; refresh tokens in 7 days.
+NFR-SEC-005: Refresh tokens stored HTTP-only, SameSite=Strict cookies.
+NFR-SEC-006: Rate limiting on all public endpoints:
+  - Auth endpoints: 5 requests/minute/IP
+  - OTP send: 3 per 10 minutes per phone number
+  - Product browse: 60 requests/minute/IP
+  - Cart/checkout: 20 requests/minute/user
+NFR-SEC-007: SQL injection prevention via Prisma ORM (parameterized queries only).
+NFR-SEC-008: XSS prevention: React auto-escapes; sanitize any HTML content in DB.
+NFR-SEC-009: CSRF protection for state-changing operations.
+NFR-SEC-010: File uploads: validate MIME type + file extension + scan for malware (basic).
+NFR-SEC-011: Admin panel accessible only from whitelisted IPs (configurable).
+NFR-SEC-012: Sensitive data encrypted at rest: bank account numbers, ID proof numbers.
+NFR-SEC-013: No sensitive data in logs (mask phone, email, payment info in logs).
+NFR-SEC-014: CORS configured to allow only known origins.
+NFR-SEC-015: Input validation on all API endpoints (reject invalid data, don't sanitize silently).
+NFR-SEC-016: Dependency vulnerability scanning in CI/CD pipeline.
+NFR-SEC-017: Payment data never stored on own servers; delegate to Razorpay.
+
+================================================================================
+SECTION 26 — API SPECIFICATION (REST ENDPOINTS)
+================================================================================
+
+BASE URL: https://api.growplants.in/v1
+AUTH HEADER: Authorization: Bearer <access_token>
+CONTENT-TYPE: application/json
+
+STANDARD RESPONSE WRAPPER:
+{
+  "success": true,
+  "data": { ... },
+  "message": "Success",
+  "pagination": {           // Only on list endpoints
+    "total": 100,
+    "page": 1,
+    "per_page": 20,
+    "total_pages": 5
+  }
+}
+
+ERROR RESPONSE:
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Phone number is required",
+    "details": { ... }
+  }
+}
+
+------------------------------------------------------------
+AUTH ENDPOINTS
+------------------------------------------------------------
+API-001  POST   /auth/register          Register new user (phone + OTP initiation)
+API-002  POST   /auth/verify-otp        Verify OTP and complete registration
+API-003  POST   /auth/login             Login with email/phone + password
+API-004  POST   /auth/login-otp         Request OTP login
+API-005  POST   /auth/logout            Logout (revoke refresh token)
+API-006  POST   /auth/refresh           Refresh access token using HTTP-only cookie
+API-007  POST   /auth/forgot-password   Initiate password reset (phone/email)
+API-008  POST   /auth/reset-password    Reset password with token/OTP
+API-009  POST   /auth/change-password   Change password (authenticated)
+API-010  GET    /auth/me                Get current user's profile
+
+------------------------------------------------------------
+USER ENDPOINTS
+------------------------------------------------------------
+API-020  GET    /users/profile          Get full profile
+API-021  PUT    /users/profile          Update profile
+API-022  POST   /users/profile-image    Upload profile image
+API-023  GET    /users/addresses        Get all saved addresses
+API-024  POST   /users/addresses        Add new address
+API-025  PUT    /users/addresses/:id    Update address
+API-026  DELETE /users/addresses/:id    Delete address
+API-027  PUT    /users/addresses/:id/default  Set as default
+API-028  GET    /users/notification-preferences  Get notification prefs
+API-029  PUT    /users/notification-preferences  Update notification prefs
+API-030  DELETE /users/account          Delete account (soft delete)
+
+------------------------------------------------------------
+PRODUCT ENDPOINTS (PUBLIC)
+------------------------------------------------------------
+API-040  GET    /products               List products (paginated, filterable)
+                  Query params: category_id, min_price, max_price, min_rating,
+                  suitable_for, sunlight, difficulty, in_stock, tags, sort, page, per_page
+API-041  GET    /products/:slug         Get product by slug
+API-042  GET    /products/search        Search products
+                  Query params: q, category_id, page, per_page
+API-043  GET    /products/featured      Get featured products
+API-044  GET    /products/bestsellers   Get bestsellers
+API-045  GET    /products/new-arrivals  Get new arrivals
+API-046  GET    /products/:id/reviews   Get reviews for a product
+
+------------------------------------------------------------
+CATEGORY ENDPOINTS (PUBLIC)
+------------------------------------------------------------
+API-050  GET    /categories             List all categories (hierarchical)
+API-051  GET    /categories/:slug       Get category + products
+
+------------------------------------------------------------
+CART ENDPOINTS
+------------------------------------------------------------
+API-060  GET    /cart                   Get current user's cart
+API-061  POST   /cart/items             Add item to cart
+                  Body: {product_id, variant_id?, quantity}
+API-062  PUT    /cart/items/:id         Update cart item quantity
+API-063  DELETE /cart/items/:id         Remove item from cart
+API-064  DELETE /cart                   Clear entire cart
+API-065  POST   /cart/apply-coupon      Apply coupon code
+API-066  DELETE /cart/remove-coupon     Remove coupon
+
+------------------------------------------------------------
+ORDER ENDPOINTS
+------------------------------------------------------------
+API-070  POST   /orders                 Create order (from cart)
+                  Body: {address_id, payment_method, delivery_slot?, notes?}
+API-071  GET    /orders                 Get user's orders (paginated)
+API-072  GET    /orders/:id             Get order details
+API-073  POST   /orders/:id/cancel      Cancel order
+                  Body: {reason}
+API-074  GET    /orders/:id/invoice     Download invoice PDF
+
+------------------------------------------------------------
+PAYMENT ENDPOINTS
+------------------------------------------------------------
+API-080  POST   /payments/create-order  Create Razorpay order
+                  Body: {amount, reference_type, reference_id}
+API-081  POST   /payments/verify        Verify payment after Razorpay callback
+                  Body: {razorpay_order_id, razorpay_payment_id, razorpay_signature}
+API-082  POST   /payments/webhook       Razorpay webhook (PUBLIC, signature verified)
+
+------------------------------------------------------------
+SERVICE ENDPOINTS (PUBLIC)
+------------------------------------------------------------
+API-090  GET    /services               List services (filterable by city, category)
+API-091  GET    /services/:slug         Get service details
+API-092  GET    /services/:id/providers List available providers for a service
+
+------------------------------------------------------------
+BOOKING ENDPOINTS
+------------------------------------------------------------
+API-100  POST   /bookings               Create booking
+                  Body: {service_id, provider_id?, address, lat, lng, date, 
+                          time_slot, notes?, payment_method}
+API-101  GET    /bookings               Get user's bookings
+API-102  GET    /bookings/:id           Get booking details
+API-103  POST   /bookings/:id/cancel    Cancel booking
+API-104  POST   /bookings/:id/reschedule Reschedule booking
+
+------------------------------------------------------------
+REVIEW ENDPOINTS
+------------------------------------------------------------
+API-110  POST   /reviews                Submit review
+                  Body: {reviewable_type, reviewable_id, reference_type, reference_id,
+                          rating, title?, body?, images?[]}
+API-111  GET    /reviews/mine           Get user's reviews
+API-112  PUT    /reviews/:id            Edit review (within 7 days of submission)
+API-113  DELETE /reviews/:id            Delete own review
+
+------------------------------------------------------------
+WISHLIST ENDPOINTS
+------------------------------------------------------------
+API-120  GET    /wishlist               Get wishlist items
+API-121  POST   /wishlist               Add to wishlist {product_id}
+API-122  DELETE /wishlist/:product_id   Remove from wishlist
+API-123  POST   /wishlist/move-to-cart  Move all wishlist items to cart
+
+------------------------------------------------------------
+RETURN ENDPOINTS
+------------------------------------------------------------
+API-130  POST   /returns                Submit return request
+API-131  GET    /returns                Get user's return requests
+API-132  GET    /returns/:id            Get return details
+
+------------------------------------------------------------
+NOTIFICATION ENDPOINTS
+------------------------------------------------------------
+API-140  GET    /notifications          Get in-app notifications (paginated)
+API-141  PUT    /notifications/:id/read Mark notification as read
+API-142  PUT    /notifications/read-all  Mark all as read
+API-143  GET    /notifications/unread-count  Get unread count
+
+------------------------------------------------------------
+LOCATION ENDPOINTS (PUBLIC)
+------------------------------------------------------------
+API-150  GET    /cities                 List active cities
+API-151  GET    /locations/check-pincode?pincode=XXX  Check if pincode is serviceable
+
+------------------------------------------------------------
+ADMIN ENDPOINTS (require admin role)
+------------------------------------------------------------
+API-200  GET    /admin/dashboard        Dashboard stats
+API-201  GET    /admin/orders           List all orders (full filter/sort)
+API-202  PUT    /admin/orders/:id/status  Update order status
+API-203  POST   /admin/orders/:id/notes  Add internal note
+API-204  GET    /admin/bookings         List all bookings
+API-205  PUT    /admin/bookings/:id/assign  Assign provider to booking
+API-206  PUT    /admin/bookings/:id/status  Override booking status
+API-207  GET    /admin/products         List all products
+API-208  POST   /admin/products         Create product
+API-209  PUT    /admin/products/:id     Update product
+API-210  DELETE /admin/products/:id     Deactivate product (soft delete)
+API-211  POST   /admin/products/:id/images  Upload product images
+API-212  GET    /admin/inventory        List inventory levels
+API-213  POST   /admin/inventory/:id/adjust  Adjust stock
+API-214  GET    /admin/providers        List all providers
+API-215  PUT    /admin/providers/:id/approve  Approve provider
+API-216  PUT    /admin/providers/:id/reject   Reject provider
+API-217  GET    /admin/customers        List all customers
+API-218  GET    /admin/returns          List all return requests
+API-219  PUT    /admin/returns/:id/review  Approve/reject return
+API-220  GET    /admin/coupons          List coupons
+API-221  POST   /admin/coupons          Create coupon
+API-222  PUT    /admin/coupons/:id      Update coupon
+API-223  GET    /admin/reports/revenue  Revenue report
+API-224  GET    /admin/reports/orders   Orders report
+API-225  GET    /admin/settings         Get all settings
+API-226  PUT    /admin/settings         Update settings
+API-227  GET    /admin/banners          List banners
+API-228  POST   /admin/banners          Upload banner
+API-229  PUT    /admin/banners/:id      Update banner
+API-230  DELETE /admin/banners/:id      Remove banner
+API-231  GET    /admin/cities           List/manage cities
+API-232  POST   /admin/cities           Add city
+API-233  POST   /admin/pincodes         Add pincode
+
+------------------------------------------------------------
+PROVIDER ENDPOINTS (require provider role)
+------------------------------------------------------------
+API-300  GET    /provider/dashboard     Provider dashboard
+API-301  GET    /provider/bookings      Provider's bookings
+API-302  PUT    /provider/bookings/:id/confirm   Confirm booking
+API-303  PUT    /provider/bookings/:id/start     Start service
+API-304  PUT    /provider/bookings/:id/complete  Complete + upload photos
+API-305  PUT    /provider/bookings/:id/no-show   Mark customer no-show
+API-306  GET    /provider/profile       Provider profile
+API-307  PUT    /provider/profile       Update provider profile
+API-308  PUT    /provider/availability  Update availability hours
+API-309  GET    /provider/earnings      Earnings summary
+API-310  POST   /provider/payout-request  Request payout
+
+================================================================================
+SECTION 27 — THIRD-PARTY INTEGRATIONS
+================================================================================
+
+27.1 RAZORPAY
+--------------
+Purpose: Payment gateway
+Integration type: REST API + Webhook
+SDK: razorpay (npm package for Node.js)
+Docs: https://razorpay.com/docs/
+Required keys: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+Webhook secret: RAZORPAY_WEBHOOK_SECRET
+Events to handle:
+  - payment.captured     → Mark order/booking as paid
+  - payment.failed       → Notify customer, release stock reservation
+  - refund.processed     → Update refund status
+Environment: Test mode for dev/staging, Live mode for production.
+
+27.2 MSG91 / TEXTLOCAL (SMS)
+-----------------------------
+Purpose: OTP delivery, transactional SMS
+Integration type: REST API
+Required keys: MSG91_AUTH_KEY, MSG91_SENDER_ID
+Template IDs required (DLT registration mandatory in India):
+  - OTP template
+  - Order confirmation template
+  - Dispatch notification template
+  - Booking confirmation template
+Note: DLT registration with TRAI required before go-live.
+      Sender ID must be 6-char (e.g., GRWPLT).
+
+27.3 FIREBASE (PUSH NOTIFICATIONS)
+------------------------------------
+Purpose: Mobile + Web push notifications
+Integration type: Firebase Admin SDK
+Required: Firebase Service Account JSON
+FCM token stored per user device in user_devices table (add to schema if needed).
+User device tokens must be updated on each app open.
+Handle token expiry gracefully.
+
+27.4 SENDGRID / AWS SES (EMAIL)
+---------------------------------
+Purpose: Transactional emails
+Integration type: REST API
+Templates: HTML email templates (see Section 16.3).
+Required: SENDGRID_API_KEY or AWS SES credentials.
+From address: noreply@growplants.in
+Reply-to: hello@growplants.in
+Note: Domain verification and DKIM/SPF setup required.
+
+27.5 GOOGLE MAPS (LOCATION)
+-----------------------------
+Purpose: Location picker, service area visualization, address validation.
+Integration type: Google Maps JavaScript API + Places API
+Required: GOOGLE_MAPS_API_KEY (restricted to domain)
+Features used:
+  - Address autocomplete (Places API)
+  - Map display with marker (service booking location)
+  - Reverse geocoding (lat/lng to address)
+  - Distance calculation (provider to customer)
+
+27.6 AWS S3 / CLOUDFLARE R2 (FILE STORAGE)
+--------------------------------------------
+Purpose: Product images, review images, provider documents, invoices.
+S3 Bucket structure:
+  /products/{product_id}/         → Product images
+  /reviews/{review_id}/           → Review images
+  /providers/{provider_id}/       → ID proofs, profile images
+  /invoices/{order_id}/           → Invoice PDFs
+  /banners/                       → Homepage banners
+  /users/{user_id}/               → Profile images
+  /bookings/{booking_id}/         → Completion photos
+Access: Product images and banners: public read.
+        Provider documents and invoices: private (signed URLs only).
+
+================================================================================
+SECTION 28 — FUTURE MODULES (AI ROADMAP)
+================================================================================
+
+28.1 AI PLANT DOCTOR [FUTURE-AI]
+----------------------------------
+Feature: Photo-based plant disease detection.
+User flow: Take photo of sick plant → AI diagnoses → Recommends treatment.
+Tech approach: 
+  - Custom CNN model trained on plant disease dataset OR
+  - Google Cloud Vision API + custom disease matching logic.
+Output: Disease name, severity level, treatment steps, product recommendations.
+Trigger to build: After 5,000+ active users and plant care product inventory.
+
+28.2 AI PLANT RECOMMENDATION ENGINE [FUTURE-AI]
+-------------------------------------------------
+Feature: Personalized plant suggestions.
+Inputs: User's location, living situation (apartment/house/garden), 
+        sunlight availability, care time availability, past purchases.
+Approach: Collaborative filtering + content-based filtering hybrid.
+Output: Ranked list of recommended plants with explanation.
+
+28.3 AI GARDEN PLANNER [FUTURE-AI]
+------------------------------------
+Feature: AI-generated garden layout suggestions.
+Inputs: Area dimensions, location (indoor/outdoor), budget, preferences.
+Output: Plant layout diagram + recommended plant list + estimated cost.
+
+28.4 PLANT CARE REMINDER [FUTURE-AI]
+--------------------------------------
+Feature: Automated watering and care reminders based on purchased plants.
+Output: Push notification at correct intervals per plant type.
+Data: Care frequency from products.water_freq field.
+Trigger: Set up upon order delivery confirmation.
+
+28.5 AR PLANT PREVIEW [FUTURE-AI]
+-----------------------------------
+Feature: Visualize plant in your space using device camera.
+Tech: ARKit (iOS) / ARCore (Android) + 3D plant models.
+Complexity: High — requires 3D models per plant.
+Timeline: Phase 3 (24+ months).
+
+================================================================================
+SECTION 29 — NON-FUNCTIONAL REQUIREMENTS (COMPLETE)
+================================================================================
+
+29.1 AVAILABILITY
+------------------
+NFR-AVAIL-001: System uptime target: 99.5% (allows ~3.6 hours downtime/month).
+NFR-AVAIL-002: Maintenance window: Sunday 2AM-4AM IST (with advance notice).
+NFR-AVAIL-003: Maintenance mode: shows maintenance page, admin panel still accessible.
+
+29.2 SCALABILITY
+-----------------
+NFR-SCALE-001: Architecture must support horizontal scaling of API servers.
+NFR-SCALE-002: Database connection pooling (Prisma connection pool: min 2, max 20).
+NFR-SCALE-003: Stateless API design (no server-side sessions — JWT based).
+NFR-SCALE-004: Async operations (email, SMS, push) via job queue (Bull + Redis).
+
+29.3 RELIABILITY
+-----------------
+NFR-REL-001: All payment operations atomic (database transactions).
+NFR-REL-002: Background jobs retried on failure (max 3 retries with exponential backoff).
+NFR-REL-003: Webhook processing idempotent (same event processed only once).
+NFR-REL-004: Graceful error handling — never expose stack traces to end users.
+
+29.4 ACCESSIBILITY
+-------------------
+NFR-A11Y-001: Web app meets WCAG 2.1 Level AA.
+NFR-A11Y-002: All images have meaningful alt text.
+NFR-A11Y-003: Keyboard navigation supported.
+NFR-A11Y-004: Minimum color contrast ratio 4.5:1 for text.
+
+29.5 COMPATIBILITY
+-------------------
+NFR-COMPAT-001: Web browsers: Chrome 90+, Safari 14+, Firefox 88+, Edge 90+.
+NFR-COMPAT-002: Mobile web: iOS Safari 14+, Android Chrome 90+.
+NFR-COMPAT-003: Mobile app: Android 8.0+, iOS 13.0+.
+NFR-COMPAT-004: Screen sizes: 320px (min mobile) to 2560px (large desktop).
+
+29.6 DATA BACKUP
+-----------------
+NFR-BACKUP-001: Database automated daily backup (retained 30 days).
+NFR-BACKUP-002: S3 versioning enabled for uploaded files.
+NFR-BACKUP-003: Backup restoration tested quarterly.
+
+29.7 INTERNATIONALIZATION
+--------------------------
+NFR-I18N-001: UI supports English (default) and Hindi.
+NFR-I18N-002: Language preference stored per user.
+NFR-I18N-003: Currency: INR only (₹ symbol used throughout).
+NFR-I18N-004: Date format: DD MMM YYYY (e.g., 15 Jan 2024).
+NFR-I18N-005: Time format: 12-hour with AM/PM (e.g., 9:30 AM).
+NFR-I18N-006: Phone numbers: stored in international format (+91XXXXXXXXXX).
+
+================================================================================
+SECTION 30 — ACCEPTANCE CRITERIA & TESTING GUIDELINES
+================================================================================
+
+30.1 UNIT TESTING
+------------------
+- Test coverage target: 70% for business logic (services layer).
+- Test coverage target: 90% for utility functions.
+- Framework: Jest (Node.js).
+- Mock all external services (Razorpay, Firebase, SMS) in tests.
+
+30.2 INTEGRATION TESTING
+--------------------------
+- Test all API endpoints with Supertest.
+- Use test database (separate PostgreSQL test DB).
+- Critical flows to test:
+  ✓ Registration → OTP → Login
+  ✓ Add to Cart → Checkout → Payment → Order Created
+  ✓ Stock reservation → Stock release on cancel
+  ✓ Booking creation → Provider assignment → Completion
+  ✓ Return request → Admin approval → Refund initiation
+
+30.3 END-TO-END TESTING
+-------------------------
+- Framework: Playwright or Cypress.
+- Critical user journeys to automate:
+  ✓ Customer registration and first purchase
+  ✓ Service booking end-to-end
+  ✓ Admin order fulfillment flow
+
+30.4 PERFORMANCE TESTING
+--------------------------
+- Load test with k6 or Apache JMeter.
+- Simulate 100 concurrent users browsing products.
+- Simulate 20 concurrent checkouts.
+- Assert: API response time < 500ms at 100 concurrent users.
+
+30.5 SECURITY TESTING
+-----------------------
+- OWASP Top 10 vulnerability scan.
+- Dependency audit: npm audit (run in CI/CD).
+- SQL injection tests on all input fields.
+- Auth bypass attempts on protected endpoints.
+
+30.6 DEVICE TESTING
+--------------------
+Web: Test on Chrome, Safari, Firefox desktop + Chrome Android + Safari iOS.
+Mobile App: Test on physical devices: 
+  - Android: Samsung Galaxy (budget), Pixel (high-end)
+  - iOS: iPhone SE (small screen), iPhone 14 (standard)
+
+30.7 CRITICAL ACCEPTANCE CRITERIA (GO/NO-GO FOR LAUNCH)
+---------------------------------------------------------
+  ✓ Customer can register, login, and browse products.
+  ✓ Customer can add to cart and complete payment via Razorpay.
+  ✓ Order is created and admin is notified.
+  ✓ Admin can update order status and customer is notified.
+  ✓ Customer can book a service.
+  ✓ Provider can confirm and complete booking.
+  ✓ Return request can be submitted with photo.
+  ✓ Admin panel is fully functional for order + booking management.
+  ✓ Inventory is correctly tracked across orders.
+  ✓ SMS and email notifications are delivered.
+  ✓ Razorpay test payments work end-to-end.
+  ✓ App works correctly on Android and iOS.
+  ✓ Privacy Policy and Terms pages are present.
+
+================================================================================
+SECTION 31 — DEPLOYMENT & DEVOPS
+================================================================================
+
+31.1 ENVIRONMENTS
+------------------
+1. LOCAL          → Developer machines (Docker Compose)
+2. DEVELOPMENT    → Shared dev server (auto-deploy from dev branch)
+3. STAGING        → Mirror of production (auto-deploy from staging branch)
+4. PRODUCTION     → Live environment (manual deploy with approval)
+
+31.2 CI/CD PIPELINE
+--------------------
+Trigger: Push to branch → GitHub Actions runs:
+  1. Lint (ESLint + Prettier check)
+  2. Unit tests (Jest)
+  3. Integration tests
+  4. Build (Next.js build / React Native EAS build)
+  5. Docker image build and push
+  6. Deploy to target environment
+
+31.3 DOCKER SETUP
+------------------
+Services in docker-compose.yml:
+  - api           (Node.js backend)
+  - web           (Next.js frontend)
+  - db            (PostgreSQL)
+  - redis         (Redis)
+  - nginx         (Reverse proxy + SSL termination)
+
+31.4 ENVIRONMENT VARIABLES
+----------------------------
+All secrets in .env file (never committed to git).
+Required backend env vars:
+
+DATABASE_URL=postgresql://user:pass@host:5432/growplants
+REDIS_URL=redis://localhost:6379
+JWT_PRIVATE_KEY=<RS256 private key>
+JWT_PUBLIC_KEY=<RS256 public key>
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+MSG91_AUTH_KEY=
+MSG91_SENDER_ID=GRWPLT
+FIREBASE_SERVICE_ACCOUNT_JSON=
+SENDGRID_API_KEY=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_BUCKET=growplants-media
+AWS_REGION=ap-south-1
+GOOGLE_MAPS_API_KEY=
+FRONTEND_URL=https://growplants.in
+NODE_ENV=production
+PORT=3001
+
+31.5 MONITORING & ALERTS
+--------------------------
+Application:  Sentry (error tracking + performance)
+Server:       PM2 (process manager + basic monitoring)
+Uptime:       UptimeRobot (free tier, 5-min checks)
+Logs:         Winston → CloudWatch (AWS) or Logtail
+
+Alerts for:
+  - API error rate > 1% in 5 minutes
+  - Response time > 2s for 10 consecutive requests
+  - Server CPU > 80% sustained for 5 minutes
+  - Payment failure spike (> 5 failures in 10 minutes)
+  - Database connection pool exhausted
+
+31.6 BACKUP & RECOVERY
+------------------------
+Database: pg_dump daily at 1AM IST → S3 bucket (retained 30 days)
+Media: S3 versioning enabled
+Recovery RTO target: 4 hours
+Recovery RPO target: 24 hours (last backup)
+
+================================================================================
+SECTION 32 — APPENDIX: ENUMS, CONSTANTS & CONFIG
+================================================================================
+
+32.1 COMPLETE ENUM LIST
+------------------------
+
+user.role:              customer | admin | provider
+user.status:            active | suspended | deleted
+user.gender:            male | female | other | prefer_not
+user.preferred_language: en | hi
+
+otp.identifier_type:    phone | email
+otp.purpose:            registration | login | password_reset | phone_change
+
+product.sunlight_req:   full_sun | partial_shade | shade | indirect
+product.water_freq:     daily | alternate_day | weekly | monthly
+product.difficulty:     easy | moderate | expert
+
+order.status:           pending | confirmed | processing | out_for_delivery |
+                        delivered | cancelled | return_requested | return_approved |
+                        return_completed | refunded
+
+order.payment_status:   pending | paid | failed | refunded | partial_refund
+
+order.payment_method:   razorpay | cod | wallet
+
+booking.status:         pending | confirmed | provider_assigned | in_progress |
+                        completed | cancelled | no_show_provider | no_show_customer |
+                        disputed
+
+service.pricing_type:   fixed | hourly | quote_based
+service.service_type:   one_time | recurring | subscription
+
+provider.verification:  pending | approved | rejected | suspended
+
+review.reviewable_type: product | service | provider
+review.reference_type:  order_item | booking
+
+return.reason:          damaged | wrong_item | quality_issue | other
+return.status:          requested | under_review | approved | rejected | completed
+return.resolution:      replacement | refund
+
+payment.method:         razorpay_upi | razorpay_card | razorpay_netbanking |
+                        razorpay_wallet | cod
+payment.status:         created | authorized | captured | failed | refunded
+
+notification.type:      order_update | booking_update | payment | promotional |
+                        system | review_request
+notification.channel:   email | sms | push | in_app
+
+inventory.txn_type:     restock | sale | return | adjustment | damage
+inventory.ref_type:     order | return | manual
+
+coupon.discount_type:   percentage | flat
+coupon.applicable_to:   all | products | services
+
+id_proof.type:          aadhar | pan | passport | driving_license
+
+32.2 DEFAULT CONFIGURATION VALUES
+-----------------------------------
+FREE_SHIPPING_THRESHOLD     : 499 (INR)
+DEFAULT_SHIPPING_CHARGE     : 49 (INR)
+COD_MAX_AMOUNT              : 5000 (INR)
+OTP_EXPIRY_MINUTES          : 10
+OTP_MAX_ATTEMPTS            : 3
+OTP_LOCKOUT_MINUTES         : 30
+MAX_FAILED_LOGINS           : 5
+LOGIN_LOCKOUT_MINUTES       : 30
+ACCESS_TOKEN_EXPIRY         : 15 minutes
+REFRESH_TOKEN_EXPIRY        : 7 days
+CART_EXPIRY_DAYS            : 7
+CART_MAX_ITEMS              : 20
+CART_MAX_QUANTITY_PER_ITEM  : 10
+STOCK_RESERVATION_MINUTES   : 30
+RETURN_WINDOW_PLANTS_HOURS  : 24
+RETURN_WINDOW_OTHERS_DAYS   : 7
+REVIEW_WINDOW_DAYS          : 30
+REVIEW_MAX_IMAGES           : 5
+REVIEW_IMAGE_MAX_MB         : 5
+PRODUCT_IMAGE_MAX_IMAGES    : 10
+PRODUCT_IMAGE_MAX_MB        : 5
+DEFAULT_PROVIDER_COMMISSION : 20 (%)
+MIN_ADVANCE_BOOKING_DAYS    : 1
+BOOKING_SLOTS               : ["09:00-11:00","11:00-13:00","14:00-16:00","16:00-18:00"]
+ADMIN_MAX_ACCOUNTS          : 3
+NOTIFICATION_BACKSTOCK_LIMIT: 100
+BCRYPT_SALT_ROUNDS          : 12
+ORDER_NUMBER_PREFIX         : "GP"
+BOOKING_NUMBER_PREFIX       : "GB"
+RETURN_NUMBER_PREFIX        : "GR"
+DEFAULT_CITY                : "Sonipat"
+DEFAULT_STATE               : "Haryana"
+DEFAULT_CURRENCY            : "INR"
+DEFAULT_TAX_RATE            : 18
+DEFAULT_LANGUAGE            : "en"
+SUPPORTED_LANGUAGES         : ["en", "hi"]
+
+32.3 HTTP STATUS CODES USED
+-----------------------------
+200 OK                    → Successful GET / PUT / PATCH
+201 Created               → Successful POST (resource created)
+204 No Content            → Successful DELETE
+400 Bad Request           → Validation error, invalid input
+401 Unauthorized          → Not authenticated
+403 Forbidden             → Authenticated but not authorized
+404 Not Found             → Resource not found
+409 Conflict              → Duplicate (e.g., email already registered)
+422 Unprocessable Entity  → Business logic error (e.g., out of stock)
+429 Too Many Requests     → Rate limit exceeded
+500 Internal Server Error → Unexpected server error
+
+32.4 ERROR CODES (CUSTOM)
+---------------------------
+AUTH_001  → Phone number already registered
+AUTH_002  → Invalid OTP
+AUTH_003  → OTP expired
+AUTH_004  → Too many OTP attempts
+AUTH_005  → Invalid credentials
+AUTH_006  → Account suspended
+AUTH_007  → Email already in use
+
+CART_001  → Product out of stock
+CART_002  → Quantity exceeds available stock
+CART_003  → Cart item limit exceeded
+CART_004  → Invalid coupon code
+CART_005  → Coupon expired
+CART_006  → Minimum order amount not met for coupon
+
+ORDER_001 → Pincode not serviceable
+ORDER_002 → Payment verification failed
+ORDER_003 → Order cannot be cancelled at this stage
+ORDER_004 → Return window expired
+ORDER_005 → Already reviewed
+
+BOOK_001  → Service not available in your city
+BOOK_002  → Time slot not available
+BOOK_003  → Provider not available on selected date
+BOOK_004  → Booking cannot be cancelled at this stage
+
+PROV_001  → Provider not yet approved
+PROV_002  → Provider account suspended
+
+VALIDATION_ERROR → Input validation failed (with field-level details)
+NOT_FOUND        → Resource not found
+UNAUTHORIZED     → Not authenticated
+FORBIDDEN        → Insufficient permissions
+INTERNAL_ERROR   → Unexpected server error
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+Document: GROWPLANTS PRD v1.0
+Total Sections: 32
+Last Updated: 2025
+Status: Draft — Ready for Developer Review
+
+This document covers:
+  ✓ Complete database schema (34 tables)
+  ✓ All user roles and permissions
+  ✓ All frontend screens (38 screens)
+  ✓ Complete API specification (100+ endpoints)
+  ✓ Full admin panel specification
+  ✓ Service provider panel specification
+  ✓ Payment integration (Razorpay)
+  ✓ Inventory management
+  ✓ Notification system (4 channels)
+  ✓ Return & refund flows
+  ✓ Security requirements
+  ✓ Performance requirements
+  ✓ Deployment specification
+  ✓ Third-party integrations
+  ✓ Future AI roadmap
+  ✓ Testing guidelines
+  ✓ Complete enum definitions
+  ✓ Error codes reference
+  ✓ Configuration constants
+
+Next Steps:
+  1. Developer team reviews and raises queries.
+  2. Wireframes/mockups created for all screens.
+  3. Sprint planning based on this PRD.
+  4. Phase 1 (MVP) estimated: 3-4 months for full team.
+================================================================================
