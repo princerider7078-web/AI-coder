@@ -1,30 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Check, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Mail, Check, Loader2 } from "lucide-react";
 import { Container } from "@/components/common/Container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { appToast } from "@/lib/toast";
-import { useBilingual } from "@/store/useBilingual";
-
-/**
- * NewsletterSection — dark section with email capture form.
- * Source: HOMEPAGE_AUDIT_REPORT.md §1.1 (NewsletterSection), PRD §8.2 (FR-HOME-008)
- *
- * Audit fixes:
- *   - C5: No hardcoded hex — uses foreground/background tokens (dark on light)
- *   - M20: Real validation + toast feedback (was fake 1.6s setTimeout)
- *   - id="newsletter" anchor (for /#newsletter links from BlogPreviewSection)
- *   - Email validation via Zod schema (newsletterSchema)
- *   - Success/error states with accessible feedback
- */
 import { newsletterSchema } from "@/lib/validations/contact";
 
 export function NewsletterSection() {
-  const { language } = useBilingual();
-  const isHi = language === "hi";
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -41,117 +25,72 @@ export function NewsletterSection() {
       return;
     }
 
-    // Phase 4: simulate API call. Phase 5+ will POST to /api/newsletter
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     setStatus("success");
-    appToast.success(
-      isHi ? "सदस्यता सफल!" : "Subscribed successfully!",
-      isHi
-        ? "आपको बागवानी टिप्स और विशेष ऑफ़र मिलेंगे"
-        : "You'll receive gardening tips and exclusive offers"
-    );
+    appToast.success("Subscribed!", "You'll receive gardening tips and offers weekly.");
     setEmail("");
   };
 
   return (
-    <section
-      id="newsletter"
-      className="section-py bg-foreground text-background scroll-mt-20"
-    >
-      <Container>
-        <div className="relative max-w-3xl mx-auto text-center space-y-6">
-          {/* Decorative leaves */}
-          <div className="absolute -left-8 -top-8 opacity-10 pointer-events-none" aria-hidden="true">
-            <Sparkles className="size-24" />
-          </div>
-          <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none" aria-hidden="true">
-            <Sparkles className="size-24" />
+    <section id="newsletter" className="bg-primary text-primary-foreground scroll-mt-20">
+      <Container className="py-12 md:py-16">
+        <div className="max-w-2xl mx-auto text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-foreground/15 text-primary-foreground text-body-sm font-medium">
+            <Mail className="size-4" aria-hidden="true" />
+            Newsletter
           </div>
 
-          <div className="relative space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-background/10 text-background text-body-sm font-medium">
-              <Mail className="size-4" aria-hidden="true" />
-              {isHi ? "न्यूज़लेटर" : "Newsletter"}
+          <h2 className="text-h2 md:text-h1 font-bold">
+            Get Gardening Tips, Offers &amp; New Arrivals
+          </h2>
+
+          <p className="text-body-lg text-primary-foreground/80">
+            Join 2,000+ plant lovers. One email per week — no spam, ever.
+          </p>
+
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto pt-2" noValidate>
+            <div className="flex-1">
+              <label htmlFor="newsletter-email" className="sr-only">Your email address</label>
+              <Input
+                id="newsletter-email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (status === "error") setStatus("idle");
+                }}
+                placeholder="Your email address"
+                aria-invalid={status === "error"}
+                aria-describedby={status === "error" ? "newsletter-error" : undefined}
+                required
+                className="bg-primary-foreground text-foreground border-primary-foreground/20 placeholder:text-muted-foreground h-12"
+              />
             </div>
-
-            <h2 className="text-h1 md:text-display text-background">
-              {isHi ? "हरियाली की कहानी पाएं" : "Get Green in Your Inbox"}
-            </h2>
-
-            <p className="text-body-lg text-background/80 max-w-xl mx-auto">
-              {isHi
-                ? "साप्ताहिक बागवानी टिप्स, नए पौधों की जानकारी, और विशेष ऑफ़र — सीधे अपने इनबॉक्स में। कोई स्पैम नहीं।"
-                : "Weekly gardening tips, new plant alerts, and exclusive offers — straight to your inbox. No spam."}
-            </p>
-
-            {/* Form */}
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto pt-4"
-              noValidate
+            <Button
+              type="submit"
+              disabled={status === "loading" || status === "success"}
+              className="gap-2 bg-warning text-on-warning hover:bg-warning/90 shrink-0 h-12"
             >
-              <div className="flex-1">
-                <label htmlFor="newsletter-email" className="sr-only">
-                  {isHi ? "ईमेल पता" : "Email address"}
-                </label>
-                <Input
-                  id="newsletter-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (status === "error") setStatus("idle");
-                  }}
-                  placeholder={isHi ? "आपका ईमेल पता" : "your@email.com"}
-                  aria-invalid={status === "error"}
-                  aria-describedby={status === "error" ? "newsletter-error" : undefined}
-                  required
-                  className="bg-background text-foreground border-background/20 placeholder:text-muted-foreground"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={status === "loading" || status === "success"}
-                className="gap-2 bg-primary hover:bg-primary-hover text-primary-foreground shrink-0"
-              >
-                {status === "loading" ? (
-                  <>
-                    <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
-                    {isHi ? "भेज रहे..." : "Sending..."}
-                  </>
-                ) : status === "success" ? (
-                  <>
-                    <Check className="size-4" aria-hidden="true" />
-                    {isHi ? "सफल" : "Done"}
-                  </>
-                ) : (
-                  <>
-                    <Mail className="size-4" aria-hidden="true" />
-                    {isHi ? "सदस्यता लें" : "Subscribe"}
-                  </>
-                )}
-              </Button>
-            </form>
+              {status === "loading" ? (
+                <><Loader2 className="size-4 animate-spin" aria-hidden="true" />Subscribing...</>
+              ) : status === "success" ? (
+                <><Check className="size-4" aria-hidden="true" />Done</>
+              ) : (
+                <>Subscribe</>
+              )}
+            </Button>
+          </form>
 
-            {/* Error message */}
-            {status === "error" && (
-              <p
-                id="newsletter-error"
-                role="alert"
-                className="text-body-sm text-error"
-              >
-                {errorMessage}
-              </p>
-            )}
-
-            {/* Trust line */}
-            <p className="text-caption text-background/60">
-              {isHi
-                ? "सदस्यता द्वारा आप हमारी गोपनीयता नीति से सहमत हैं"
-                : "By subscribing, you agree to our Privacy Policy"}
+          {status === "error" && (
+            <p id="newsletter-error" role="alert" className="text-body-sm text-warning">
+              {errorMessage}
             </p>
-          </div>
+          )}
+
+          <p className="text-caption text-primary-foreground/60">
+            Unsubscribe anytime. Your information is safe with us.
+          </p>
         </div>
       </Container>
     </section>

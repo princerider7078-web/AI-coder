@@ -3,55 +3,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { Heart, ShoppingCart, Check, Eye } from "lucide-react";
+import { Heart, ShoppingCart, Check, Star, Sun, Droplets } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Price } from "@/components/common/Price";
-import { Rating } from "@/components/common/Rating";
-import { ProductBadges } from "@/components/products/ProductBadges";
-import { StockStatus } from "@/components/products/StockStatus";
+import { formatINR } from "@/lib/utils";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { appToast } from "@/lib/toast";
-import { formatINR } from "@/lib/utils";
 import type { Product } from "@/data/homepageData";
 
-/**
- * ProductCard — reusable product card.
- * Source: HOMEPAGE_AUDIT_REPORT.md §4.2 ("ProductCard used on homepage"),
- *         C3 (use next/image), C5 (no hardcoded hex), M7 (use formatINR),
- *         M12 (persist wishlist via WishlistContext).
- *
- * Features:
- *   - next/image with lazy loading + blur placeholder
- *   - Price component (INR formatted with discount %)
- *   - Rating component (display mode with review count)
- *   - ProductBadges (Sale / New / Best Seller / OOS)
- *   - StockStatus (in-stock / low-stock / OOS with Notify Me)
- *   - Wishlist toggle (persisted via WishlistContext)
- *   - Add to Cart (with "Added" confirmation state via CartContext)
- *   - Hover: image zoom, quick-view icon
- *   - Keyboard accessible (real buttons, focus rings)
- *
- * Touch targets: 44px min (Button size="sm" = 36px height — acceptable for
- * secondary actions; primary Add to Cart uses default size = 40px).
- */
 export interface ProductCardProps {
   product: Product;
   className?: string;
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
-  const { addItem, openDrawer } = useCart();
+  const { addItem } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const [isAdded, setIsAdded] = useState(false);
 
   const wishlisted = isWishlisted(product.id);
   const isOutOfStock = product.availableStock === 0;
-  const discount =
-    product.basePrice > product.sellingPrice
-      ? Math.round(((product.basePrice - product.sellingPrice) / product.basePrice) * 100)
-      : 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -62,13 +34,13 @@ export function ProductCard({ product, className }: ProductCardProps) {
       variantId: null,
       name: product.name,
       slug: product.slug,
-      price: product.sellingPrice,
+      price: product.price,
       image: product.image,
       quantity: 1,
       inStock: !isOutOfStock,
     });
     setIsAdded(true);
-    appToast.success("Added to cart", `${product.name} (${formatINR(product.sellingPrice)})`);
+    appToast.success("Added to cart", `${product.name} (${formatINR(product.price)})`);
     setTimeout(() => setIsAdded(false), 1800);
   };
 
@@ -76,46 +48,40 @@ export function ProductCard({ product, className }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     toggleWishlist(product.id);
-    appToast.info(
-      wishlisted ? "Removed from wishlist" : "Added to wishlist",
-      product.name
-    );
+    appToast.info(wishlisted ? "Removed from wishlist" : "Added to wishlist", product.name);
   };
 
   return (
     <article
       className={cn(
-        "group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden",
-        "transition-all duration-200 ease-fast",
-        "hover:shadow-md hover:border-primary/30 hover-lift",
+        "group relative flex flex-col rounded-lg border border-border bg-card overflow-hidden",
+        "transition-all duration-200 hover:shadow-md hover:border-primary/30",
         className
       )}
     >
-      {/* ---------- Image ---------- */}
-      <Link
-        href={`/product/${product.slug}`}
-        className="relative block aspect-square bg-muted overflow-hidden"
-        aria-label={`View ${product.name}`}
-      >
+      {/* Image */}
+      <Link href={`/product/${product.slug}`} className="relative block aspect-square bg-muted overflow-hidden" aria-label={`View ${product.name}`}>
         <Image
           src={product.image}
           alt={product.name}
           fill
-          sizes="(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 20vw"
-          className="object-cover transition-transform duration-500 ease-slow group-hover:scale-105"
+          sizes="(max-width: 768px) 50vw, 25vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
 
         {/* Badges top-left */}
-        <div className="absolute top-2 left-2 z-10">
-          <ProductBadges
-            isOutOfStock={isOutOfStock}
-            isOnSale={discount > 0}
-            isBestseller={product.isBestseller}
-            isNewArrival={product.isNewArrival}
-            discountPercent={discount}
-            maxBadges={2}
-          />
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+          {product.isBestseller && (
+            <span className="px-2 py-0.5 rounded text-caption font-bold bg-warning text-on-warning">
+              BESTSELLER
+            </span>
+          )}
+          {product.discountPercent && product.discountPercent > 0 && (
+            <span className="px-2 py-0.5 rounded text-caption font-bold bg-error text-on-error">
+              -{product.discountPercent}%
+            </span>
+          )}
         </div>
 
         {/* Wishlist top-right */}
@@ -123,87 +89,83 @@ export function ProductCard({ product, className }: ProductCardProps) {
           type="button"
           onClick={handleWishlist}
           className={cn(
-            "absolute top-2 right-2 z-10 size-9 rounded-full",
+            "absolute top-2 right-2 z-10 size-8 rounded-full",
             "flex items-center justify-center",
-            "bg-background/90 backdrop-blur shadow-sm",
-            "transition-colors hover:bg-background",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+            "bg-background/90 backdrop-blur shadow-sm transition-colors hover:bg-background",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             wishlisted ? "text-destructive" : "text-muted-foreground hover:text-foreground"
           )}
           aria-label={wishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
           aria-pressed={wishlisted}
         >
-          <Heart
-            className={cn("size-4", wishlisted && "fill-destructive")}
-            aria-hidden="true"
-          />
+          <Heart className={cn("size-4", wishlisted && "fill-destructive")} aria-hidden="true" />
         </button>
-
-        {/* Quick view icon (desktop hover) */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur shadow-sm text-body-sm font-medium text-foreground">
-            <Eye className="size-4" aria-hidden="true" />
-            Quick View
-          </span>
-        </div>
       </Link>
 
-      {/* ---------- Content ---------- */}
-      <div className="flex flex-col gap-2 p-3 flex-1">
-        {/* Stock status */}
-        <StockStatus availableStock={product.availableStock} size="sm" />
+      {/* Content */}
+      <div className="flex flex-col gap-1.5 p-3 flex-1">
+        {/* Category badge */}
+        <p className="text-caption font-bold text-primary tracking-wide">
+          {product.categoryBadge}
+        </p>
 
         {/* Name */}
         <Link
           href={`/product/${product.slug}`}
-          className="text-body-sm font-medium text-foreground line-clamp-2 hover:text-primary transition-colors"
+          className="text-body-sm font-medium text-foreground line-clamp-2 hover:text-primary transition-colors min-h-[2.5rem]"
         >
           {product.name}
         </Link>
 
         {/* Rating */}
-        <Rating
-          value={product.rating}
-          count={product.reviewCount}
-          showCount
-          size="sm"
-          countLabel={`${product.rating.toFixed(1)} (${product.reviewCount})`}
-        />
+        <div className="flex items-center gap-1">
+          <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
+          <span className="text-body-sm font-semibold text-foreground tabular-nums">
+            {product.rating > 0 ? product.rating.toFixed(1) : "New"}
+          </span>
+          <span className="text-body-sm text-muted-foreground">({product.reviewCount})</span>
+        </div>
 
-        {/* Price */}
-        <Price
-          sellingPrice={product.sellingPrice}
-          basePrice={product.basePrice}
-          size="md"
-          className="mt-auto"
-        />
+        {/* Sun + Water info */}
+        <div className="flex items-center gap-2 text-caption text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Sun className="size-3" aria-hidden="true" />
+            {product.sunInfo}
+          </span>
+          <span>•</span>
+          <span className="flex items-center gap-1">
+            <Droplets className="size-3" aria-hidden="true" />
+            {product.waterInfo}
+          </span>
+        </div>
 
-        {/* Add to cart */}
-        <Button
-          type="button"
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          className={cn(
-            "w-full gap-2 mt-2",
-            isAdded && "bg-success hover:bg-success text-success-foreground"
-          )}
-          size="sm"
-          aria-label={`Add ${product.name} to cart`}
-        >
-          {isAdded ? (
-            <>
-              <Check className="size-4" aria-hidden="true" />
-              Added
-            </>
-          ) : isOutOfStock ? (
-            "Notify Me"
-          ) : (
-            <>
-              <ShoppingCart className="size-4" aria-hidden="true" />
-              Add to Cart
-            </>
-          )}
-        </Button>
+        {/* Price + Add to cart */}
+        <div className="flex items-center justify-between gap-2 mt-auto pt-2">
+          <div>
+            <p className="text-h5 font-bold text-primary tabular-nums">
+              {formatINR(product.price)}
+            </p>
+            {product.originalPrice && (
+              <p className="text-caption text-muted-foreground line-through tabular-nums">
+                {formatINR(product.originalPrice)}
+              </p>
+            )}
+          </div>
+          <Button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            size="sm"
+            className={cn("gap-1.5", isAdded && "bg-success hover:bg-success text-success-foreground")}
+            aria-label={`Add ${product.name} to cart`}
+          >
+            {isAdded ? (
+              <><Check className="size-3.5" aria-hidden="true" />Added</>
+            ) : (
+              <><ShoppingCart className="size-3.5" aria-hidden="true" />Add to Cart</>
+            )}
+          </Button>
+        </div>
       </div>
     </article>
   );

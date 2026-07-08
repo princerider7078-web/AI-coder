@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Menu, Heart, User, Search as SearchIcon, X, ShoppingCart, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, Heart, User, Search as SearchIcon, X, ShoppingCart, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common/Logo";
 import { IconBadge } from "@/components/common/IconBadge";
-import { MegaMenu } from "@/components/global/MegaMenu";
 import { SearchBar } from "@/components/global/SearchBar";
 import { PincodeChecker } from "@/components/global/PincodeChecker";
 import { NotificationBell } from "@/components/global/NotificationBell";
@@ -18,27 +18,32 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useBilingual } from "@/store/useBilingual";
 import { appToast } from "@/lib/toast";
 
-/**
- * Header — the main desktop + mobile header.
- * Source: PRD §8.3 (Navigation Structure), 05_recreation_prompts.md Prompt 5
- *
- * Phase 5 update: Account button now reflects auth state.
- *   - Logged out: icon button linking to /login
- *   - Logged in: avatar with user initial + dropdown (name, email, account, logout)
- *
- * Also wires real wishlist count from WishlistContext (was hardcoded 3).
- */
+const NAV_LINKS = [
+  { label: "SHOP", href: "/shop" },
+  { label: "SERVICES", href: "/services" },
+  { label: "NEW", href: "/shop?filter=new" },
+  { label: "BEST SELLERS", href: "/shop?filter=bestseller" },
+  { label: "TRENDING", href: "/shop?filter=trending" },
+  { label: "OFFERS", href: "/offers" },
+  { label: "BLOG", href: "/blog" },
+];
+
+const ACCENT_LINKS = [
+  { label: "DEALS", href: "/deals", color: "text-error" },
+  { label: "SEASONAL", href: "/shop?category=seasonal-plants", color: "text-warning" },
+];
+
 export function Header() {
   const { t } = useBilingual();
   const { itemCount, openDrawer } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
   const { count: wishlistCount } = useWishlist();
+  const pathname = usePathname();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
 
-  // Close account menu on outside click + Escape
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
@@ -64,79 +69,44 @@ export function Header() {
     appToast.success("Logged out", "You've been signed out of GrowPlants.");
   };
 
+  const isActive = (href: string) => {
+    if (href === "/shop") return pathname === "/shop" || pathname.startsWith("/product");
+    if (href === "/services") return pathname === "/services" || pathname.startsWith("/services");
+    if (href === "/blog") return pathname.startsWith("/blog");
+    return pathname === href;
+  };
+
   return (
     <>
       <header
-        className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border"
+        className="sticky top-0 z-40 w-full bg-background border-b border-border"
         role="banner"
       >
         {/* ---------- Top row ---------- */}
         <div className="container-mw container-px">
           <div className="flex items-center gap-3 h-16 lg:h-18">
-            {/* Mobile: hamburger */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Open menu"
-            >
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
               <Menu className="size-5" aria-hidden="true" />
             </Button>
 
-            {/* Logo */}
             <Logo size="md" className="shrink-0" />
 
-            {/* Desktop search */}
             <div className="hidden md:block flex-1 max-w-xl mx-4">
               <SearchBar variant="header" />
             </div>
 
-            {/* Desktop: pincode checker */}
             <div className="hidden xl:block">
               <PincodeChecker variant="compact" />
             </div>
 
-            {/* Mobile: search toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden ml-auto"
-              onClick={() => setMobileSearchOpen((v) => !v)}
-              aria-label="Search"
-              aria-expanded={mobileSearchOpen}
-            >
-              {mobileSearchOpen ? (
-                <X className="size-5" aria-hidden="true" />
-              ) : (
-                <SearchIcon className="size-5" aria-hidden="true" />
-              )}
+            <Button variant="ghost" size="icon" className="md:hidden ml-auto" onClick={() => setMobileSearchOpen((v) => !v)} aria-label="Search" aria-expanded={mobileSearchOpen}>
+              {mobileSearchOpen ? <X className="size-5" aria-hidden="true" /> : <SearchIcon className="size-5" aria-hidden="true" />}
             </Button>
 
-            {/* Wishlist */}
-            <IconBadge
-              icon={Heart}
-              count={wishlistCount}
-              label={t("nav.wishlist")}
-              href={isAuthenticated ? "/account/wishlist" : "/login"}
-              className="hidden sm:inline-flex"
-            />
+            <IconBadge icon={Heart} count={wishlistCount} label={t("nav.wishlist")} href={isAuthenticated ? "/account/wishlist" : "/login"} className="hidden sm:inline-flex" />
+            {isAuthenticated && <NotificationBell className="hidden sm:block" />}
+            <IconBadge icon={ShoppingCart} count={itemCount} label={t("nav.cart")} onClick={openDrawer} className="cursor-pointer" />
 
-            {/* Notifications */}
-            {isAuthenticated && (
-              <NotificationBell className="hidden sm:block" />
-            )}
-
-            {/* Cart */}
-            <IconBadge
-              icon={ShoppingCart}
-              count={itemCount}
-              label={t("nav.cart")}
-              onClick={openDrawer}
-              className="cursor-pointer"
-            />
-
-            {/* Account */}
             {isAuthenticated && user ? (
               <div ref={accountRef} className="relative">
                 <button
@@ -148,62 +118,29 @@ export function Header() {
                   aria-haspopup="true"
                 >
                   {user.profileImageUrl ? (
-                    <img
-                      src={user.profileImageUrl}
-                      alt={user.fullName}
-                      className="size-10 rounded-full object-cover"
-                    />
+                    <img src={user.profileImageUrl} alt={user.fullName} className="size-10 rounded-full object-cover" />
                   ) : (
                     user.fullName.charAt(0).toUpperCase()
                   )}
                 </button>
-
                 {accountMenuOpen && (
-                  <div
-                    role="menu"
-                    aria-label="Account menu"
-                    className="absolute top-full right-0 mt-2 w-64 rounded-xl border border-border bg-popover shadow-lg overflow-hidden z-50"
-                  >
-                    {/* User info */}
+                  <div role="menu" aria-label="Account menu" className="absolute top-full right-0 mt-2 w-64 rounded-xl border border-border bg-popover shadow-lg overflow-hidden z-50">
                     <div className="p-4 border-b border-border bg-muted/30">
-                      <p className="text-body font-semibold text-foreground truncate">
-                        {user.fullName}
-                      </p>
-                      <p className="text-caption text-muted-foreground truncate">
-                        {user.email}
-                      </p>
+                      <p className="text-body font-semibold text-foreground truncate">{user.fullName}</p>
+                      <p className="text-caption text-muted-foreground truncate">{user.email}</p>
                     </div>
-
-                    {/* Links */}
                     <div className="p-2">
-                      <Link
-                        href="/account"
-                        onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-body-sm text-foreground"
-                        role="menuitem"
-                      >
+                      <Link href="/account" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-body-sm text-foreground" role="menuitem">
                         <User className="size-4 text-primary" aria-hidden="true" />
                         {t("nav.account")}
                       </Link>
-                      <Link
-                        href="/account/settings"
-                        onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-body-sm text-foreground"
-                        role="menuitem"
-                      >
+                      <Link href="/account/settings" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-body-sm text-foreground" role="menuitem">
                         <Settings className="size-4 text-primary" aria-hidden="true" />
                         {t("nav.settings")}
                       </Link>
                     </div>
-
-                    {/* Logout */}
                     <div className="p-2 border-t border-border">
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-destructive/10 text-body-sm text-destructive"
-                        role="menuitem"
-                      >
+                      <button type="button" onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-destructive/10 text-body-sm text-destructive" role="menuitem">
                         <LogOut className="size-4" aria-hidden="true" />
                         {t("nav.logout")}
                       </button>
@@ -212,21 +149,12 @@ export function Header() {
                 )}
               </div>
             ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-                className="rounded-full"
-                aria-label={t("nav.login")}
-              >
-                <Link href="/login">
-                  <User className="size-5" aria-hidden="true" />
-                </Link>
+              <Button variant="ghost" size="icon" asChild className="rounded-full" aria-label={t("nav.login")}>
+                <Link href="/login"><User className="size-5" aria-hidden="true" /></Link>
               </Button>
             )}
           </div>
 
-          {/* ---------- Mobile search (collapsible) ---------- */}
           {mobileSearchOpen && (
             <div className="md:hidden pb-3">
               <SearchBar variant="mobile" />
@@ -234,17 +162,47 @@ export function Header() {
           )}
         </div>
 
-        {/* ---------- Bottom row: MegaMenu (desktop only) ---------- */}
+        {/* ---------- Bottom nav row (desktop) ---------- */}
         <div className="hidden lg:block border-t border-border bg-background">
           <div className="container-mw container-px">
-            <nav className="flex items-center h-12" aria-label="Main navigation">
-              <MegaMenu />
+            <nav className="flex items-center justify-between h-11" aria-label="Main navigation">
+              <ul className="flex items-center gap-1">
+                {NAV_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md text-overline font-semibold tracking-wide transition-colors",
+                        isActive(link.href)
+                          ? "text-primary bg-primary/10"
+                          : "text-foreground hover:text-primary hover:bg-muted"
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <ul className="flex items-center gap-1">
+                {ACCENT_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md text-overline font-bold tracking-wide hover:bg-muted transition-colors",
+                        link.color
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </nav>
           </div>
         </div>
       </header>
 
-      {/* Mobile drawer nav */}
       <MobileDrawerNav open={drawerOpen} onOpenChange={setDrawerOpen} />
     </>
   );

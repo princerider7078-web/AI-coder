@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { HeroSection } from "@/components/sections/HeroSection";
-import { TrustBadges } from "@/components/common/TrustBadges";
 import { QuickCategoryGrid } from "@/components/sections/QuickCategoryGrid";
 import { BestSellersSection } from "@/components/sections/BestSellersSection";
 import { ServicesSection } from "@/components/sections/ServicesSection";
@@ -11,48 +10,14 @@ import { BlogPreviewSection } from "@/components/sections/BlogPreviewSection";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { NewsletterSection } from "@/components/sections/NewsletterSection";
 import { WhatsAppButton } from "@/components/common/WhatsAppButton";
-import { Container } from "@/components/common/Container";
-import { FAQ_ITEMS, PRODUCTS, TESTIMONIALS, TESTIMONIAL_STATS } from "@/data/homepageData";
+import { FAQ_ITEMS, PRODUCTS } from "@/data/homepageData";
 import { APP_URL, CONTACT_PHONE, CONTACT_EMAIL } from "@/lib/constants";
-
-/**
- * ============================================================================
- * GrowPlants — Homepage (Phase 4)
- * ============================================================================
- *
- * Built per HOMEPAGE_AUDIT_REPORT.md. 10 sections in the exact order
- * specified by §1.1:
- *   1. HeroSection (with PincodeChecker integrated)
- *   1a. TrustBadges (persistent trust bar below hero — audit §9.1.5)
- *   2. QuickCategoryGrid
- *   3. BestSellersSection
- *   4. ServicesSection
- *   5. WhyChooseUsSection
- *   6. ProvidersSection
- *   7. TestimonialsSection (id="testimonials")
- *   8. BlogPreviewSection
- *   9. FAQSection
- *   10. NewsletterSection (id="newsletter")
- *
- * Plus floating WhatsAppButton (audit §11.1).
- *
- * JSON-LD structured data (audit C7 fix):
- *   - LocalBusiness (GrowPlants as Sonipat business)
- *   - ItemList (featured products)
- *   - FAQPage (FAQ accordion)
- *   - Review/Testimonial aggregate rating
- *
- * Page-specific metadata (audit M17 fix).
- * ============================================================================
- */
 
 export const metadata: Metadata = {
   title: "GrowPlants — Plants, Planters & Gardening Services in Sonipat",
   description:
     "Shop healthy indoor & outdoor plants, premium planters, and gardening supplies. Book verified local gardeners for balcony setup, maintenance, and landscaping in Sonipat, Haryana. Free delivery above ₹499.",
-  alternates: {
-    canonical: "/",
-  },
+  alternates: { canonical: "/" },
   openGraph: {
     title: "GrowPlants — Plants, Planters & Gardening Services in Sonipat",
     description:
@@ -62,14 +27,12 @@ export const metadata: Metadata = {
   },
 };
 
-/* ---------- JSON-LD Structured Data (audit C7 fix) ---------- */
-
+/* ---------- JSON-LD Structured Data ---------- */
 const localBusinessSchema = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   name: "GrowPlants",
-  description:
-    "Location-based botanical e-commerce and gardening service marketplace in Sonipat, Haryana.",
+  description: "Location-based botanical e-commerce and gardening service marketplace in Sonipat, Haryana.",
   url: APP_URL,
   telephone: CONTACT_PHONE,
   email: CONTACT_EMAIL,
@@ -79,17 +42,13 @@ const localBusinessSchema = {
     addressRegion: "Haryana",
     addressCountry: "IN",
   },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: 28.9949,
-    longitude: 77.0246,
-  },
+  geo: { "@type": "GeoCoordinates", latitude: 28.9949, longitude: 77.0246 },
   openingHours: "Mo-Su 09:00-19:00",
   priceRange: "₹₹",
   aggregateRating: {
     "@type": "AggregateRating",
-    ratingValue: TESTIMONIAL_STATS.averageRating,
-    reviewCount: TESTIMONIAL_STATS.totalReviews,
+    ratingValue: 4.8,
+    reviewCount: 1200,
   },
 };
 
@@ -104,16 +63,12 @@ const itemListSchema = {
       "@type": "Product",
       name: product.name,
       image: product.image,
-      description: product.shortDescription,
       sku: product.id,
       offers: {
         "@type": "Offer",
-        price: product.sellingPrice,
+        price: product.price,
         priceCurrency: "INR",
-        availability:
-          product.availableStock > 0
-            ? "https://schema.org/InStock"
-            : "https://schema.org/OutOfStock",
+        availability: product.availableStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       },
       aggregateRating: {
         "@type": "AggregateRating",
@@ -129,69 +84,49 @@ const faqSchema = {
   "@type": "FAQPage",
   mainEntity: FAQ_ITEMS.map((item) => ({
     "@type": "Question",
-    name: item.question.en,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: item.answer.en,
-    },
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
   })),
 };
-
-/* ---------- Page ---------- */
 
 export default function HomePage() {
   return (
     <>
-      {/* JSON-LD structured data (audit C7 fix) */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
-      {/* ---------- 1. Hero ---------- */}
+      {/* 1. Hero */}
       <HeroSection />
 
-      {/* ---------- 1a. Trust badges bar (audit §9.1.5 fix) ---------- */}
-      <Container className="py-6">
-        <TrustBadges />
-      </Container>
-
-      {/* ---------- 2. Quick Category Grid ---------- */}
+      {/* 2. Quick Category Grid */}
       <QuickCategoryGrid />
 
-      {/* ---------- 3. Best Sellers ---------- */}
+      {/* 3. Best Sellers */}
       <BestSellersSection />
 
-      {/* ---------- 4. Services ---------- */}
+      {/* 4. Services + How Booking Works + Trust Badges */}
       <ServicesSection />
 
-      {/* ---------- 5. Why Choose Us ---------- */}
+      {/* 5. Why Choose Us */}
       <WhyChooseUsSection />
 
-      {/* ---------- 6. Providers ---------- */}
+      {/* 6. Providers */}
       <ProvidersSection />
 
-      {/* ---------- 7. Testimonials (id="testimonials") ---------- */}
+      {/* 7. Testimonials + Stats (dark green) */}
       <TestimonialsSection />
 
-      {/* ---------- 8. Blog Preview ---------- */}
+      {/* 8. Blog Preview */}
       <BlogPreviewSection />
 
-      {/* ---------- 9. FAQ ---------- */}
+      {/* 9. FAQ */}
       <FAQSection />
 
-      {/* ---------- 10. Newsletter (id="newsletter") ---------- */}
+      {/* 10. Newsletter (dark green) */}
       <NewsletterSection />
 
-      {/* ---------- Floating WhatsApp (audit §11.1) ---------- */}
+      {/* Floating WhatsApp */}
       <WhatsAppButton />
     </>
   );
