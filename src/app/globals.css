@@ -151,102 +151,88 @@
  * ============================================================================
  */
 :root {
-  /* ---- shadcn semantic tokens mapped to Material 3 ---- */
-  --background: #f7fbf0;                  /* surface */
-  --foreground: #181d17;                  /* on-surface */
-  --card: #ffffff;                        /* surface-container-lowest */
-  --card-foreground: #181d17;             /* on-surface */
-  --popover: #ffffff;                     /* surface-container-lowest */
-  --popover-foreground: #181d17;          /* on-surface */
-  --primary: #0d631b;                     /* primary (dark green) */
-  --primary-foreground: #ffffff;          /* on-primary */
-  --secondary: #7a5649;                   /* secondary (brown) */
-  --secondary-foreground: #ffffff;        /* on-secondary */
-  --muted: #ebefe5;                       /* surface-container */
-  --muted-foreground: #40493d;            /* on-surface-variant */
-  --accent: #e5eadf;                      /* surface-container-high (hover surfaces) */
-  --accent-foreground: #181d17;           /* on-surface */
-  --destructive: #EF4444;                 /* error */
-  --destructive-foreground: #ffffff;      /* on-error */
-  --border: #bfcaba;                      /* outline-variant */
-  --input: #bfcaba;                       /* outline-variant */
-  --ring: #0d631b;                        /* primary */
-  --radius: 0.75rem;                      /* md (12px) default for shadcn */
+  /* ---- shadcn semantic tokens (user's exact brand colors) ---- */
+  --background: #FAFAF6;                  /* page background */
+  --foreground: #1C1C1C;                  /* body text */
+  --card: #ffffff;                        /* card surface */
+  --card-foreground: #1C1C1C;
+  --popover: #ffffff;
+  --popover-foreground: #1C1C1C;
+  --primary: #1A6B3C;                     /* brand green (user's exact value) */
+  --primary-foreground: #ffffff;
+  --secondary: #7a5649;                   /* brown */
+  --secondary-foreground: #ffffff;
+  --muted: #F3F8F1;                       /* light green surface */
+  --muted-foreground: #64748b;            /* slate-500 */
+  --accent: #E8930A;                      /* orange accent (user's exact value) */
+  --accent-foreground: #ffffff;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;                      /* slate-200 */
+  --input: #e2e8f0;
+  --ring: #1A6B3C;
+  --radius: 0.5rem;
 
-  /* ---- Material 3 surface system ---- */
-  --surface: #f7fbf0;
+  /* ---- User's exact brand colors ---- */
+  --brand-green: #1A6B3C;
+  --brand-green-hover: #16A34A;
+  --brand-orange: #E8930A;
+  --brand-surface: #F3F8F1;
+  --brand-dark: #0F2419;
+  --brand-wa-green: #25D366;
+
+  /* ---- Primary scale ---- */
+  --color-primary-50: #F2FBF3;
+  --color-primary-100: #DDF5E0;
+  --color-primary-200: #BCEABF;
+  --color-primary-300: #8FD68E;
+  --color-primary-400: #5ABB59;
+  --color-primary-500: #2E7D32;
+  --color-primary-600: #1A6B3C;
+  --color-primary-700: #1C4D1E;
+  --color-primary-800: #123614;
+  --color-primary-900: #081E0A;
+
+  /* ---- Material 3 surface system (kept for compatibility) ---- */
+  --surface: #FAFAF6;
   --surface-dim: #d7dbd2;
-  --surface-bright: #f7fbf0;
+  --surface-bright: #FAFAF6;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f1f5eb;
+  --surface-container-low: #F3F8F1;
   --surface-container: #ebefe5;
   --surface-container-high: #e5eadf;
   --surface-container-highest: #e0e4da;
-  --on-surface: #181d17;
+  --on-surface: #1C1C1C;
   --on-surface-variant: #40493d;
-  --inverse-surface: #2d322b;
-  --inverse-on-surface: #eef2e8;
   --outline: #707a6c;
   --outline-variant: #bfcaba;
-  --surface-tint: #1b6d24;
-
-  /* ---- Primary ---- */
-  --primary-container: #2e7d32;
-  --on-primary-container: #cbffc2;
-  --primary-fixed: #a3f69c;
-  --primary-fixed-dim: #88d982;
-  --on-primary-fixed: #002204;
-  --on-primary-fixed-variant: #005312;
-  --inverse-primary: #88d982;
-
-  /* ---- Secondary (brown) ---- */
-  --secondary-container: #fdcdbc;
-  --on-secondary-container: #795548;
-  --secondary-fixed: #ffdbcf;
-  --secondary-fixed-dim: #ebbcac;
-  --on-secondary-fixed: #2e150b;
-  --on-secondary-fixed-variant: #603f33;
-
-  /* ---- Tertiary (pink) ---- */
-  --tertiary: #923357;
-  --on-tertiary: #ffffff;
-  --tertiary-container: #b14b6f;
-  --on-tertiary-container: #ffedf0;
-  --tertiary-fixed: #ffd9e2;
-  --tertiary-fixed-dim: #ffb1c7;
-  --on-tertiary-fixed: #3f001c;
-  --on-tertiary-fixed-variant: #7f2448;
-
-  /* ---- Error ---- */
-  --error: #EF4444;
-  --on-error: #ffffff;
-  --error-container: #ffdad6;
-  --on-error-container: #93000a;
 
   /* ---- Status colors ---- */
   --leaf-green: #43A047;
   --success: #22C55E;
-  --warning: #F59E0B;
+  --warning: #E8930A;
   --on-warning: #ffffff;
   --info: #3B82F6;
   --on-info: #ffffff;
+  --error: #EF4444;
+  --on-error: #ffffff;
 
-  /* ---- Sidebar (account/provider/admin) ---- */
+  /* ---- Sidebar ---- */
   --sidebar: #ffffff;
-  --sidebar-foreground: #181d17;
-  --sidebar-primary: #0d631b;
+  --sidebar-foreground: #1C1C1C;
+  --sidebar-primary: #1A6B3C;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e5eadf;
-  --sidebar-accent-foreground: #181d17;
-  --sidebar-border: #bfcaba;
-  --sidebar-ring: #0d631b;
+  --sidebar-accent: #F3F8F1;
+  --sidebar-accent-foreground: #1C1C1C;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #1A6B3C;
 
   /* ---- Charts ---- */
-  --chart-1: #0d631b;   /* primary green */
-  --chart-2: #43A047;   /* leaf green */
-  --chart-3: #F59E0B;   /* warning amber */
-  --chart-4: #7a5649;   /* secondary brown */
-  --chart-5: #923357;   /* tertiary pink */
+  --chart-1: #1A6B3C;
+  --chart-2: #43A047;
+  --chart-3: #E8930A;
+  --chart-4: #7a5649;
+  --chart-5: #923357;
 }
 
 /* ============================================================================
@@ -418,9 +404,27 @@
     @apply mx-auto w-full max-w-7xl;
   }
 
-  /* Section vertical rhythm (design.md spacing: lg=24px, xl=32px, xxl=48px) */
-  .section-py {
-    @apply py-12 md:py-16 lg:py-24;
+  /* Section vertical rhythm (matching user's section-padding) */
+  .section-padding {
+    @apply py-12 md:py-16 lg:py-20;
+  }
+
+  /* Font display utility (user's font-display class) */
+  .font-display {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* Footer social button (matching user's footer-social-btn) */
+  .footer-social-btn {
+    @apply size-9 rounded-full flex items-center justify-center transition-all;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .footer-social-btn:hover {
+    background: #1A6B3C;
+    color: #ffffff;
   }
 
   /* ---- Typography scale (design.md §3) ---- */

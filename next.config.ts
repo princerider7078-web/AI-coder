@@ -20,6 +20,7 @@ const REMOTE_IMAGE_DOMAINS = [
   "gardengram.in",
   "ilovenursery.com",
   "images.meesho.com",
+  "images.unsplash.com",
   "lh3.googleusercontent.com",
   "littleveggiepatchco.com.au",
   "m.media-amazon.com",
