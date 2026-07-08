@@ -1,14 +1,20 @@
 "use client";
 
 /**
- * GrowPlants — Orders Context (Firestore real-time + localStorage fallback)
- * Uses onSnapshot() on orders collection where userId == uid for real-time updates.
- * Falls back to localStorage when Firebase is not configured or user is not logged in.
+ * GrowPlants — Orders Context (Firestore real-time)
+ *
+ * Order status is fetched from Firestore in real-time via onSnapshot().
+ * When an order is created, it's written to Firestore orders/{orderId}.
+ * The onSnapshot listener picks up real-time changes — if admin updates
+ * orderStatus in Firestore, the user's page updates instantly.
+ *
+ * No auto-progress timer — status comes ONLY from Firestore.
+ * Falls back to localStorage for guests (not logged in).
  */
 import {
   createContext, useContext, useState, useEffect, useCallback, type ReactNode,
 } from "react";
-import { collection, query, where, onSnapshot, doc, setDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, setDoc, updateDoc } from "firebase/firestore";
 import { firebaseDb, isFirebaseConfigured } from "@/lib/firebase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -49,7 +55,7 @@ function saveToStorage(orders: Order[]) {
   if (typeof window !== "undefined") try { localStorage.setItem(STORAGE_KEY, JSON.stringify(orders)); } catch (_e) {}
 }
 function genOrderNumber(): string {
-  return `${PREFIX}-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}`;
+  return PREFIX + "-" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(3, "0");
 }
 
 export function OrdersProvider({ children }: { children: ReactNode }) {
@@ -57,46 +63,63 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  // Real-time Firestore listener when logged in
+  // Real-time Firestore listener — fetches orders AND their status from Firestore
   useEffect(() => {
     if (user && isFirebaseConfigured && firebaseDb) {
       const q = query(collection(firebaseDb, "orders"), where("userId", "==", user.id));
-      const unsub = onSnapshot(q,
+      const unsub = onSnapshot(
+        q,
         (snap) => {
-          const firestoreOrders = snap.docs.map((d) => {
+          const firestoreOrders: Order[] = snap.docs.map((d) => {
             const data = d.data() as any;
             return {
               id: d.id,
-              orderNumber: data.orderNumber ?? data.id,
+              orderNumber: data.orderNumber ?? d.id,
               items: data.products ?? data.items ?? [],
               subtotal: data.subtotal ?? 0,
               shipping: data.shippingFee ?? data.shipping ?? 0,
               discount: data.discount ?? 0,
               tax: data.tax ?? 0,
               total: data.totalAmount ?? data.total ?? 0,
-              address: data.addressDetails ? {
-                fullName: data.name ?? "", phone: data.phone ?? "",
-                addressLine1: data.addressDetails.house ?? "", city: data.addressDetails.city ?? "",
-                state: data.addressDetails.state ?? "", pincode: data.addressDetails.pincode ?? "",
-              } : (data.address ?? { fullName: "", phone: "", addressLine1: "", city: "", state: "", pincode: "" }),
+              address: data.addressDetails
+                ? {
+                    fullName: data.name ?? "",
+                    phone: data.phone ?? "",
+                    addressLine1: data.addressDetails.house ?? "",
+                    city: data.addressDetails.city ?? "",
+                    state: data.addressDetails.state ?? "",
+                    pincode: data.addressDetails.pincode ?? "",
+                  }
+                : (data.address ?? { fullName: "", phone: "", addressLine1: "", city: "", state: "", pincode: "" }),
               paymentMethod: data.paymentMethod ?? "cod",
               paymentStatus: data.paymentStatus ?? "pending",
+              // STATUS COMES FROM FIRESTORE — this is the key line
               orderStatus: data.orderStatus ?? "pending",
               notes: data.notes,
               createdAt: data.orderPlacedAt?.toDate?.()?.toISOString() ?? data.createdAt ?? new Date().toISOString(),
               statusHistory: data.statusHistory ?? [{ status: "pending" as const, date: new Date().toISOString(), note: "Order placed" }],
             } as Order;
           });
-          // Merge with localStorage orders (localStorage orders that aren't in Firestore yet)
+
+          // Merge Firestore orders with localStorage-only orders (orders not yet in Firestore)
           const localOrders = loadFromStorage();
           const firestoreIds = new Set(firestoreOrders.map((o) => o.id));
           const localOnly = localOrders.filter((o) => !firestoreIds.has(o.id));
-          const merged = [...firestoreOrders, ...localOnly].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+          const merged = [...firestoreOrders, ...localOnly].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+
           setOrders(merged);
           saveToStorage(merged);
           setHydrated(true);
         },
-        () => { setOrders(loadFromStorage()); setHydrated(true); }
+        (err) => {
+          // Firestore permission denied or error — fall back to localStorage
+          console.warn("[Orders] Firestore listener error, using localStorage:", err);
+          setOrders(loadFromStorage());
+          setHydrated(true);
+        }
       );
       return () => unsub();
     } else {
@@ -107,97 +130,99 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   }, [user, firebaseDb]);
 
   // Persist to localStorage
-  useEffect(() => { if (hydrated) saveToStorage(orders); }, [orders, hydrated]);
-
-  // Auto-progress order status for demo (simulates admin updating status)
-  // In production, this would come from Firestore onSnapshot when admin updates
   useEffect(() => {
-    if (!hydrated || orders.length === 0) return;
-    const interval = setInterval(() => {
-      setOrders((prev) => prev.map((o) => {
-        if (o.orderStatus === "cancelled" || o.orderStatus === "delivered") return o;
-        const now = new Date().toISOString();
-        const created = new Date(o.createdAt).getTime();
-        const elapsed = Date.now() - created;
+    if (hydrated) saveToStorage(orders);
+  }, [orders, hydrated]);
 
-        // Auto-progress: pending → confirmed (10s) → processing (20s) → out_for_delivery (30s) → delivered (40s)
-        if (o.orderStatus === "pending" && elapsed > 10000) {
-          return { ...o, orderStatus: "confirmed", statusHistory: [...o.statusHistory, { status: "confirmed", date: now, note: "Order confirmed" }] };
-        }
-        if (o.orderStatus === "confirmed" && elapsed > 20000) {
-          return { ...o, orderStatus: "processing", statusHistory: [...o.statusHistory, { status: "processing", date: now, note: "Order is being processed" }] };
-        }
-        if (o.orderStatus === "processing" && elapsed > 30000) {
-          return { ...o, orderStatus: "out_for_delivery", statusHistory: [...o.statusHistory, { status: "out_for_delivery", date: now, note: "Out for delivery" }] };
-        }
-        if (o.orderStatus === "out_for_delivery" && elapsed > 40000) {
-          return { ...o, orderStatus: "delivered", statusHistory: [...o.statusHistory, { status: "delivered", date: now, note: "Order delivered" }] };
-        }
-        return o;
-      }));
-    }, 5000); // Check every 5 seconds
+  const createOrder = useCallback(
+    (data: Omit<Order, "id" | "orderNumber" | "orderStatus" | "paymentStatus" | "createdAt" | "statusHistory">): Order => {
+      const now = new Date().toISOString();
+      const paymentStatus: PaymentStatus = data.paymentMethod === "cod" ? "pending" : "paid";
+      const order: Order = {
+        ...data,
+        id: "order-" + Date.now(),
+        orderNumber: genOrderNumber(),
+        orderStatus: "pending",
+        paymentStatus,
+        createdAt: now,
+        statusHistory: [{ status: "pending", date: now, note: "Order placed" }],
+      };
 
-    return () => clearInterval(interval);
-  }, [hydrated, orders.length]);
+      // Add to state + localStorage immediately
+      setOrders((prev) => {
+        const newOrders = [order, ...prev];
+        saveToStorage(newOrders);
+        return newOrders;
+      });
 
-  const createOrder = useCallback((data: Omit<Order, "id" | "orderNumber" | "orderStatus" | "paymentStatus" | "createdAt" | "statusHistory">): Order => {
-    const now = new Date().toISOString();
-    const paymentStatus: PaymentStatus = data.paymentMethod === "cod" ? "pending" : "paid";
-    const order: Order = {
-      ...data,
-      id: `order-${Date.now()}`,
-      orderNumber: genOrderNumber(),
-      orderStatus: "pending",
-      paymentStatus,
-      createdAt: now,
-      statusHistory: [{ status: "pending", date: now, note: "Order placed" }],
-    };
+      // Write to Firestore — orders/{orderId} collection
+      // Admin panel will read from here and update orderStatus
+      // onSnapshot will pick up the change and update the UI in real-time
+      if (user && isFirebaseConfigured && firebaseDb) {
+        const orderDocRef = doc(firebaseDb, "orders", order.id);
+        setDoc(orderDocRef, {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          userId: user.id,
+          orderPlacedAt: now,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          orderStatus: "pending", // Initial status — admin will update this
+          name: order.address.fullName,
+          phone: order.address.phone,
+          addressDetails: {
+            house: order.address.addressLine1,
+            city: order.address.city,
+            state: order.address.state,
+            pincode: order.address.pincode,
+          },
+          products: order.items.map((item) => ({
+            id: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+          })),
+          subtotal: order.subtotal,
+          shippingFee: order.shipping,
+          totalAmount: order.total,
+          statusHistory: order.statusHistory,
+        }).catch((e) => {
+          console.warn("[Orders] Firestore write failed (order saved locally):", e);
+        });
+      }
 
-    // Add to state + localStorage
-    setOrders((prev) => {
-      const newOrders = [order, ...prev];
-      saveToStorage(newOrders);
-      return newOrders;
-    });
-
-    // Dual-write to Firestore (top-level orders collection + user document)
-    if (user && isFirebaseConfigured && firebaseDb) {
-      // Top-level orders collection (admin reads from here)
-      const orderDocRef = doc(firebaseDb, "orders", order.id);
-      setDoc(orderDocRef, {
-        orderId: order.id,
-        userId: user.id,
-        orderPlacedAt: now,
-        paymentMethod: order.paymentMethod,
-        paymentStatus: order.paymentStatus,
-        orderStatus: order.orderStatus,
-        name: order.address.fullName,
-        phone: order.address.phone,
-        addressDetails: {
-          house: order.address.addressLine1,
-          city: order.address.city,
-          state: order.address.state,
-          pincode: order.address.pincode,
-        },
-        products: order.items,
-        subtotal: order.subtotal,
-        shippingFee: order.shipping,
-        totalAmount: order.total,
-      }).catch(() => {});
-    }
-
-    return order;
-  }, [user, firebaseDb]);
+      return order;
+    },
+    [user, firebaseDb]
+  );
 
   const getOrder = useCallback((id: string) => orders.find((o) => o.id === id) ?? null, [orders]);
 
-  const cancelOrder = useCallback((id: string, reason?: string) => {
-    setOrders((prev) => prev.map((o) => {
-      if (o.id !== id || (o.orderStatus !== "pending" && o.orderStatus !== "confirmed")) return o;
+  const cancelOrder = useCallback(
+    (id: string, reason?: string) => {
       const now = new Date().toISOString();
-      return { ...o, orderStatus: "cancelled", statusHistory: [...o.statusHistory, { status: "cancelled", date: now, note: reason ?? "Cancelled by customer" }] };
-    }));
-  }, []);
+      const cancelledStatus = { status: "cancelled" as const, date: now, note: reason ?? "Cancelled by customer" };
+
+      // Update local state immediately
+      setOrders((prev) =>
+        prev.map((o) => {
+          if (o.id !== id || (o.orderStatus !== "pending" && o.orderStatus !== "confirmed")) return o;
+          return { ...o, orderStatus: "cancelled", statusHistory: [...o.statusHistory, cancelledStatus] };
+        })
+      );
+
+      // Update Firestore so admin sees the cancellation
+      if (user && isFirebaseConfigured && firebaseDb) {
+        const orderDocRef = doc(firebaseDb, "orders", id);
+        updateDoc(orderDocRef, {
+          orderStatus: "cancelled",
+          statusHistory: [...(orders.find((o) => o.id === id)?.statusHistory ?? []), cancelledStatus],
+        }).catch(() => {});
+      }
+    },
+    [user, orders, firebaseDb]
+  );
 
   return (
     <OrdersContext.Provider value={{ orders, createOrder, getOrder, cancelOrder }}>
@@ -213,12 +238,19 @@ export function useOrders() {
 }
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Pending", confirmed: "Confirmed", processing: "Processing",
-  out_for_delivery: "Out for Delivery", delivered: "Delivered", cancelled: "Cancelled",
+  pending: "Pending",
+  confirmed: "Confirmed",
+  processing: "Processing",
+  out_for_delivery: "Out for Delivery",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: "bg-amber-100 text-amber-700", confirmed: "bg-blue-100 text-blue-700",
-  processing: "bg-blue-100 text-blue-700", out_for_delivery: "bg-purple-100 text-purple-700",
-  delivered: "bg-green-100 text-green-700", cancelled: "bg-red-100 text-red-700",
+  pending: "bg-amber-100 text-amber-700",
+  confirmed: "bg-blue-100 text-blue-700",
+  processing: "bg-blue-100 text-blue-700",
+  out_for_delivery: "bg-purple-100 text-purple-700",
+  delivered: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-700",
 };
