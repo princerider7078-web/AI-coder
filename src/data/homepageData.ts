@@ -83,7 +83,7 @@ export const QUICK_CATEGORIES: QuickCategory[] = [
   { id: "cat-8", name: "Seeds & Tools", itemCount: 43, image: "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=200&q=80", href: "/shop?category=seeds-bulbs" },
 ];
 
-/* ---------- Products ---------- */
+/* ---------- Products (REAL DATA from plants-data.json) ---------- */
 export interface Product {
   id: string;
   categoryBadge: string;
@@ -105,16 +105,50 @@ export interface Product {
   tags: string[];
 }
 
-export const PRODUCTS: Product[] = [
-  { id: "p1", categoryBadge: "INDOOR PLANTS", name: "Poinsettia Pink Plant", image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80", rating: 4.3, reviewCount: 437, sunInfo: "Full Sun", waterInfo: "Weekly", price: 179, originalPrice: 399, discountPercent: 55, isBestseller: true, slug: "poinsettia-pink", availableStock: 15, isBestseller_bool: true, isNewArrival: false, isAirPurifying: false, tags: ["bestseller"] },
-  { id: "p2", categoryBadge: "OUTDOOR PLANTS", name: "'First Love' plant (Xanthostemon chrysanthus)", image: "https://images.unsplash.com/photo-1463936575829-25148e1db1b8?w=400&q=80", rating: 4.6, reviewCount: 67, sunInfo: "Full Sun", waterInfo: "Weekly", price: 89, originalPrice: 158, discountPercent: 44, slug: "first-love-plant", availableStock: 22, isBestseller_bool: false, isNewArrival: true, isAirPurifying: false, tags: ["new"] },
-  { id: "p3", categoryBadge: "INDOOR PLANTS", name: "Anthurium Red Plant", image: "https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=400&q=80", rating: 4.5, reviewCount: 60, sunInfo: "Full Sun", waterInfo: "Weekly", price: 999, originalPrice: 1599, discountPercent: 38, slug: "anthurium-red", availableStock: 8, isBestseller_bool: false, isNewArrival: false, isAirPurifying: true, tags: ["air-purifying"] },
-  { id: "p4", categoryBadge: "INDOOR PLANTS", name: "Peace Lily Plant", image: "https://images.unsplash.com/photo-1604762524889-3e2fcc145683?w=400&q=80", rating: 4.6, reviewCount: 128, sunInfo: "Full Sun", waterInfo: "Weekly", price: 109, originalPrice: 250, discountPercent: 56, isBestseller: true, slug: "peace-lily", availableStock: 18, isBestseller_bool: true, isNewArrival: false, isAirPurifying: true, tags: ["bestseller", "air-purifying"] },
-  { id: "p5", categoryBadge: "SUMMER PLANTS", name: "Money Plant Golden", image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&q=80", rating: 4.5, reviewCount: 155, sunInfo: "Full Sun", waterInfo: "Weekly", price: 99, originalPrice: 199, discountPercent: 50, slug: "money-plant-golden", availableStock: 25, isBestseller_bool: false, isNewArrival: true, isAirPurifying: true, tags: ["new", "trending", "air-purifying"] },
-  { id: "p6", categoryBadge: "INDOOR PLANTS", name: "Spider Plant (Small)", image: "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=400&q=80", rating: 4.6, reviewCount: 23, sunInfo: "Full Sun", waterInfo: "Weekly", price: 59, originalPrice: 77, discountPercent: 23, slug: "spider-plant", availableStock: 30, isBestseller_bool: false, isNewArrival: false, isAirPurifying: true, tags: ["air-purifying", "trending"] },
-  { id: "p7", categoryBadge: "OUTDOOR PLANTS", name: "All Spice Plant", image: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=400&q=80", rating: 0, reviewCount: 0, sunInfo: "Full Sun", waterInfo: "Weekly", price: 89, originalPrice: 149, discountPercent: 40, slug: "all-spice-plant", availableStock: 12, isBestseller_bool: false, isNewArrival: false, isAirPurifying: false, tags: [] },
-  { id: "p8", categoryBadge: "OUTDOOR PLANTS", name: "Stand Kamini Plant", image: "https://images.unsplash.com/photo-1490750967868-88df5691cc23?w=400&q=80", rating: 4.4, reviewCount: 165, sunInfo: "Full Sun", waterInfo: "Weekly", price: 99, originalPrice: 179, discountPercent: 45, slug: "stand-kamini-plant", availableStock: 14, isBestseller_bool: false, isNewArrival: false, isAirPurifying: false, tags: [] },
-];
+import plantsData from "@/data/plants-data.json";
+
+/** Convert real plant JSON entries to the Product format used by ProductCard */
+function mapRealProducts(): Product[] {
+  return Object.entries(plantsData).slice(0, 12).map(([slug, raw]: [string, any]) => {
+    const price = raw.price ?? 0;
+    const oldPrice = raw.oldPrice ?? price;
+    const discount = oldPrice > price ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0;
+    const categories: string[] = raw.category ?? [];
+    const categoryName = categories[0]?.toUpperCase() ?? "PLANTS";
+    const care = raw.care ?? {};
+    const lightReq = care.lightRequirements ?? "";
+    const sunInfo = lightReq.includes("direct") ? "Full Sun" : lightReq.includes("bright") ? "Indirect" : lightReq.includes("shade") ? "Shade" : "Partial Shade";
+    const waterInfo = care.wateringInstructions?.includes("week") ? "Weekly" : care.wateringInstructions?.includes("daily") ? "Daily" : "Alternate Day";
+
+    return {
+      id: slug,
+      categoryBadge: categoryName,
+      name: raw.name ?? slug,
+      image: (raw.images ?? [])[0] ?? "",
+      rating: raw.rating ?? 4.5,
+      reviewCount: raw.reviewsCount ?? 0,
+      sunInfo,
+      waterInfo,
+      price,
+      originalPrice: oldPrice,
+      discountPercent: discount,
+      isBestseller: raw.badge === "Best Seller",
+      slug,
+      availableStock: raw.stock ?? 10,
+      isBestseller_bool: raw.badge === "Best Seller",
+      isNewArrival: raw.badge === "New Arrival",
+      isAirPurifying: categories.includes("air-purifying"),
+      tags: [
+        ...(raw.badge === "Best Seller" ? ["bestseller"] : []),
+        ...(raw.badge === "New Arrival" ? ["new"] : []),
+        ...(categories.includes("air-purifying") ? ["air-purifying"] : []),
+        ...(raw.rating >= 4.5 ? ["trending"] : []),
+      ],
+    };
+  });
+}
+
+export const PRODUCTS: Product[] = mapRealProducts();
 
 export interface FilterTab {
   id: string;
