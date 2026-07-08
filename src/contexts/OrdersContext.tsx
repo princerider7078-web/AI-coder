@@ -114,16 +114,20 @@ function mapFirestoreOrderToOrder(fo: FirestoreOrder): Order {
     variantId: p.variantId ?? null,
   }));
 
-  // Map address (FirestoreOrderAddressDetails → OrderAddress)
-  const addr = fo.addressDetails as FirestoreOrderAddressDetails;
+  // Map address — handle missing addressDetails gracefully (old orders may have
+  // only a flat `address` string, or no addressDetails at all)
+  const rawAddr = (fo as unknown as Record<string, unknown>).addressDetails;
+  const addr = (rawAddr && typeof rawAddr === "object"
+    ? (rawAddr as FirestoreOrderAddressDetails)
+    : {}) as Partial<FirestoreOrderAddressDetails>;
   const address: OrderAddress = {
-    fullName: fo.name,
-    phone: fo.phone,
-    addressLine1: addr.house ?? "",
-    addressLine2: addr.street ?? undefined,
-    city: addr.city ?? "",
-    state: addr.state ?? "",
-    pincode: addr.pincode ?? "",
+    fullName: fo.name ?? "",
+    phone: fo.phone ?? "",
+    addressLine1: addr?.house ?? (typeof fo.address === "string" ? fo.address : "") ?? "",
+    addressLine2: addr?.street ?? undefined,
+    city: addr?.city ?? "",
+    state: addr?.state ?? "",
+    pincode: addr?.pincode ?? "",
   };
 
   // Map statusHistory (FirestoreOrderStatusEvent[] → Order.statusHistory)

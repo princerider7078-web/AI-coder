@@ -45,7 +45,7 @@ import {
 } from "@/contexts/OrdersContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { onUserOrderSnapshot } from "@/lib/firebase/firestore";
-import type { FirestoreOrder } from "@/types/firebase";
+import type { FirestoreOrder, FirestoreOrderAddressDetails } from "@/types/firebase";
 import { OrderTrackingTimeline } from "@/components/orders/OrderTrackingTimeline";
 import { appToast } from "@/lib/toast";
 
@@ -413,15 +413,19 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
     variantId: p.variantId ?? null,
   }));
 
-  const addr = fo.addressDetails;
+  // Defensive: old Firestore orders may not have addressDetails (only flat address string)
+  const rawAddr = (fo as unknown as Record<string, unknown>).addressDetails;
+  const addr = (rawAddr && typeof rawAddr === "object"
+    ? (rawAddr as FirestoreOrderAddressDetails)
+    : {}) as Partial<FirestoreOrderAddressDetails>;
   const address = {
-    fullName: fo.name,
-    phone: fo.phone,
-    addressLine1: addr.house ?? "",
-    addressLine2: addr.street ?? undefined,
-    city: addr.city ?? "",
-    state: addr.state ?? "",
-    pincode: addr.pincode ?? "",
+    fullName: fo.name ?? "",
+    phone: fo.phone ?? "",
+    addressLine1: addr?.house ?? (typeof fo.address === "string" ? fo.address : "") ?? "",
+    addressLine2: addr?.street ?? undefined,
+    city: addr?.city ?? "",
+    state: addr?.state ?? "",
+    pincode: addr?.pincode ?? "",
   };
 
   const statusHistory = (fo.statusHistory ?? []).map((h) => {
