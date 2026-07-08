@@ -64,30 +64,55 @@ export interface FirestoreWishlistItem {
   addedAt: import("firebase/firestore").Timestamp | Date | string;
 }
 
+export interface FirestoreOrderProduct {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+  quantity: number;
+  type?: string;            // "plant" | "pot" | "gardening"
+  size?: string;
+  status?: string;          // item-level status (e.g. "shipped" if split shipment)
+  slug?: string;
+  variantId?: string | null;
+}
+
+export interface FirestoreOrderAddressDetails {
+  house: string;
+  street?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  lat?: number | null;
+  lng?: number | null;
+  instructions?: string;
+}
+
+export interface FirestoreOrderStatusEvent {
+  status: string;
+  date: import("firebase/firestore").Timestamp | Date | string;
+  note?: string;
+  createdBy?: string;
+}
+
 export interface FirestoreOrder {
   orderId: string;
+  orderNumber?: string;
   userId: string;
   orderPlacedAt: import("firebase/firestore").Timestamp | Date | string;
-  paymentMethod: string;
-  paymentStatus: string;
-  name: string;
+  status: string;                                   // pending|confirmed|processing|packed|shipped|out_for_delivery|delivered|cancelled
+  paymentMethod: string;                            // cod | razorpay
+  paymentStatus: string;                            // pending|paid|failed|refunded|partial_refund
+  name: string;                                     // recipient fullName
   phone: string;
-  addressDetails: {
-    house: string;
-    street: string;
-    city: string;
-    state: string;
-    pincode: string;
-  };
-  products: {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    image: string;
-  }[];
+  address: string;                                  // single-line formatted address (legacy)
+  addressDetails: FirestoreOrderAddressDetails;
+  products: FirestoreOrderProduct[];
   subtotal: number;
   shippingFee: number;
   totalAmount: number;
-  orderStatus: string;
+  discount?: number;
+  tax?: number;
+  notes?: string;
+  statusHistory?: FirestoreOrderStatusEvent[];
 }

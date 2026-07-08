@@ -79,17 +79,21 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setIsPlacing(true);
-    await new Promise((r) => setTimeout(r, 1200));
+    try {
+      const order = await createOrder({
+        items: items.map((i) => ({ productId: i.productId, name: i.name, slug: i.slug, price: i.price, image: i.image, quantity: i.quantity, variantId: i.variantId })),
+        subtotal, shipping, discount: couponDiscount, tax, total,
+        address, paymentMethod, notes: notes.trim() || undefined,
+      });
 
-    const order = createOrder({
-      items: items.map((i) => ({ productId: i.productId, name: i.name, slug: i.slug, price: i.price, image: i.image, quantity: i.quantity, variantId: i.variantId })),
-      subtotal, shipping, discount: couponDiscount, tax, total,
-      address, paymentMethod, notes: notes.trim() || undefined,
-    });
-
-    clearCart();
-    appToast.success("Order placed!", `Order ${order.orderNumber} confirmed`);
-    router.push(`/order-confirmation/${order.id}`);
+      clearCart();
+      appToast.success("Order placed!", `Order ${order.orderNumber} confirmed`);
+      router.push(`/order-confirmation/${order.id}`);
+    } catch (err) {
+      console.error("[checkout] createOrder failed:", err);
+      appToast.error("Order failed", "Could not place your order. Please try again.");
+      setIsPlacing(false);
+    }
   };
 
   return (

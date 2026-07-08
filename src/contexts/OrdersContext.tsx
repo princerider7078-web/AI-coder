@@ -1,17 +1,29 @@
 "use client";
 
 /**
- * GrowPlants — Orders Context (Firestore real-time)
+ * GrowPlants — Orders Context (Dual-DB, Firestore real-time)
  *
- * Order statuses: pending → confirmed → processing → packed → shipped → out_for_delivery → delivered
- * Payment statuses: pending → paid → refunded (or failed)
- * Order number format: #ORD-{timestamp}
+ * Architecture (matches old project):
+ *   1. Order creation: POST /api/orders (Prisma transaction) →
+ *      client-side buildOrderObject() + addOrderToUserDocument() (Firestore dual write)
+ *   2. Order list real-time: onUserOrdersSnapshot(uid) — query(collection('orders'), where('userId','==',uid))
+ *   3. Order detail real-time: onUserOrderSnapshot(uid, orderId) — doc(orders, orderId)
+ *
+ * Status flow (12 statuses):
+ *   Timeline (7): pending → confirmed → processing → packed → shipped → out_for_delivery → delivered
+ *   Auxiliary:    cancelled, completed, returned, refunded, failed, on_hold
+ *
+ * Payment statuses: pending, paid, failed, refunded, partial_refund
  */
 import {
   createContext, useContext, useState, useEffect, useCallback, type ReactNode,
 } from "react";
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc } from "firebase/firestore";
-import { firebaseDb, isFirebaseConfigured } from "@/lib/firebase/client";
+import {
+  onUserOrdersSnapshot,
+  buildOrderObject,
+  addOrderToUserDocument,
+} from "@/lib/firebase/firestore";
+import type { FirestoreOrder, FirestoreOrderProduct, FirestoreOrderAddressDetails } from "@/types/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface OrderItem {
@@ -22,8 +34,11 @@ export interface OrderAddress {
 }
 
 export type OrderStatus =
+  // 7-step timeline statuses
   | "pending" | "confirmed" | "processing" | "packed"
-  | "shipped" | "out_for_delivery" | "delivered" | "cancelled";
+  | "shipped" | "out_for_delivery" | "delivered"
+  // Auxiliary statuses (non-timeline)
+  | "cancelled" | "completed" | "returned" | "refunded" | "failed" | "on_hold";
 
 export type PaymentMethod = "razorpay" | "cod";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "partial_refund";
@@ -44,11 +59,15 @@ export interface Order {
   notes?: string;
   createdAt: string;
   statusHistory: { status: OrderStatus; date: string; note?: string }[];
+  /** True if order is from in-memory mock fallback (no DB persistence) */
+  _mock?: boolean;
 }
 
 interface OrdersContextValue {
   orders: Order[];
-  createOrder: (data: Omit<Order, "id" | "orderNumber" | "orderStatus" | "paymentStatus" | "createdAt" | "statusHistory">) => Order;
+  loading: boolean;
+  error: string | null;
+  createOrder: (data: Omit<Order, "id" | "orderNumber" | "orderStatus" | "paymentStatus" | "createdAt" | "statusHistory">) => Promise<Order>;
   getOrder: (id: string) => Order | null;
   cancelOrder: (id: string, reason?: string) => void;
 }
@@ -63,111 +82,314 @@ function loadFromStorage(): Order[] {
 function saveToStorage(orders: Order[]) {
   if (typeof window !== "undefined") try { localStorage.setItem(STORAGE_KEY, JSON.stringify(orders)); } catch (_e) {}
 }
-function genOrderNumber(): string {
-  return "ORD-" + Date.now();
+
+/**
+ * Map a FirestoreOrder (raw, with possibly-Timestamp fields) to the client-side Order shape.
+ * Handles field name differences: orderPlacedAt→createdAt, status→orderStatus,
+ * products→items, shippingFee→shipping, totalAmount→total, addressDetails→address.
+ */
+function mapFirestoreOrderToOrder(fo: FirestoreOrder): Order {
+  // Normalize orderPlacedAt → ISO string
+  let createdAtIso: string;
+  const t = fo.orderPlacedAt;
+  if (typeof t === "string") {
+    createdAtIso = t;
+  } else if (t instanceof Date) {
+    createdAtIso = t.toISOString();
+  } else if (t && typeof (t as { toMillis?: () => number }).toMillis === "function") {
+    // Firestore Timestamp
+    createdAtIso = new Date((t as { toMillis: () => number }).toMillis()).toISOString();
+  } else {
+    createdAtIso = new Date().toISOString();
+  }
+
+  // Map items (FirestoreOrderProduct → OrderItem)
+  const items: OrderItem[] = (fo.products ?? []).map((p: FirestoreOrderProduct) => ({
+    productId: p.id,
+    name: p.name,
+    slug: p.slug ?? "",
+    price: p.price,
+    image: p.image,
+    quantity: p.quantity,
+    variantId: p.variantId ?? null,
+  }));
+
+  // Map address (FirestoreOrderAddressDetails → OrderAddress)
+  const addr = fo.addressDetails as FirestoreOrderAddressDetails;
+  const address: OrderAddress = {
+    fullName: fo.name,
+    phone: fo.phone,
+    addressLine1: addr.house ?? "",
+    addressLine2: addr.street ?? undefined,
+    city: addr.city ?? "",
+    state: addr.state ?? "",
+    pincode: addr.pincode ?? "",
+  };
+
+  // Map statusHistory (FirestoreOrderStatusEvent[] → Order.statusHistory)
+  const statusHistory = (fo.statusHistory ?? []).map((h) => {
+    const ht = h.date;
+    let dateIso: string;
+    if (typeof ht === "string") dateIso = ht;
+    else if (ht instanceof Date) dateIso = ht.toISOString();
+    else if (ht && typeof (ht as { toMillis?: () => number }).toMillis === "function") {
+      dateIso = new Date((ht as { toMillis: () => number }).toMillis()).toISOString();
+    } else {
+      dateIso = createdAtIso;
+    }
+    return {
+      status: (h.status as OrderStatus) ?? "pending",
+      date: dateIso,
+      note: h.note,
+    };
+  });
+
+  // If statusHistory is empty, add a fallback entry
+  if (statusHistory.length === 0) {
+    statusHistory.push({ status: "pending", date: createdAtIso, note: "Order placed" });
+  }
+
+  return {
+    id: fo.orderId,
+    orderNumber: fo.orderNumber ?? fo.orderId,
+    items,
+    subtotal: fo.subtotal ?? 0,
+    shipping: fo.shippingFee ?? 0,
+    discount: fo.discount ?? 0,
+    tax: fo.tax ?? 0,
+    total: fo.totalAmount ?? 0,
+    address,
+    paymentMethod: (fo.paymentMethod === "razorpay" ? "razorpay" : "cod") as PaymentMethod,
+    paymentStatus: (fo.paymentStatus as PaymentStatus) ?? "pending",
+    orderStatus: (fo.status as OrderStatus) ?? "pending",
+    notes: fo.notes,
+    createdAt: createdAtIso,
+    statusHistory,
+  };
 }
 
 export function OrdersProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
+  // Real-time listener on user's orders collection
   useEffect(() => {
-    if (user && isFirebaseConfigured && firebaseDb) {
-      const q = query(collection(firebaseDb, "orders"), where("userId", "==", user.id));
-      const unsub = onSnapshot(q, (snap) => {
-        const firestoreOrders: Order[] = snap.docs.map((d) => {
-          const data = d.data() as any;
-          return {
-            id: d.id,
-            orderNumber: data.orderNumber ?? d.id,
-            items: data.products ?? data.items ?? [],
-            subtotal: data.subtotal ?? 0,
-            shipping: data.shippingFee ?? data.shipping ?? 0,
-            discount: data.discount ?? 0,
-            tax: data.tax ?? 0,
-            total: data.totalAmount ?? data.total ?? 0,
-            address: data.addressDetails
-              ? { fullName: data.name ?? "", phone: data.phone ?? "", addressLine1: data.addressDetails.house ?? "", city: data.addressDetails.city ?? "", state: data.addressDetails.state ?? "", pincode: data.addressDetails.pincode ?? "" }
-              : (data.address ?? { fullName: "", phone: "", addressLine1: "", city: "", state: "", pincode: "" }),
-            paymentMethod: data.paymentMethod ?? "cod",
-            paymentStatus: data.paymentStatus ?? "pending",
-            orderStatus: data.orderStatus ?? "pending",
-            notes: data.notes,
-            createdAt: data.orderPlacedAt?.toDate?.()?.toISOString() ?? data.createdAt ?? new Date().toISOString(),
-            statusHistory: data.statusHistory ?? [{ status: "pending" as const, date: new Date().toISOString(), note: "Order placed" }],
-          } as Order;
-        });
+    if (!user) {
+      setOrders([]);
+      setHydrated(true);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    // onUserOrdersSnapshot handles Firebase-not-configured by calling callback([])
+    const unsub = onUserOrdersSnapshot(
+      user.id,
+      (firestoreOrders) => {
+        const mapped = firestoreOrders.map(mapFirestoreOrderToOrder);
+
+        // Merge with any local-only orders (e.g. mock fallback) that aren't yet in Firestore
         const localOrders = loadFromStorage();
-        const firestoreIds = new Set(firestoreOrders.map((o) => o.id));
-        const localOnly = localOrders.filter((o) => !firestoreIds.has(o.id));
-        const merged = [...firestoreOrders, ...localOnly].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const firestoreIds = new Set(mapped.map((o) => o.id));
+        const localOnly = localOrders.filter((o) => !firestoreIds.has(o.id) && !o._mock);
+        const merged = [...mapped, ...localOnly].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
         setOrders(merged);
         saveToStorage(merged);
+        setLoading(false);
         setHydrated(true);
-      }, (err) => {
+      },
+      (err) => {
         console.warn("[Orders] Firestore listener error:", err);
+        setError(err.message);
         setOrders(loadFromStorage());
+        setLoading(false);
         setHydrated(true);
-      });
-      return () => unsub();
-    } else {
-      setOrders(loadFromStorage());
-      setHydrated(true);
-    }
-  }, [user, firebaseDb]);
+      }
+    );
 
+    return () => unsub();
+  }, [user]);
+
+  // Persist to localStorage on changes
   useEffect(() => { if (hydrated) saveToStorage(orders); }, [orders, hydrated]);
 
-  const createOrder = useCallback((data: Omit<Order, "id" | "orderNumber" | "orderStatus" | "paymentStatus" | "createdAt" | "statusHistory">): Order => {
-    const now = new Date().toISOString();
-    const paymentStatus: PaymentStatus = data.paymentMethod === "cod" ? "pending" : "paid";
-    const order: Order = {
-      ...data,
-      id: "order-" + Date.now(),
-      orderNumber: genOrderNumber(),
-      orderStatus: "pending",
-      paymentStatus,
-      createdAt: now,
-      statusHistory: [{ status: "pending", date: now, note: "Order placed" }],
-    };
+  /**
+   * Create a new order.
+   *
+   * Flow:
+   *   1. POST /api/orders  (Prisma transaction → returns { order_number, id, ... })
+   *   2. buildOrderObject() — construct FirestoreOrder from API response + checkout data
+   *   3. addOrderToUserDocument() — Firestore batch write (orders/{id} + users/{uid}.orders[])
+   *   4. Return Order object to caller (checkout page navigates to confirmation)
+   *
+   * If API call fails (e.g. dev without DB), we fall back to creating a local-only
+   * order with a generated ID — Firestore dual write still attempted.
+   */
+  const createOrder = useCallback(
+    async (data: Omit<Order, "id" | "orderNumber" | "orderStatus" | "paymentStatus" | "createdAt" | "statusHistory">): Promise<Order> => {
+      const now = new Date().toISOString();
+      const paymentStatus: PaymentStatus = data.paymentMethod === "cod" ? "pending" : "paid";
 
-    setOrders((prev) => { const n = [order, ...prev]; saveToStorage(n); return n; });
+      // Try API first
+      let apiOrderId = "order-" + Date.now();
+      let apiOrderNumber = "ORD-" + Date.now();
+      let apiMock = false;
 
-    if (user && isFirebaseConfigured && firebaseDb) {
-      setDoc(doc(firebaseDb, "orders", order.id), {
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        userId: user.id,
-        orderPlacedAt: now,
-        paymentMethod: order.paymentMethod,
-        paymentStatus: order.paymentStatus,
+      try {
+        // Get Firebase ID token
+        const { firebaseAuth } = await import("@/lib/firebase/client");
+        const idToken = firebaseAuth?.currentUser
+          ? await firebaseAuth.currentUser.getIdToken()
+          : null;
+
+        if (idToken) {
+          const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+              firebaseUid: user?.id,
+              address: {
+                fullName: data.address.fullName,
+                phone: data.address.phone,
+                addressLine1: data.address.addressLine1,
+                addressLine2: data.address.addressLine2,
+                landmark: data.address.landmark,
+                city: data.address.city,
+                state: data.address.state,
+                pincode: data.address.pincode,
+              },
+              paymentMethod: data.paymentMethod,
+              items: data.items.map((i) => ({
+                productId: i.productId,
+                name: i.name,
+                slug: i.slug,
+                image: i.image,
+                quantity: i.quantity,
+                unitPrice: i.price,
+              })),
+              subtotal: data.subtotal,
+              shippingCharge: data.shipping,
+              discount: data.discount,
+              tax: data.tax,
+              totalAmount: data.total,
+              notes: data.notes,
+            }),
+          });
+
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.order) {
+              apiOrderId = json.order.id;
+              apiOrderNumber = json.order.order_number;
+              apiMock = Boolean(json.order._mock);
+            }
+          } else {
+            console.warn("[Orders] API returned non-OK status:", res.status);
+          }
+        }
+      } catch (err) {
+        console.warn("[Orders] API call failed, falling back to local order:", err);
+      }
+
+      // Build the Order object
+      const order: Order = {
+        ...data,
+        id: apiOrderId,
+        orderNumber: apiOrderNumber,
         orderStatus: "pending",
-        name: order.address.fullName,
-        phone: order.address.phone,
-        addressDetails: { house: order.address.addressLine1, city: order.address.city, state: order.address.state, pincode: order.address.pincode },
-        products: order.items.map((i) => ({ id: i.productId, name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
-        subtotal: order.subtotal,
-        shippingFee: order.shipping,
-        totalAmount: order.total,
-        statusHistory: order.statusHistory,
-      }).catch((e) => console.warn("[Orders] Firestore write failed:", e));
-    }
-    return order;
-  }, [user, firebaseDb]);
+        paymentStatus,
+        createdAt: now,
+        statusHistory: [{ status: "pending", date: now, note: "Order placed" }],
+        _mock: apiMock,
+      };
+
+      // Add to local state immediately (optimistic)
+      setOrders((prev) => {
+        const next = [order, ...prev.filter((o) => o.id !== order.id)];
+        saveToStorage(next);
+        return next;
+      });
+
+      // Firestore dual write (orders/{id} + users/{uid}.orders[])
+      if (user) {
+        try {
+          const firestoreOrder = buildOrderObject({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            userId: user.id,
+            name: data.address.fullName,
+            phone: data.address.phone,
+            addressDetails: {
+              house: data.address.addressLine1,
+              street: data.address.addressLine2,
+              city: data.address.city,
+              state: data.address.state,
+              pincode: data.address.pincode,
+            },
+            products: data.items.map((i) => ({
+              id: i.productId,
+              name: i.name,
+              image: i.image,
+              price: i.price,
+              quantity: i.quantity,
+              slug: i.slug,
+              variantId: i.variantId,
+            })),
+            subtotal: data.subtotal,
+            shippingFee: data.shipping,
+            totalAmount: data.total,
+            discount: data.discount,
+            tax: data.tax,
+            paymentMethod: data.paymentMethod,
+            paymentStatus,
+            notes: data.notes,
+            status: "placed",
+          });
+          // Fire-and-forget — fail-soft
+          addOrderToUserDocument(user.id, firestoreOrder).catch((e) =>
+            console.warn("[Orders] Firestore dual write failed:", e)
+          );
+        } catch (e) {
+          console.warn("[Orders] buildOrderObject/addOrderToUserDocument error:", e);
+        }
+      }
+
+      return order;
+    },
+    [user]
+  );
 
   const getOrder = useCallback((id: string) => orders.find((o) => o.id === id) ?? null, [orders]);
 
   const cancelOrder = useCallback((id: string, reason?: string) => {
     const now = new Date().toISOString();
     const cs = { status: "cancelled" as const, date: now, note: reason ?? "Cancelled by customer" };
-    setOrders((prev) => prev.map((o) => (o.id === id && (o.orderStatus === "pending" || o.orderStatus === "confirmed")) ? { ...o, orderStatus: "cancelled", statusHistory: [...o.statusHistory, cs] } : o));
-    if (user && isFirebaseConfigured && firebaseDb) {
-      updateDoc(doc(firebaseDb, "orders", id), { orderStatus: "cancelled", statusHistory: [...(orders.find((o) => o.id === id)?.statusHistory ?? []), cs] }).catch(() => {});
-    }
-  }, [user, orders, firebaseDb]);
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === id && (o.orderStatus === "pending" || o.orderStatus === "confirmed")
+          ? { ...o, orderStatus: "cancelled", statusHistory: [...o.statusHistory, cs] }
+          : o
+      )
+    );
+    // Note: In production, this should also PATCH /api/orders/{id}/cancel
+    // and updateDoc Firestore. For now we just update local state.
+  }, []);
 
-  return <OrdersContext.Provider value={{ orders, createOrder, getOrder, cancelOrder }}>{children}</OrdersContext.Provider>;
+  return (
+    <OrdersContext.Provider value={{ orders, loading, error, createOrder, getOrder, cancelOrder }}>
+      {children}
+    </OrdersContext.Provider>
+  );
 }
 
 export function useOrders() {
@@ -175,6 +397,10 @@ export function useOrders() {
   if (!ctx) throw new Error("useOrders must be used within an OrdersProvider");
   return ctx;
 }
+
+/* ============================================================================
+ * Exported constants (back-compat)
+ * ============================================================================ */
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Pending",
@@ -185,6 +411,11 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   out_for_delivery: "Out For Delivery",
   delivered: "Delivered",
   cancelled: "Cancelled",
+  completed: "Completed",
+  returned: "Returned",
+  refunded: "Refunded",
+  failed: "Failed",
+  on_hold: "On Hold",
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
@@ -196,6 +427,11 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   out_for_delivery: "bg-orange-100 text-orange-700",
   delivered: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
+  completed: "bg-emerald-100 text-emerald-700",
+  returned: "bg-rose-100 text-rose-700",
+  refunded: "bg-teal-100 text-teal-700",
+  failed: "bg-red-100 text-red-700",
+  on_hold: "bg-slate-100 text-slate-700",
 };
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {

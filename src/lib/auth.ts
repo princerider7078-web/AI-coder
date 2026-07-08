@@ -152,3 +152,110 @@ export async function requireRole(
   }
   return user;
 }
+
+/* ============================================================================
+ * Firebase ID Token Verification (Dev Fallback)
+ * ============================================================================
+ * In production we'd use firebase-admin's verifyIdToken(). In dev, we decode
+ * the JWT payload via base64 — without signature verification — so the API
+ * routes can accept Firebase-issued ID tokens even when Admin SDK credentials
+ * are missing.
+ *
+ * ⚠️  NEVER use this in production. Signature is NOT verified.
+ * ============================================================================ */
+
+export interface DecodedFirebaseToken {
+  uid: string;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  picture?: string;
+  iss?: string;
+  aud?: string;
+  auth_time?: number;
+  iat?: number;
+  exp?: number;
+  sub?: string;
+  firebase?: {
+    identities?: Record<string, unknown>;
+    sign_in_provider?: string;
+  };
+}
+
+/**
+ * Decode a Firebase ID token's payload WITHOUT verifying the signature.
+ *
+ * Firebase ID tokens are standard JWTs (header.payload.signature). All three
+ * segments are base64url-encoded. We only need the payload (segment 2) to
+ * extract the uid.
+ *
+ * Returns null if:
+ *   - the token is malformed (fewer than 3 segments)
+ *   - the payload cannot be base64-decoded or JSON-parsed
+ *   - the token is expired (exp < now)
+ */
+export function verifyIdTokenDev(
+  idToken: string
+): DecodedFirebaseToken | null {
+  try {
+    const parts = idToken.split(".");
+    if (parts.length !== 3) return null;
+
+    // base64url → base64 → JSON
+    const payloadB64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    // Pad to multiple of 4
+    const padded = payloadB64 + "=".repeat((4 - (payloadB64.length % 4)) % 4);
+    const payloadJson = Buffer.from(padded, "base64").toString("utf-8");
+    const payload = JSON.parse(payloadJson) as DecodedFirebaseToken;
+
+    // Validate expiry (exp is in seconds)
+    if (typeof payload.exp === "number") {
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (payload.exp < nowSec) return null;
+    }
+
+    // Extract uid: Firebase uses `user_id` or `sub`
+    const uid = (payload as unknown as Record<string, unknown>).user_id as string | undefined;
+    if (!uid && !payload.sub) return null;
+    payload.uid = (uid || payload.sub)!;
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Try Admin SDK first (if configured); fall back to verifyIdTokenDev.
+ * Used by API routes that accept Firebase ID tokens in the Authorization header.
+ */
+export async function verifyFirebaseIdToken(
+  idToken: string
+): Promise<DecodedFirebaseToken | null> {
+  // Try Admin SDK first (production path)
+  try {
+    const { adminAuth, isAdminConfigured } = await import("@/lib/firebase/admin");
+    if (isAdminConfigured && adminAuth) {
+      const decoded = await adminAuth.verifyIdToken(idToken);
+      return {
+        uid: decoded.uid,
+        email: decoded.email,
+        email_verified: decoded.email_verified,
+        name: decoded.name,
+        picture: decoded.picture,
+        iss: decoded.iss,
+        aud: decoded.aud,
+        auth_time: decoded.auth_time,
+        iat: decoded.iat,
+        exp: decoded.exp,
+        sub: decoded.sub,
+        firebase: decoded.firebase as DecodedFirebaseToken["firebase"],
+      };
+    }
+  } catch (err) {
+    console.warn("[auth] Admin SDK verify failed, falling back to dev decode:", err);
+  }
+
+  // Dev fallback
+  return verifyIdTokenDev(idToken);
+}

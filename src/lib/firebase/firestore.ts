@@ -8,24 +8,28 @@
  *
  * Firestore schema reference (03_database_design.md):
  *   users/{uid} → { uid, firstName, lastName, email, phone, profileImage,
- *                   memberSince, preferences, addresses[], wishlist[], cart[] }
- *   orders/{orderId} → { orderId, userId, orderPlacedAt, paymentMethod,
- *                        paymentStatus, name, phone, addressDetails,
- *                        products[], subtotal, shippingFee, totalAmount,
- *                        orderStatus }
+ *                   memberSince, preferences, addresses[], wishlist[], cart[],
+ *                   orders[] (embedded mirror for client convenience) }
+ *   orders/{orderId} → { orderId, orderNumber, userId, orderPlacedAt, status,
+ *                        paymentMethod, paymentStatus, name, phone, address,
+ *                        addressDetails, products[], subtotal, shippingFee,
+ *                        totalAmount, discount, statusHistory[] }
  */
 import {
   doc,
-  getDoc,
   setDoc,
   updateDoc,
+  arrayUnion,
   collection,
   query,
   where,
-  getDocs,
   onSnapshot,
+  getDoc,
+  getDocs,
   serverTimestamp,
+  writeBatch,
   type Unsubscribe,
+  type Timestamp,
 } from "firebase/firestore";
 import { firebaseDb, isFirebaseConfigured } from "@/lib/firebase/client";
 import type {
@@ -34,6 +38,9 @@ import type {
   FirestoreCartItem,
   FirestoreWishlistItem,
   FirestoreOrder,
+  FirestoreOrderProduct,
+  FirestoreOrderAddressDetails,
+  FirestoreOrderStatusEvent,
 } from "@/types/firebase";
 
 const USERS_COLLECTION = "users";
@@ -203,4 +210,213 @@ export function watchFirestoreOrders(
     (snap) => callback(snap.docs.map((d) => d.data() as FirestoreOrder)),
     () => callback([])
   );
+}
+
+/* ============================================================================
+ * ORDER CREATION HELPERS — buildOrderObject + addOrderToUserDocument
+ * Dual-write: top-level orders/{orderId} + users/{uid}/orders[] (arrayUnion)
+ * ============================================================================ */
+
+export interface BuildOrderObjectInput {
+  orderId: string;
+  orderNumber: string;
+  userId: string;
+  name: string;
+  phone: string;
+  addressDetails: FirestoreOrderAddressDetails;
+  products: FirestoreOrderProduct[];
+  subtotal: number;
+  shippingFee: number;
+  totalAmount: number;
+  discount?: number;
+  tax?: number;
+  paymentMethod: string;       // "cod" | "razorpay"
+  paymentStatus: string;       // "pending" | "paid" | ...
+  notes?: string;
+  status?: string;             // default "placed"
+}
+
+/**
+ * Build a plain-object FirestoreOrder from API/checkout input.
+ * Returned object is JSON-serialisable (no Timestamps except via serverTimestamp
+ * — but we store orderPlacedAt as ISO string so it round-trips safely).
+ */
+export function buildOrderObject(input: BuildOrderObjectInput): FirestoreOrder {
+  const now = new Date().toISOString();
+  const addressLine = [
+    input.addressDetails.house,
+    input.addressDetails.street,
+    input.addressDetails.city,
+    input.addressDetails.state,
+    input.addressDetails.pincode,
+  ].filter(Boolean).join(", ");
+
+  const statusHistory: FirestoreOrderStatusEvent[] = [
+    {
+      status: input.status ?? "placed",
+      date: now,
+      note: "Order placed",
+      createdBy: input.userId,
+    },
+  ];
+
+  return {
+    orderId: input.orderId,
+    orderNumber: input.orderNumber,
+    userId: input.userId,
+    orderPlacedAt: now,
+    status: input.status ?? "placed",
+    paymentMethod: input.paymentMethod,
+    paymentStatus: input.paymentStatus,
+    name: input.name,
+    phone: input.phone,
+    address: addressLine,
+    addressDetails: input.addressDetails,
+    products: input.products,
+    subtotal: input.subtotal,
+    shippingFee: input.shippingFee,
+    totalAmount: input.totalAmount,
+    discount: input.discount ?? 0,
+    tax: input.tax ?? 0,
+    notes: input.notes,
+    statusHistory,
+  };
+}
+
+/**
+ * Atomic Firestore batch write — adds the order to BOTH:
+ *   1. orders/{orderId}        (top-level collection — for admin reads + real-time)
+ *   2. users/{uid} → orders[]   (embedded array — for client convenience)
+ *
+ * Either both succeed or both fail (Firestore batch atomicity).
+ *
+ * If Firebase is not configured, this is a no-op (logged).
+ */
+export async function addOrderToUserDocument(
+  uid: string,
+  order: FirestoreOrder
+): Promise<void> {
+  if (!isFirebaseConfigured || !firebaseDb) {
+    console.warn("[firestore] addOrderToUserDocument: Firebase not configured — skipping dual write");
+    return;
+  }
+
+  const orderRef = doc(firebaseDb, ORDERS_COLLECTION, order.orderId);
+  const userRef = doc(firebaseDb, USERS_COLLECTION, uid);
+
+  try {
+    const batch = writeBatch(firebaseDb);
+    // 1. Top-level orders/{orderId} doc
+    batch.set(orderRef, order);
+    // 2. Append order to users/{uid}.orders[] (arrayUnion — dedupes by reference equality)
+    batch.update(userRef, { orders: arrayUnion(order) });
+    await batch.commit();
+  } catch (err) {
+    // Fail-soft: log only. PostgreSQL/Prisma already saved the order — Firestore
+    // is the secondary mirror. Admin can rebuild it from PostgreSQL if needed.
+    console.error("[firestore] addOrderToUserDocument dual-write failed:", err);
+  }
+}
+
+/* ============================================================================
+ * REAL-TIME LISTENERS — onUserOrdersSnapshot + onUserOrderSnapshot
+ * ============================================================================ */
+
+/**
+ * Subscribe to ALL of a user's orders in real-time.
+ * Fires callback immediately with the current snapshot, and again whenever any
+ * order changes. Returns an unsubscribe function.
+ *
+ * Used by: OrdersContext (orders list page).
+ */
+export function onUserOrdersSnapshot(
+  uid: string,
+  callback: (orders: FirestoreOrder[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  if (!isFirebaseConfigured || !firebaseDb) {
+    callback([]);
+    return () => {};
+  }
+  const q = query(
+    collection(firebaseDb, ORDERS_COLLECTION),
+    where("userId", "==", uid)
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const orders = snap.docs
+        .map((d) => d.data() as FirestoreOrder)
+        .sort((a, b) => {
+          // Sort by orderPlacedAt desc (string|Timestamp|Date)
+          const tA = normalizeTime(a.orderPlacedAt);
+          const tB = normalizeTime(b.orderPlacedAt);
+          return tB - tA;
+        });
+      callback(orders);
+    },
+    (err) => {
+      console.warn("[firestore] onUserOrdersSnapshot error:", err);
+      onError?.(err);
+      callback([]);
+    }
+  );
+}
+
+/**
+ * Subscribe to a SINGLE order document in real-time.
+ * Fires callback immediately with the current doc, and again whenever the doc
+ * changes (e.g. admin updates status from "shipped" → "out_for_delivery").
+ * Returns an unsubscribe function.
+ *
+ * Used by: OrderTrackingClient (order detail page).
+ */
+export function onUserOrderSnapshot(
+  uid: string,
+  orderId: string,
+  callback: (order: FirestoreOrder | null) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  if (!isFirebaseConfigured || !firebaseDb) {
+    callback(null);
+    return () => {};
+  }
+  const ref = doc(firebaseDb, ORDERS_COLLECTION, orderId);
+  return onSnapshot(
+    ref,
+    (snap) => {
+      if (!snap.exists()) {
+        callback(null);
+        return;
+      }
+      const data = snap.data() as FirestoreOrder;
+      // Security: only deliver the doc if it belongs to this user
+      if (data.userId !== uid) {
+        console.warn("[firestore] onUserOrderSnapshot: doc belongs to different user — ignoring");
+        callback(null);
+        return;
+      }
+      callback(data);
+    },
+    (err) => {
+      console.warn("[firestore] onUserOrderSnapshot error:", err);
+      onError?.(err);
+      callback(null);
+    }
+  );
+}
+
+/* ---------- Internal helpers ---------- */
+
+function normalizeTime(
+  t: FirestoreOrder["orderPlacedAt"]
+): number {
+  if (!t) return 0;
+  if (typeof t === "string") return new Date(t).getTime();
+  if (t instanceof Date) return t.getTime();
+  // Firestore Timestamp
+  if (typeof (t as Timestamp).toMillis === "function") {
+    return (t as Timestamp).toMillis();
+  }
+  return 0;
 }

@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,6 +16,9 @@ model User {
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  orders    Order[]
+  addresses Address[]
 }
 
 model Post {
@@ -29,4 +29,107 @@ model Post {
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// ORDERS — Dual-DB Strategy (PostgreSQL/SQLite via Prisma + Firestore)
+// ============================================================================
+
+/// Top-level order record. Mirrored to Firestore orders/{orderId} for real-time.
+model Order {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique                 // ORD-{timestamp}
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addressId     String?
+  address       Address? @relation(fields: [addressId], references: [id])
+
+  // Totals (in paise/int to avoid float drift)
+  subtotal      Int      @default(0)
+  shippingFee   Int      @default(0)
+  discount      Int      @default(0)
+  tax           Int      @default(0)
+  totalAmount   Int      @default(0)
+
+  // Payment
+  paymentMethod String   @default("cod")          // "cod" | "razorpay"
+  paymentStatus String   @default("pending")      // pending|paid|failed|refunded|partial_refund
+
+  // Order status (7-step flow + cancelled)
+  status        String   @default("pending")      // pending|confirmed|processing|packed|shipped|out_for_delivery|delivered|cancelled
+
+  notes         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Line items for an order. productSnapshot keeps the product JSON at order time.
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId       String
+  name            String
+  slug            String
+  image           String
+  quantity        Int      @default(1)
+  unitPrice       Int
+  totalPrice      Int
+  /// JSON string snapshot of product at order time
+  productSnapshot String   @default("{}")
+
+  createdAt       DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+/// Audit log of every status change.
+model OrderStatusHistory {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  status      String                                   // OrderStatus value
+  remarks     String?
+  createdBy   String   @default("system")              // uid or "system" | "admin"
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+/// Saved addresses (per user). One address can be used by multiple orders.
+model Address {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName      String
+  phone         String
+  addressLine1  String
+  addressLine2  String?
+  landmark      String?
+  city          String
+  state         String
+  pincode       String
+  latitude      Float?
+  longitude     Float?
+  isDefault     Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orders        Order[]
+
+  @@index([userId])
 }
