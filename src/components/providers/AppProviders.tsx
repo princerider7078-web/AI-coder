@@ -16,15 +16,18 @@ import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { OrdersProvider } from "@/contexts/OrdersContext";
+import { BookingsProvider } from "@/contexts/BookingsContext";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <AuthProvider>
         <OrdersProvider>
-          <WishlistProvider>
-            <CartProvider>{children}</CartProvider>
-          </WishlistProvider>
+          <BookingsProvider>
+            <WishlistProvider>
+              <CartProvider>{children}</CartProvider>
+            </WishlistProvider>
+          </BookingsProvider>
         </OrdersProvider>
       </AuthProvider>
     </ThemeProvider>
