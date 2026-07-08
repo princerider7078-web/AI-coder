@@ -1,0 +1,232 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { ChevronRight, Check, Truck, CreditCard, Banknote, MapPin, Loader2, ShoppingCart } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Container } from "@/components/common/Container";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { useCart } from "@/contexts/CartContext";
+import { useOrders, type OrderAddress, type PaymentMethod } from "@/contexts/OrdersContext";
+import { formatINR, isValidPincode } from "@/lib/utils";
+import { appToast } from "@/lib/toast";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
+import Link from "next/link";
+
+const STEPS = ["Address", "Review", "Payment"] as const;
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { items, subtotal, itemCount, clearCart } = useCart();
+  const { createOrder } = useOrders();
+
+  const [step, setStep] = useState(0);
+  const [isPlacing, setIsPlacing] = useState(false);
+
+  // Address form
+  const [address, setAddress] = useState<OrderAddress>({
+    fullName: "", phone: "", addressLine1: "", addressLine2: "", landmark: "",
+    city: "Sonipat", state: "Haryana", pincode: "",
+  });
+  const [addressErrors, setAddressErrors] = useState<Record<string, string>>({});
+
+  // Payment
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("razorpay");
+  const [notes, setNotes] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 49;
+  const tax = Math.round(subtotal * 0.18);
+  const total = subtotal - couponDiscount + shipping;
+
+  // Empty cart guard
+  if (itemCount === 0 && !isPlacing) {
+    return (
+      <Container className="py-16">
+        <div className="text-center space-y-4">
+          <div className="size-16 rounded-full bg-[#F3F8F1] flex items-center justify-center mx-auto">
+            <ShoppingCart className="size-8 text-[#1A6B3C]" aria-hidden="true" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900">Your cart is empty</h1>
+          <p className="text-sm text-slate-500">Add some products before checking out.</p>
+          <Button asChild className="bg-[#1A6B3C] hover:bg-[#16A34A] gap-2"><Link href="/shop">Browse Shop</Link></Button>
+        </div>
+      </Container>
+    );
+  }
+
+  const validateAddress = () => {
+    const errs: Record<string, string> = {};
+    if (!address.fullName.trim()) errs.fullName = "Name is required";
+    if (!address.phone.trim() || !/^\+?91?\s?[6-9]\d{9}$/.test(address.phone.replace(/\s/g, ""))) errs.phone = "Enter a valid Indian phone number";
+    if (!address.addressLine1.trim()) errs.addressLine1 = "Address is required";
+    if (!address.city.trim()) errs.city = "City is required";
+    if (!address.state.trim()) errs.state = "State is required";
+    if (!isValidPincode(address.pincode)) errs.pincode = "Enter a valid 6-digit pincode";
+    setAddressErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleNext = () => {
+    if (step === 0 && !validateAddress()) return;
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  };
+
+  const handlePlaceOrder = async () => {
+    setIsPlacing(true);
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const order = createOrder({
+      items: items.map((i) => ({ productId: i.productId, name: i.name, slug: i.slug, price: i.price, image: i.image, quantity: i.quantity, variantId: i.variantId })),
+      subtotal, shipping, discount: couponDiscount, tax, total,
+      address, paymentMethod, notes: notes.trim() || undefined,
+    });
+
+    clearCart();
+    appToast.success("Order placed!", `Order ${order.orderNumber} confirmed`);
+    router.push(`/order-confirmation/${order.id}`);
+  };
+
+  return (
+    <Container className="py-6 md:py-10">
+      {/* Stepper */}
+      <div className="flex items-center justify-center gap-2 mb-8">
+        {STEPS.map((label, i) => (
+          <div key={label} className="flex items-center gap-2">
+            <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors", i === step ? "bg-[#1A6B3C] text-white" : i < step ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500")}>
+              {i < step ? <Check className="size-3.5" /> : <span className="size-5 rounded-full flex items-center justify-center text-xs">{i + 1}</span>}
+              {label}
+            </div>
+            {i < STEPS.length - 1 && <ChevronRight className="size-4 text-slate-300" />}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Left: Step content */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Step 1: Address */}
+          {step === 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+              <h2 className="text-base font-bold text-[#1A6B3C] flex items-center gap-2"><MapPin className="size-5" />Delivery Address</h2>
+              <Separator />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label htmlFor="fullName" className="text-sm">Full Name *</Label><Input id="fullName" value={address.fullName} onChange={(e) => setAddress({ ...address, fullName: e.target.value })} className="h-11" />{addressErrors.fullName && <p className="text-xs text-red-500">{addressErrors.fullName}</p>}</div>
+                <div className="space-y-1.5"><Label htmlFor="phone" className="text-sm">Phone Number *</Label><Input id="phone" type="tel" placeholder="9876543210" value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} className="h-11" />{addressErrors.phone && <p className="text-xs text-red-500">{addressErrors.phone}</p>}</div>
+              </div>
+              <div className="space-y-1.5"><Label htmlFor="addr1" className="text-sm">Address Line 1 *</Label><Input id="addr1" placeholder="House no, Building, Street" value={address.addressLine1} onChange={(e) => setAddress({ ...address, addressLine1: e.target.value })} className="h-11" />{addressErrors.addressLine1 && <p className="text-xs text-red-500">{addressErrors.addressLine1}</p>}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label htmlFor="addr2" className="text-sm">Address Line 2</Label><Input id="addr2" value={address.addressLine2} onChange={(e) => setAddress({ ...address, addressLine2: e.target.value })} className="h-11" /></div>
+                <div className="space-y-1.5"><Label htmlFor="landmark" className="text-sm">Landmark</Label><Input id="landmark" placeholder="Near..." value={address.landmark} onChange={(e) => setAddress({ ...address, landmark: e.target.value })} className="h-11" /></div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5"><Label htmlFor="city" className="text-sm">City *</Label><Input id="city" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} className="h-11" />{addressErrors.city && <p className="text-xs text-red-500">{addressErrors.city}</p>}</div>
+                <div className="space-y-1.5"><Label htmlFor="state" className="text-sm">State *</Label><Input id="state" value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} className="h-11" />{addressErrors.state && <p className="text-xs text-red-500">{addressErrors.state}</p>}</div>
+                <div className="space-y-1.5"><Label htmlFor="pincode" className="text-sm">Pincode *</Label><Input id="pincode" inputMode="numeric" maxLength={6} placeholder="131001" value={address.pincode} onChange={(e) => setAddress({ ...address, pincode: e.target.value.replace(/\D/g, "") })} className="h-11" />{addressErrors.pincode && <p className="text-xs text-red-500">{addressErrors.pincode}</p>}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Review */}
+          {step === 1 && (
+            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+              <h2 className="text-base font-bold text-[#1A6B3C]">Review Your Order</h2>
+              <Separator />
+              {/* Delivery address summary */}
+              <div className="p-3 bg-[#F3F8F1] rounded-lg">
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Delivering To</p>
+                <p className="text-sm font-medium text-slate-800">{address.fullName} · {address.phone}</p>
+                <p className="text-sm text-slate-600">{address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ""}, {address.city}, {address.state} - {address.pincode}</p>
+              </div>
+              {/* Items */}
+              <div className="space-y-3">
+                {items.map((item) => (
+                  <div key={item.id} className="flex gap-3 items-center">
+                    <div className="relative size-14 rounded-lg overflow-hidden bg-slate-50 shrink-0">
+                      {item.image && <Image src={item.image} alt={item.name} fill sizes="56px" className="object-cover" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-800 line-clamp-1">{item.name}</p>
+                      <p className="text-xs text-slate-500">Qty: {item.quantity} × {formatINR(item.price)}</p>
+                    </div>
+                    <p className="text-sm font-bold text-[#1A6B3C] tabular-nums">{formatINR(item.price * item.quantity)}</p>
+                  </div>
+                ))}
+              </div>
+              <Separator />
+              {/* Notes */}
+              <div className="space-y-1.5">
+                <Label htmlFor="notes" className="text-sm">Special Instructions (optional)</Label>
+                <Textarea id="notes" rows={2} placeholder="Any delivery preferences..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Payment */}
+          {step === 2 && (
+            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+              <h2 className="text-base font-bold text-[#1A6B3C]">Payment Method</h2>
+              <Separator />
+              <div className="space-y-3">
+                {/* Razorpay */}
+                <button onClick={() => setPaymentMethod("razorpay")} className={cn("w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left", paymentMethod === "razorpay" ? "border-[#1A6B3C] bg-[#F3F8F1]" : "border-slate-200 hover:border-slate-300")}>
+                  <CreditCard className="size-5 text-[#1A6B3C]" />
+                  <div className="flex-1"><p className="text-sm font-semibold text-slate-800">Pay Online</p><p className="text-xs text-slate-500">UPI, Cards, Net Banking, Wallets via Razorpay</p></div>
+                  <div className={cn("size-5 rounded-full border-2 flex items-center justify-center", paymentMethod === "razorpay" ? "border-[#1A6B3C] bg-[#1A6B3C]" : "border-slate-300")}>{paymentMethod === "razorpay" && <Check className="size-3 text-white" />}</div>
+                </button>
+                {/* COD */}
+                <button onClick={() => setPaymentMethod("cod")} className={cn("w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left", paymentMethod === "cod" ? "border-[#1A6B3C] bg-[#F3F8F1]" : "border-slate-200 hover:border-slate-300")}>
+                  <Banknote className="size-5 text-[#1A6B3C]" />
+                  <div className="flex-1"><p className="text-sm font-semibold text-slate-800">Cash on Delivery</p><p className="text-xs text-slate-500">Pay in cash when your order arrives. Available for orders up to ₹5,000.</p></div>
+                  <div className={cn("size-5 rounded-full border-2 flex items-center justify-center", paymentMethod === "cod" ? "border-[#1A6B3C] bg-[#1A6B3C]" : "border-slate-300")}>{paymentMethod === "cod" && <Check className="size-3 text-white" />}</div>
+                </button>
+              </div>
+              {paymentMethod === "razorpay" && (
+                <div className="p-3 bg-blue-50 rounded-lg flex items-center gap-2 text-xs text-blue-700">
+                  <Truck className="size-4 shrink-0" /> You will be redirected to Razorpay's secure payment gateway. Your card details are never stored on our servers.
+                </div>
+              )}
+              {paymentMethod === "cod" && (
+                <div className="p-3 bg-amber-50 rounded-lg text-xs text-amber-700">Please keep exact change ready. COD orders may take an extra day for delivery confirmation.</div>
+              )}
+            </div>
+          )}
+
+          {/* Navigation buttons */}
+          <div className="flex items-center gap-3">
+            {step > 0 && <Button variant="outline" onClick={() => setStep((s) => s - 1)} className="border-[#1A6B3C] text-[#1A6B3C]">Back</Button>}
+            {step < STEPS.length - 1 ? (
+              <Button onClick={handleNext} className="bg-[#1A6B3C] hover:bg-[#16A34A] flex-1 gap-2">Continue <ChevronRight className="size-4" /></Button>
+            ) : (
+              <Button onClick={handlePlaceOrder} disabled={isPlacing} className="bg-[#1A6B3C] hover:bg-[#16A34A] flex-1 gap-2">
+                {isPlacing ? <><Loader2 className="size-4 animate-spin" />Placing Order...</> : <>Place Order · {formatINR(total)}</>}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Order summary (sticky) */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-24 bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+            <h3 className="text-base font-bold text-[#1A6B3C]">Order Summary</h3>
+            <Separator />
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-slate-600">Subtotal ({itemCount} items)</span><span className="font-medium text-slate-800 tabular-nums">{formatINR(subtotal)}</span></div>
+              {couponDiscount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span className="font-medium tabular-nums">-{formatINR(couponDiscount)}</span></div>}
+              <div className="flex justify-between"><span className="text-slate-600">Delivery</span><span className="font-medium text-slate-800 tabular-nums">{shipping === 0 ? "FREE" : formatINR(shipping)}</span></div>
+              <div className="flex justify-between text-xs text-slate-400"><span>GST (18%, incl.)</span><span className="tabular-nums">{formatINR(tax)}</span></div>
+            </div>
+            <Separator />
+            <div className="flex justify-between items-baseline"><span className="text-base font-bold text-slate-800">Total</span><span className="text-xl font-bold text-[#1A6B3C] tabular-nums">{formatINR(total)}</span></div>
+            <div className="flex items-center gap-2 text-xs text-slate-500 pt-2"><Truck className="size-3.5 text-[#1A6B3C]" />{shipping === 0 ? "Free delivery applied!" : `Add ${formatINR(FREE_SHIPPING_THRESHOLD - subtotal)} more for free delivery`}</div>
+          </div>
+        </div>
+      </div>
+    </Container>
+  );
+}

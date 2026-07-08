@@ -15,19 +15,17 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OrdersProvider } from "@/contexts/OrdersContext";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <AuthProvider>
-        <WishlistProvider>
-          <CartProvider>{children}</CartProvider>
-        </WishlistProvider>
+        <OrdersProvider>
+          <WishlistProvider>
+            <CartProvider>{children}</CartProvider>
+          </WishlistProvider>
+        </OrdersProvider>
       </AuthProvider>
     </ThemeProvider>
   );
