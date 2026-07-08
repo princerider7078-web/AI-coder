@@ -52,7 +52,6 @@ const nextConfig: NextConfig = {
   // Allow the preview gateway origin to load _next/* assets during dev.
   allowedDevOrigins: [
     "https://preview-chat-9491ca16-c30d-4a2b-8976-79a75d0955cc.space-z.ai",
-    /\.space-z\.ai$/,
   ],
   typescript: {
     // Foundation types are strict; allow build to surface issues during dev.
