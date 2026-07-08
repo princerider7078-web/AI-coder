@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Package, Calendar, Heart, ShoppingBag, TrendingUp, ArrowRight } from "lucide-react";
+import { Package, Calendar, Heart, ShoppingBag, TrendingUp, ArrowRight, MapPin } from "lucide-react";
 import { Container } from "@/components/common/Container";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders } from "@/contexts/OrdersContext";
@@ -11,12 +11,20 @@ import { formatINR, formatDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@/contexts/OrdersContext";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from "@/contexts/BookingsContext";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+
+const STORAGE_KEY = "growplants-addresses";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { orders } = useOrders();
   const { bookings } = useBookings();
   const { count: wishlistCount } = useWishlist();
+  const [addressCount, setAddressCount] = useState(0);
+
+  useEffect(() => {
+    try { const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); setAddressCount(Array.isArray(list) ? list.length : 0); } catch {}
+  }, []);
 
   const totalSpent = orders.filter((o) => o.orderStatus !== "cancelled").reduce((sum, o) => sum + o.total, 0);
   const activeOrders = orders.filter((o) => !["delivered", "cancelled"].includes(o.orderStatus)).length;
@@ -117,6 +125,7 @@ export default function DashboardPage() {
         <Link href="/shop" className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1A6B3C] text-white text-sm font-medium rounded-lg hover:bg-[#16A34A] transition-colors"><ShoppingBag className="size-4" />Shop Plants</Link>
         <Link href="/services" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-[#1A6B3C] text-[#1A6B3C] text-sm font-medium rounded-lg hover:bg-[#F3F8F1] transition-colors"><Calendar className="size-4" />Book a Service</Link>
         <Link href="/account/wishlist" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"><Heart className="size-4" />View Wishlist</Link>
+        <Link href="/account/addresses" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"><MapPin className="size-4" />Addresses ({addressCount})</Link>
       </div>
     </Container>
   );
