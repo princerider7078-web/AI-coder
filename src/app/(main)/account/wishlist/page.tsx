@@ -10,23 +10,23 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useCart } from "@/contexts/CartContext";
 import { appToast } from "@/lib/toast";
 import { formatINR } from "@/lib/utils";
-import { PRODUCTS } from "@/data/homepageData";
+import { getAllProducts, type ShopProduct } from "@/lib/shop-products";
 
 export default function WishlistPage() {
   const { wishlistIds, removeFromWishlist } = useWishlist();
   const { addItem } = useCart();
 
-  const items = PRODUCTS.filter((p) => wishlistIds.includes(p.id));
+  // Use ALL products (101 real products) instead of just 12 homepage products
+  const allProducts = getAllProducts();
+  const items = allProducts.filter((p) => wishlistIds.includes(p.id));
 
   if (items.length === 0) {
     return <Container className="py-16"><EmptyState icon={Heart} title="Your wishlist is empty" description="Tap the heart icon on any product to save it here for later." action={{ label: "Shop Plants", href: "/shop" }} size="lg" /></Container>;
   }
 
-  const handleMoveToCart = (id: string) => {
-    const product = items.find((p) => p.id === id);
-    if (!product) return;
-    addItem({ productId: product.id, variantId: null, name: product.name, slug: product.slug, price: product.price, image: product.image, quantity: 1, inStock: product.availableStock > 0 });
-    removeFromWishlist(id);
+  const handleMoveToCart = (product: ShopProduct) => {
+    addItem({ productId: product.id, variantId: null, name: product.name, slug: product.slug, price: product.price, image: product.image, quantity: 1, inStock: product.inStock });
+    removeFromWishlist(product.id);
     appToast.success("Moved to cart", `${product.name} added to cart`);
   };
 
@@ -41,10 +41,10 @@ export default function WishlistPage() {
               <button onClick={() => { removeFromWishlist(p.id); appToast.info("Removed", `${p.name} removed from wishlist`); }} className="absolute top-2 right-2 size-8 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-red-500 hover:bg-white" aria-label="Remove from wishlist"><Trash2 className="size-4" /></button>
             </Link>
             <div className="flex flex-col gap-1.5 p-3 flex-1">
-              <p className="text-xs font-bold text-[#1A6B3C]">{p.categoryBadge}</p>
+              <p className="text-xs font-bold text-[#1A6B3C]">{p.category.toUpperCase()}</p>
               <Link href={`/product/${p.slug}`} className="text-sm font-medium text-slate-800 line-clamp-2 hover:text-[#1A6B3C]">{p.name}</Link>
               <p className="text-lg font-bold text-[#1A6B3C] tabular-nums">{formatINR(p.price)}</p>
-              <Button onClick={() => handleMoveToCart(p.id)} size="sm" className="bg-[#1A6B3C] hover:bg-[#16A34A] gap-1.5 mt-auto"><ShoppingCart className="size-3.5" />Move to Cart</Button>
+              <Button onClick={() => handleMoveToCart(p)} size="sm" disabled={!p.inStock} className="bg-[#1A6B3C] hover:bg-[#16A34A] gap-1.5 mt-auto"><ShoppingCart className="size-3.5" />{p.inStock ? "Move to Cart" : "Out of Stock"}</Button>
             </div>
           </div>
         ))}

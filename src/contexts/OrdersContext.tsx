@@ -109,6 +109,37 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   // Persist to localStorage
   useEffect(() => { if (hydrated) saveToStorage(orders); }, [orders, hydrated]);
 
+  // Auto-progress order status for demo (simulates admin updating status)
+  // In production, this would come from Firestore onSnapshot when admin updates
+  useEffect(() => {
+    if (!hydrated || orders.length === 0) return;
+    const interval = setInterval(() => {
+      setOrders((prev) => prev.map((o) => {
+        if (o.orderStatus === "cancelled" || o.orderStatus === "delivered") return o;
+        const now = new Date().toISOString();
+        const created = new Date(o.createdAt).getTime();
+        const elapsed = Date.now() - created;
+
+        // Auto-progress: pending → confirmed (10s) → processing (20s) → out_for_delivery (30s) → delivered (40s)
+        if (o.orderStatus === "pending" && elapsed > 10000) {
+          return { ...o, orderStatus: "confirmed", statusHistory: [...o.statusHistory, { status: "confirmed", date: now, note: "Order confirmed" }] };
+        }
+        if (o.orderStatus === "confirmed" && elapsed > 20000) {
+          return { ...o, orderStatus: "processing", statusHistory: [...o.statusHistory, { status: "processing", date: now, note: "Order is being processed" }] };
+        }
+        if (o.orderStatus === "processing" && elapsed > 30000) {
+          return { ...o, orderStatus: "out_for_delivery", statusHistory: [...o.statusHistory, { status: "out_for_delivery", date: now, note: "Out for delivery" }] };
+        }
+        if (o.orderStatus === "out_for_delivery" && elapsed > 40000) {
+          return { ...o, orderStatus: "delivered", statusHistory: [...o.statusHistory, { status: "delivered", date: now, note: "Order delivered" }] };
+        }
+        return o;
+      }));
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [hydrated, orders.length]);
+
   const createOrder = useCallback((data: Omit<Order, "id" | "orderNumber" | "orderStatus" | "paymentStatus" | "createdAt" | "statusHistory">): Order => {
     const now = new Date().toISOString();
     const paymentStatus: PaymentStatus = data.paymentMethod === "cod" ? "pending" : "paid";
