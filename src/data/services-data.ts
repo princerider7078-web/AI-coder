@@ -67,9 +67,9 @@ export const SERVICES: Service[] = [
     categorySlug: "garden-maintenance",
     shortDescription: "Monthly garden maintenance — watering, pruning, fertilizing, and pest control.",
     description: "Keep your garden healthy and beautiful with our monthly maintenance service. A dedicated gardener visits your home regularly to handle watering, pruning, fertilizing, pest control, and general plant health check-ups. Perfect for busy plant parents who want thriving plants without the hassle.",
-    image: "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=600&q=80",
+    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80",
     gallery: [
-      "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=800&q=80",
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80",
       "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80",
       "https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800&q=80",
     ],
@@ -129,9 +129,9 @@ export const SERVICES: Service[] = [
     categorySlug: "gardener-hiring",
     shortDescription: "Hire a verified gardener by the hour for any gardening task.",
     description: "Need a gardener for a specific task? Hire our verified gardeners by the hour for pruning, repotting, lawn mowing, or any gardening work. Flexible, affordable, and perfect for one-off tasks or regular maintenance.",
-    image: "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=600&q=80",
+    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80",
     gallery: [
-      "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=800&q=80",
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80",
       "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80",
     ],
     pricingType: "hourly",

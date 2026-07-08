@@ -47,7 +47,7 @@ export const HERO_SLIDES: HeroSlide[] = [
     trustBadge: "Free Delivery Above ₹499",
     primaryCta: { label: "Shop Seasonal Plants", href: "/shop?category=seasonal-plants" },
     secondaryCta: { label: "View Offers", href: "/offers" },
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDXDyeLZVK9QbLFNwqQgWzO439Qws7uIWWfoYtwtdjMmPIimZ1NamCCSRI8_EbcZfpj42zoX_NkYWY2LTQPNgEgSL0Yz15ClKj8PRwzazHnyg38SvtQz6mW0FYhQjdar01002qHzml90jp2sgN5YFg6nN25zXKWYQdNTuiA5g",
+    image: "https://images.unsplash.com/photo-1463936575829-25148e1db1b8?w=1600&q=80",
     imageAlt: "Lush green monsoon plants",
   },
   {
@@ -80,7 +80,7 @@ export const QUICK_CATEGORIES: QuickCategory[] = [
   { id: "cat-5", name: "Succulents", itemCount: 22, image: "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=200&q=80", href: "/shop?category=succulents" },
   { id: "cat-6", name: "Bonsai", itemCount: 12, image: "https://images.unsplash.com/photo-1463936575829-25148e1db1b8?w=200&q=80", href: "/shop?category=bonsai" },
   { id: "cat-7", name: "Planters", itemCount: 56, image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=200&q=80", href: "/shop?category=ceramic-planters" },
-  { id: "cat-8", name: "Seeds & Tools", itemCount: 43, image: "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=200&q=80", href: "/shop?category=seeds-bulbs" },
+  { id: "cat-8", name: "Seeds & Tools", itemCount: 43, image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=200&q=80", href: "/shop?category=seeds-bulbs" },
 ];
 
 /* ---------- Products (REAL DATA from plants-data.json) ---------- */
@@ -196,7 +196,7 @@ export const SERVICES: Service[] = [
     description: "Monthly garden maintenance — watering, pruning, fertilizing, and pest control handled by a dedicated gardener.",
     rating: 4.9, reviewCount: 112, bookingCount: 289,
     priceFrom: 799, priceUnit: "per month", pricingType: "fixed",
-    image: "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=600&q=80",
+    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80",
     href: "/services/garden-maintenance",
   },
   {
@@ -300,7 +300,7 @@ export interface BlogPost {
 export const BLOG_POSTS: BlogPost[] = [
   { id: "b1", title: "10 Best Indoor Plants for Indian Homes in 2024", excerpt: "Discover the perfect low-maintenance plants that thrive in India's climate while beautifying your home.", image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600&q=80", category: "indoor-plants", author: "GrowPlants Team", date: "1 April 2024", readTime: 5, href: "/blog/best-indoor-plants", featured: true },
   { id: "b2", title: "How to Set Up a Balcony Garden in a Small Space", excerpt: "Transform even the smallest balcony into a thriving green haven with smart plant selection and space-saving tips.", image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80", category: "balcony-garden", author: "GrowPlants Team", date: "25 March 2024", readTime: 7, href: "/blog/balcony-garden-small-space" },
-  { id: "b3", title: "Summer Plant Care Guide — Protecting Plants in Indian Heat", excerpt: "Keep your plants healthy through the scorching Indian summer with these expert-proven care strategies.", image: "https://images.unsplash.com/photo-1599598425947-5202edd56fde?w=400&q=80", category: "plant-care", author: "GrowPlants Team", date: "18 March 2024", readTime: 6, href: "/blog/summer-plant-care" },
+  { id: "b3", title: "Summer Plant Care Guide — Protecting Plants in Indian Heat", excerpt: "Keep your plants healthy through the scorching Indian summer with these expert-proven care strategies.", image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&q=80", category: "plant-care", author: "GrowPlants Team", date: "18 March 2024", readTime: 6, href: "/blog/summer-plant-care" },
 ];
 
 /* ---------- FAQ ---------- */
