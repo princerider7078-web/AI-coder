@@ -112,6 +112,7 @@ function SpecificationsGrid({ data }: { data: ProductData }) {
   if (data.prices) specs.push({ label: "Available Sizes", value: Object.keys(data.prices).join(", ") });
   if (data.potFeatures.length > 0) specs.push({ label: "Features", value: data.potFeatures.join(", ") });
   if (data.deliveryTime) specs.push({ label: "Delivery", value: data.deliveryTime });
+  if (data.sku) specs.push({ label: "SKU", value: data.sku });
 
   if (specs.length === 0) return null;
 
@@ -228,19 +229,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 </div>
               )}
 
-              {/* 5. Price block — all grouped tightly */}
-              <div className="flex items-baseline gap-3 flex-wrap py-2">
-                <span className="text-3xl font-bold text-[#1A6B3C] tabular-nums">₹{data.price}</span>
-                {data.oldPrice && data.oldPrice > data.price && (
-                  <>
-                    <span className="text-lg text-slate-400 line-through tabular-nums">₹{data.oldPrice}</span>
-                    {data.discountPercent && <span className="text-sm font-bold text-green-600">{data.discountPercent}% OFF</span>}
-                    {data.savings && <span className="text-xs text-green-600 font-medium">Save ₹{data.savings}</span>}
-                  </>
-                )}
-              </div>
-
-              {/* 6. Stock status + ONE primary CTA */}
+              {/* 5+6+7. Price + Stock + CTA + Secondary actions (all in ProductPricingPanel) */}
               <ProductPricingPanel
                 price={data.oldPrice ?? data.price}
                 salePrice={data.oldPrice && data.oldPrice > data.price ? data.price : null}
@@ -367,6 +356,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               rating={data.rating}
               reviewCount={data.reviewCount}
               productName={data.name}
+              reviews={data.reviews}
             />
           </div>
 
@@ -417,6 +407,46 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         </div>
                       )}
                     </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bundles */}
+          {data.bundles.length > 0 && (
+            <div className="mt-8 border-t border-gray-200 pt-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-5">Frequently Bought Together</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {data.bundles.map((bundle, i) => (
+                  <div key={i} className="bg-white border border-slate-100 rounded-lg overflow-hidden hover:shadow-md transition-all group">
+                    <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
+                      <img src={bundle.image} alt={bundle.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                    <div className="p-4">
+                      <p className="font-semibold text-gray-900 text-sm">{bundle.name}</p>
+                      <p className="text-xs text-gray-500 mt-1">{bundle.desc}</p>
+                      <p className="text-sm font-bold text-[#1A6B3C] mt-2">₹{bundle.price}</p>
+                      <button className="mt-3 w-full text-xs font-bold text-[#1A6B3C] border border-[#1A6B3C] rounded-lg py-2.5 hover:bg-[#F0FAF4] transition-colors">Add Bundle to Cart</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Professional Services */}
+          {data.services.length > 0 && (
+            <div className="mt-8 border-t border-gray-200 pt-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Professional Services</h2>
+              <p className="text-gray-500 text-sm mb-5">Let our verified experts help you care for your plants</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {data.services.map((service, i) => (
+                  <Link key={i} href="/services" className="bg-white border border-slate-100 rounded-lg p-5 hover:shadow-md transition-all hover:-translate-y-0.5">
+                    <span className="text-3xl">{service.icon}</span>
+                    <p className="font-semibold text-gray-900 text-sm mt-3">{service.name}</p>
+                    <p className="text-xs text-gray-500 mt-1">{service.desc}</p>
+                    <p className="text-sm font-bold text-[#1A6B3C] mt-2">{service.price}</p>
                   </Link>
                 ))}
               </div>
