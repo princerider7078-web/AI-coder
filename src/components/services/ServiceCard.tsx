@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatINR } from "@/lib/utils";
 import { useBilingual } from "@/store/useBilingual";
-import type { Service } from "@/data/homepageData";
+import type { Service } from "@/data/services-data";
 
 /**
  * ServiceCard — reusable gardening service card.
@@ -44,7 +44,7 @@ export function ServiceCard({ service, className }: ServiceCardProps) {
       <div className="relative aspect-[16/10] bg-muted overflow-hidden">
         <Image
           src={service.image}
-          alt={isHi ? service.name.hi : service.name.en}
+          alt={service.name}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
           className="object-cover transition-transform duration-500 ease-slow group-hover:scale-105"
@@ -60,23 +60,23 @@ export function ServiceCard({ service, className }: ServiceCardProps) {
       <CardContent className="p-5 flex flex-col gap-3 flex-1">
         {/* Name */}
         <h3 className="text-h4 font-semibold text-foreground">
-          {isHi ? service.name.hi : service.name.en}
+          {service.name}
         </h3>
 
         {/* Description */}
         <p className="text-body-sm text-muted-foreground line-clamp-2">
-          {isHi ? service.description.hi : service.description.en}
+          {service.shortDescription}
         </p>
 
         {/* Duration */}
         <div className="flex items-center gap-1.5 text-body-sm text-muted-foreground">
           <Clock className="size-4 text-primary" aria-hidden="true" />
-          {isHi ? service.duration.hi : service.duration.en}
+          {service.duration}
         </div>
 
         {/* Features */}
         <ul className="space-y-1.5 mt-1">
-          {(isHi ? service.features.hi : service.features.en).slice(0, 3).map((feature, i) => (
+          {service.features.slice(0, 3).map((feature, i) => (
             <li key={i} className="flex items-start gap-2 text-body-sm text-foreground">
               <Check className="size-4 text-success shrink-0 mt-0.5" aria-hidden="true" />
               {feature}
@@ -93,7 +93,7 @@ export function ServiceCard({ service, className }: ServiceCardProps) {
             <p className="text-h4 font-bold text-foreground">{priceLabel}</p>
           </div>
           <Button asChild size="sm" className="gap-1.5">
-            <Link href={service.href}>
+            <Link href={`/services/${service.slug}`}>
               {isHi ? "बुक करें" : "Book Now"}
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>

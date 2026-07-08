@@ -125,12 +125,12 @@ export function MegaMenu() {
     <NavigationMenu className="hidden lg:flex">
       <NavigationMenuList>
         {CATEGORIES.map((cat) => (
-          <NavigationMenuItem key={cat.slug}>
+          <NavigationMenuItem key={cat.href}>
             <NavigationMenuTrigger className="text-body font-medium">
               {isHi ? cat.labelHi : cat.label}
             </NavigationMenuTrigger>
             <NavigationMenuContent>
-              <div key={cat.slug} className="w-[480px] p-4">
+              <div key={cat.href} className="w-[480px] p-4">
                 {/* Header row */}
                 <div className="flex items-start gap-3 p-3 mb-2 rounded-lg bg-muted/50">
                   <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">

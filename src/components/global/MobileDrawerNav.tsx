@@ -199,7 +199,7 @@ export function MobileDrawerNav({ open, onOpenChange }: MobileDrawerNavProps) {
             </p>
             <Accordion type="multiple" className="w-full">
               {CATEGORY_GROUPS.map((cat) => (
-                <AccordionItem key={cat.slug} value={cat.label} className="border-0">
+                <AccordionItem key={cat.href} value={cat.label} className="border-0">
                   <AccordionTrigger className="px-2 py-2.5 hover:bg-muted rounded-md text-body font-medium hover:no-underline">
                     <span className="flex items-center gap-3">
                       <cat.icon className="size-4 text-primary" aria-hidden="true" />

@@ -15,20 +15,17 @@ export function ProductFaqSection({
 }) {
   const faqs: { q: string; a: string }[] = [];
 
-  if (careInstructions.sunlight && careInstructions.sunlight !== "N/A") {
-    faqs.push({ q: `How much sunlight does the ${productName} need?`, a: careInstructions.sunlight });
+  if (careInstructions.light && careInstructions.light !== "N/A") {
+    faqs.push({ q: `How much sunlight does the ${productName} need?`, a: careInstructions.light });
   }
-  if (careInstructions.watering && careInstructions.watering !== "N/A") {
-    faqs.push({ q: `How often should I water the ${productName}?`, a: careInstructions.watering });
+  if (careInstructions.water && careInstructions.water !== "N/A") {
+    faqs.push({ q: `How often should I water the ${productName}?`, a: careInstructions.water });
   }
   if (careInstructions.temperature && careInstructions.temperature !== "N/A") {
     faqs.push({ q: `What temperature is best for the ${productName}?`, a: careInstructions.temperature });
   }
   if (careInstructions.humidity && careInstructions.humidity !== "N/A") {
     faqs.push({ q: `Does the ${productName} need high humidity?`, a: careInstructions.humidity });
-  }
-  if (careInstructions.toxicity && careInstructions.toxicity !== "N/A") {
-    faqs.push({ q: `Is the ${productName} safe for pets?`, a: careInstructions.toxicity });
   }
 
   if (faqs.length === 0) return null;

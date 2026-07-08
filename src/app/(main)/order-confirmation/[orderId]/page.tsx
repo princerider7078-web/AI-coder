@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle2, Package, Box, Truck, Home, Download, ArrowRight, MapPin, CreditCard } from "lucide-react";
+import { CheckCircle2, Download, ArrowRight, MapPin, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Container } from "@/components/common/Container";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import {
   useOrders, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS,
   PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS,
-  ORDER_TIMELINE,
 } from "@/contexts/OrdersContext";
 import { formatINR, formatDate } from "@/lib/utils";
+import { OrderTrackingTimeline } from "@/components/orders/OrderTrackingTimeline";
 
 export default function OrderConfirmationPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = use(params);
@@ -29,8 +29,6 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
       </Container>
     );
   }
-
-  const currentStepIndex = ORDER_TIMELINE.findIndex((t) => t.status === order.orderStatus);
 
   return (
     <Container className="py-8 md:py-12">
@@ -56,25 +54,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
               {ORDER_STATUS_LABELS[order.orderStatus]}
             </span>
           </div>
-          <div className="flex items-start justify-between gap-1">
-            {ORDER_TIMELINE.map((step, i) => {
-              const isDone = i <= currentStepIndex;
-              const isCurrent = i === currentStepIndex;
-              const icons = [CheckCircle2, CheckCircle2, Package, Box, Package, Truck, Home];
-              const StepIcon = icons[i];
-              return (
-                <div key={step.status} className="flex flex-col items-center gap-1.5 flex-1 relative">
-                  {i < ORDER_TIMELINE.length - 1 && (
-                    <div className={cn("absolute top-4 left-1/2 w-full h-0.5", isDone && i < currentStepIndex ? "bg-[#1A6B3C]" : "bg-slate-200")} />
-                  )}
-                  <div className={cn("relative z-10 size-8 rounded-full flex items-center justify-center shrink-0 transition-colors", isDone ? "bg-[#1A6B3C] text-white" : "bg-slate-100 text-slate-400", isCurrent && "ring-4 ring-[#1A6B3C]/20")}>
-                    <StepIcon className="size-4" />
-                  </div>
-                  <p className={cn("text-[10px] text-center font-medium leading-tight", isDone ? "text-slate-800" : "text-slate-400")}>{step.label}</p>
-                </div>
-              );
-            })}
-          </div>
+          <OrderTrackingTimeline order={order} showDates />
         </div>
 
         {/* Items */}
@@ -104,11 +84,14 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
             <p className="text-xs text-slate-600">{order.address.city}, {order.address.state} - {order.address.pincode}</p>
             <p className="text-xs text-slate-600 mt-1">📞 {order.address.phone}</p>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
+          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
             <h3 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1.5"><CreditCard className="size-3.5" />Payment</h3>
-            <p className="text-sm font-medium text-slate-800">{order.paymentMethod === "cod" ? "COD" : "Online (Razorpay)"}</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-slate-500">Status:</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Method</span>
+              <span className="text-sm font-medium text-slate-800">{order.paymentMethod === "cod" ? "COD" : "Online (Razorpay)"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Status</span>
               <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", PAYMENT_STATUS_COLORS[order.paymentStatus])}>
                 {PAYMENT_STATUS_LABELS[order.paymentStatus]}
               </span>

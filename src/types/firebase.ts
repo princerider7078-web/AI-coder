@@ -13,7 +13,7 @@ export interface FirestoreUser {
   email: string;
   phone: string;
   profileImage: string | null;
-  memberSince: import("firebase/firestore").Timestamp | Date | string;
+  memberSince: import("firebase/firestore").Timestamp | Date | string | import("firebase/firestore").FieldValue;
   preferences: {
     notifications: {
       email: boolean;

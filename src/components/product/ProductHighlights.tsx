@@ -1,4 +1,4 @@
-import { Sun, Droplets, Thermometer, Wind, Sprout, Ruler } from "lucide-react";
+import { Sun, Droplets, Thermometer, Wind } from "lucide-react";
 import type { CareInstructions as CareType } from "@/lib/product-data";
 
 export function ProductHighlights({
@@ -9,8 +9,8 @@ export function ProductHighlights({
   careInstructions: CareType;
 }) {
   const highlights = [
-    { icon: Sun, label: "Sunlight", value: careInstructions.sunlight },
-    { icon: Droplets, label: "Watering", value: careInstructions.watering },
+    { icon: Sun, label: "Sunlight", value: careInstructions.light },
+    { icon: Droplets, label: "Watering", value: careInstructions.water },
     { icon: Thermometer, label: "Temperature", value: careInstructions.temperature },
     { icon: Wind, label: "Humidity", value: careInstructions.humidity },
   ].filter((h) => h.value && h.value !== "N/A");

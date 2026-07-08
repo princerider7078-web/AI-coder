@@ -20,7 +20,9 @@ const FILTERS: { label: string; value: OrderStatus | "all" }[] = [
   { label: "Pending", value: "pending" },
   { label: "Confirmed", value: "confirmed" },
   { label: "Processing", value: "processing" },
+  { label: "Packed", value: "packed" },
   { label: "Shipped", value: "shipped" },
+  { label: "Out For Delivery", value: "out_for_delivery" },
   { label: "Delivered", value: "delivered" },
   { label: "Cancelled", value: "cancelled" },
 ];

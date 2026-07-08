@@ -531,6 +531,24 @@
 }
 
 /* ============================================================================
+ * KEYFRAMES — custom animations
+ * ============================================================================
+ */
+@keyframes pulse-soft {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(26, 107, 60, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(26, 107, 60, 0);
+  }
+}
+
+/* Soft pulsing glow used by the "current" step in OrderTrackingTimeline */
+.animate-pulse-soft {
+  animation: pulse-soft 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================================================
  * PRINT — legal/policy pages
  * ============================================================================
  */

@@ -28,7 +28,7 @@ if (isConfigured) {
           credential: cert({
             projectId,
             clientEmail,
-            privateKey: privateKeyRaw.replace(/\\n/g, "\n"),
+            privateKey: (privateKeyRaw ?? "").replace(/\\n/g, "\n"),
           }),
         });
   adminAuth = getAuth(adminApp);

@@ -1,18 +1,15 @@
-import { Sun, Droplets, Thermometer, Wind, Sprout, Ruler, AlertCircle, Leaf } from "lucide-react";
+import { Sun, Droplets, Thermometer, Wind, Leaf } from "lucide-react";
 import type { CareInstructions as CareType } from "@/lib/product-data";
 
 export function CareInstructions({ instructions }: { instructions: CareType }) {
-  if (!instructions || instructions.sunlight === "N/A") return null;
+  if (!instructions || !instructions.light) return null;
 
   const items = [
-    { icon: Sun, label: "Sunlight", value: instructions.sunlight },
-    { icon: Droplets, label: "Watering", value: instructions.watering },
+    { icon: Sun, label: "Sunlight", value: instructions.light },
+    { icon: Droplets, label: "Watering", value: instructions.water },
     { icon: Thermometer, label: "Temperature", value: instructions.temperature },
     { icon: Wind, label: "Humidity", value: instructions.humidity },
-    { icon: Sprout, label: "Difficulty", value: instructions.difficulty },
-    { icon: Ruler, label: "Height", value: instructions.height },
-    { icon: AlertCircle, label: "Toxicity", value: instructions.toxicity },
-    { icon: Leaf, label: "Fertilizer", value: instructions.fertilizerSchedule ?? "Balanced fertilizer every 4-6 weeks" },
+    { icon: Leaf, label: "Fertilizer", value: instructions.fertilizer ?? "Balanced fertilizer every 4-6 weeks" },
   ].filter((i) => i.value && i.value !== "N/A");
 
   return (

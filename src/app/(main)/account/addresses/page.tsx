@@ -54,7 +54,9 @@ function AddressForm({ initial, onSave, onCancel }: { initial: Partial<Firestore
   const [gpsState, setGpsState] = useState<GpsState>("idle");
   const [gpsError, setGpsError] = useState("");
   const [gpsData, setGpsData] = useState<{ lat: number; lng: number; accuracy: number } | null>(
-    initial?.gpsVerified && initial?.latitude ? { lat: initial.latitude, lng: initial.longitude, accuracy: initial.accuracy ?? 0 } : null
+    initial?.gpsVerified && initial?.latitude && initial?.longitude != null
+      ? { lat: initial.latitude, lng: initial.longitude, accuracy: initial.accuracy ?? 0 }
+      : null
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 

@@ -176,6 +176,7 @@ export const translations = {
     /* Cart */
     "cart.title": "Your Cart",
     "cart.empty": "Your cart is empty",
+    "cart.empty.desc": "Add plants, pots, or gardening essentials to get started.",
     "cart.empty.cta": "Shop Plants",
     "cart.subtotal": "Subtotal",
     "cart.shipping": "Shipping",
@@ -482,6 +483,7 @@ export const translations = {
     /* Cart */
     "cart.title": "आपका कार्ट",
     "cart.empty": "आपका कार्ट खाली है",
+    "cart.empty.desc": "शुरू करने के लिए पौधे, गमले, या बागवानी सामान जोड़ें।",
     "cart.empty.cta": "पौधे खरीदें",
     "cart.subtotal": "उप-योग",
     "cart.shipping": "शिपिंग",

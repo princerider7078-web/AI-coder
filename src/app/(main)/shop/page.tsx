@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { SlidersHorizontal, SearchX, PackageSearch } from "lucide-react";
 import { Container } from "@/components/common/Container";
@@ -30,6 +30,14 @@ function toProductCard(p: ShopProduct): Product {
 }
 
 export default function ShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <ShopPageInner />
+    </Suspense>
+  );
+}
+
+function ShopPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();

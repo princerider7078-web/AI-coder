@@ -81,7 +81,7 @@ export function LanguageToggle({
   return (
     <Button
       variant="ghost"
-      size={size}
+      size={size === "md" ? "default" : size}
       onClick={toggleLanguage}
       className={cn("gap-2 font-medium", className)}
       aria-label={`Switch to ${OPPOSITE[language] === "en" ? "English" : "Hindi"}`}
