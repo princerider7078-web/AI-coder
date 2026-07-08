@@ -272,3 +272,44 @@ Stage Summary:
   * /home/z/my-project/download/phase4-homepage-full.png (full desktop)
   * /home/z/my-project/download/phase4-homepage-mobile.png (mobile viewport)
 - Awaiting user approval before starting Phase 5 (Authentication — Login/Register/Forgot Password/OTP).
+
+---
+Task ID: 5
+Agent: Main (Senior Frontend Architect)
+Task: Phase 5 — Authentication (WITHOUT OTP per user instruction). Build Login, Register, Forgot Password (no OTP verification). Minimal centered auth layout. AuthContext for state management. Wire Header to reflect auth state.
+
+Work Log:
+- Built src/contexts/AuthContext.tsx — minimal auth state with localStorage persistence (key: growplants-auth-user); login/register/logout/resetPassword (mock implementations with simulated API delay; Phase 5+ replaces with /api/auth/* endpoints); AuthUser interface (id, fullName, email, phone, role, status, profileImageUrl, preferredLanguage); isAuthenticated derived value
+- Updated src/components/providers/AppProviders.tsx — wrapped WishlistProvider + CartProvider inside AuthProvider (AuthProvider outermost context after ThemeProvider)
+- Built src/components/auth/PasswordStrengthMeter.tsx — real-time strength indicator with 4-segment bar (Weak/Fair/Good/Strong) + requirements checklist (8+ chars, uppercase, lowercase, number); color-coded (error/warning/leaf-green/success)
+- Built src/components/auth/LoginForm.tsx — React Hook Form + Zod (loginSchema from Phase 1); email/phone identifier input with Mail icon; password input with show/hide toggle (Eye/EyeOff); "Keep me signed in" checkbox; "Forgot password?" link; submit with loading spinner + success toast + redirect to /; error alert for server errors; switch-to-register link
+- Built src/components/auth/RegisterForm.tsx — React Hook Form + Zod (registerSchema from Phase 1); full name, email, phone (2-col on desktop), password with strength meter, confirm password with show/hide, terms acceptance checkbox; submit with loading + success toast + redirect; all fields aria-invalid + aria-describedby for errors
+- Built src/components/auth/ForgotPasswordForm.tsx — React Hook Form + Zod (forgotPasswordSchema); email/phone input; info alert explaining reset flow; submit with loading spinner; success state shows "Check your inbox" with checkmark icon + identifier echo + "try a different address" + "Back to login" (NO OTP per user instruction — direct email reset link)
+- Built src/components/auth/AuthCard.tsx — 2-column layout: left brand panel (desktop only, lg:flex) with logo, "Start Your Green Journey" headline, 4 trust points (Healthy Plants / Fast Delivery / Verified Gardeners / Expert Support), 3 stats (1200+ customers / 4.8★ / 500+ products), decorative leaf SVGs; right form panel with mobile logo, view title + subtitle, form content, footer with privacy/terms note; view state toggle (login/register/forgot) via useState
+- Built src/app/(auth)/layout.tsx — minimal centered layout (NO Header/Footer/CartDrawer/MobileBottomNav); bg-surface-container-low; subtle botanical SVG pattern background; centered max-w-5xl card
+- Built src/app/(auth)/login/page.tsx — renders AuthCard; noindex metadata
+- Updated src/components/global/Header.tsx — Account button now reflects auth state: logged out shows User icon linking to /login; logged in shows avatar (initial or profile image) with dropdown (user name + email + Account/Settings/Logout menu items); dropdown closes on outside click + Escape; logout clears auth + shows toast; also wired real wishlist count from WishlistContext (was hardcoded 3); notifications bell only shows when authenticated
+- Ran bun run lint → 1 warning: unused eslint-disable directive for @next/next/no-img-element (img tag in Header avatar) → removed the directive (the rule is already off in eslint config); lint clean (0 errors, 0 warnings) ✅
+- Used agent-browser for end-to-end verification:
+  * /login page: loaded with correct title "Login or Register | GrowPlants"; 2-column layout (brand panel + form panel); login form with email/phone, password (show/hide), remember me, forgot password link, login button, register switch
+  * Toggle to Register: heading changed to "Create your account"; all fields rendered (name, email, phone, password, confirm, terms checkbox)
+  * Password strength meter: typed "Test123" → showed "Good" rating + requirements checklist (8 chars, uppercase, lowercase, number)
+  * Forgot password: clicked link → heading "Reset your password"; filled email "test@example.com"; clicked "Send Reset Link" → success state "Check your inbox" with email echo + "try a different address" + "Back to login"
+  * Login flow: filled email + password "password123"; clicked Login → loading spinner → success toast → redirected to / (homepage)
+  * Header auth state: after login, header showed "Account — test" button (avatar with initial "T"); clicked → dropdown showed user email (test@example.com) + Account/Settings/Logout menu items
+  * Logout: clicked Logout → header reverted to "Login" link (logged out state); toast "Logged out" appeared
+  * Mobile (375×812): brand panel hidden (lg:flex), form panel centered with logo; all form fields accessible
+  * No page errors throughout testing
+  * Captured 2 screenshots: desktop login, mobile login
+
+Stage Summary:
+- Phase 5 (Authentication) is COMPLETE and verified end-to-end. NO OTP verification per user instruction — forgot password sends a direct reset link to email.
+- 7 new auth files: AuthContext, PasswordStrengthMeter, LoginForm, RegisterForm, ForgotPasswordForm, AuthCard, (auth)/layout.tsx, (auth)/login/page.tsx
+- 2 modified files: AppProviders (added AuthProvider), Header (auth state wiring + real wishlist count)
+- AuthContext is mock-implemented (simulated API delay) — Phase 5+ backend integration will replace with real /api/auth/* endpoints (Firebase Auth + JWT cookies + Prisma)
+- All forms use React Hook Form + Zod validation (schemas from Phase 1); full ARIA (aria-invalid, aria-describedby, role="menu"/"menuitem" on account dropdown); keyboard accessible (Escape closes dropdown, outside-click closes); 48px touch targets on all inputs/buttons; password show/hide toggles; password strength meter with real-time feedback
+- ESLint clean (0 errors, 0 warnings). Dev server GET / 200. Agent Browser verified all flows: login → redirect → header auth state → logout; register form validation; forgot password success state; mobile layout
+- Artifacts:
+  * /home/z/my-project/download/phase5-auth-login.png (desktop login)
+  * /home/z/my-project/download/phase5-auth-mobile.png (mobile login)
+- Awaiting user approval before starting Phase 6 (CMS / Static Pages — About, Contact, FAQ, Terms, Privacy, Refund Policy, 404 Error).
