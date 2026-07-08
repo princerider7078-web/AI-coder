@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const [addressCount, setAddressCount] = useState(0);
 
   useEffect(() => {
-    try { const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); setAddressCount(Array.isArray(list) ? list.length : 0); } catch {}
+    try { const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); setAddressCount(Array.isArray(list) ? list.length : 0); } catch (_e) {}
   }, []);
 
   const totalSpent = orders.filter((o) => o.orderStatus !== "cancelled").reduce((sum, o) => sum + o.total, 0);

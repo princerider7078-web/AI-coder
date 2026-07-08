@@ -42,11 +42,11 @@ const STORAGE_KEY = "growplants-auth-user";
 
 function loadFromStorage(): AuthUser | null {
   if (typeof window === "undefined") return null;
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch (_e) { return null; }
 }
 function saveToStorage(user: AuthUser | null) {
   if (typeof window === "undefined") return;
-  try { if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user)); else localStorage.removeItem(STORAGE_KEY); } catch {}
+  try { if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user)); else localStorage.removeItem(STORAGE_KEY); } catch (_e) {}
 }
 
 /** Convert Firebase user to AuthUser, merging Firestore data if available */
@@ -56,27 +56,26 @@ async function firebaseToAuthUser(fbUser: FirebaseUser): Promise<AuthUser> {
   let profileImageUrl = fbUser.photoURL;
   let preferredLanguage: "en" | "hi" = "en";
 
-  // Try to get additional data from Firestore
+  // Try to get additional data from Firestore (non-blocking — use Auth data if Firestore fails)
   if (isFirebaseConfigured && firebaseDb) {
     try {
       const ref = doc(firebaseDb, "users", fbUser.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
-        const data = snap.data() as any;
-        fullName = data.firstName ? `${data.firstName} ${data.lastName || ""}`.trim() : fullName;
+        const data: any = snap.data();
+        fullName = data.firstName ? (data.firstName + " " + (data.lastName || "")).trim() : fullName;
         phone = data.phone || phone;
         profileImageUrl = data.profileImage || profileImageUrl;
-        preferredLanguage = data.preferences?.language || "en";
+        preferredLanguage = (data.preferences && data.preferences.language) || "en";
       }
     } catch (e) {
-      // Firestore read failed — use Firebase Auth data only
-      console.warn("[Auth] Firestore user data fetch failed:", e);
+      console.warn("[Auth] Firestore user data fetch failed (non-blocking):", e);
     }
   }
 
   return {
     id: fbUser.uid,
-    fullName: fullName || fbUser.email?.split("@")[0] || "User",
+    fullName: fullName || (fbUser.email ? fbUser.email.split("@")[0] : "User"),
     email: fbUser.email || "",
     phone,
     role: "customer",
@@ -94,7 +93,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Listen to Firebase Auth state changes
   useEffect(() => {
     if (!isFirebaseConfigured || !firebaseAuth) {
-      // Firebase not configured — fall back to localStorage
       const stored = loadFromStorage();
       if (stored) setUser(stored);
       setIsLoading(false);
@@ -122,14 +120,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       if (isFirebaseConfigured && firebaseAuth) {
-        // Real Firebase Auth
         const cred = await signInWithEmailAndPassword(firebaseAuth, email, password);
         const authUser = await firebaseToAuthUser(cred.user);
         setUser(authUser);
         saveToStorage(authUser);
         return { success: true };
       } else {
-        // Fallback: mock login (no Firebase configured)
         await new Promise((r) => setTimeout(r, 800));
         if (password.length < 8) return { success: false, error: "Invalid credentials" };
         const isEmail = email.includes("@");
@@ -160,14 +156,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       if (isFirebaseConfigured && firebaseAuth) {
-        // Real Firebase Auth
+        console.log("[Auth] Register called with:", data.email, "isConfigured:", isFirebaseConfigured, "hasAuth:", !!firebaseAuth);
+        // Step 1: Create Firebase Auth user
         const cred = await createUserWithEmailAndPassword(firebaseAuth, data.email, data.password);
         await updateProfile(cred.user, { displayName: data.fullName });
 
-        // Save additional user data to Firestore
+        // Step 2: Save user data to Firestore (NON-BLOCKING — don't fail registration if Firestore fails)
         if (firebaseDb) {
           const [firstName, ...rest] = data.fullName.split(" ");
-          await setDoc(doc(firebaseDb, "users", cred.user.uid), {
+          setDoc(doc(firebaseDb, "users", cred.user.uid), {
             uid: cred.user.uid,
             firstName,
             lastName: rest.join(" "),
@@ -179,9 +176,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             addresses: [],
             wishlist: [],
             cart: [],
-          });
+          }).catch((e) => console.warn("[Auth] Firestore user doc creation failed (non-blocking):", e));
         }
 
+        // Step 3: Set user state immediately (don't wait for onAuthStateChanged)
         const authUser: AuthUser = {
           id: cred.user.uid,
           fullName: data.fullName,
@@ -190,10 +188,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: "customer", status: "active", profileImageUrl: null, preferredLanguage: "en",
         };
         setUser(authUser);
+        setFirebaseUser(cred.user);
         saveToStorage(authUser);
         return { success: true };
       } else {
-        // Fallback: mock register
         await new Promise((r) => setTimeout(r, 1000));
         const mockUser: AuthUser = {
           id: `user-${Date.now()}`, fullName: data.fullName, email: data.email, phone: data.phone,
@@ -204,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (err: any) {
       let msg = "Registration failed. Please try again.";
+      console.error("[Auth] Registration error:", err?.code, err?.message);
       if (err?.code === "auth/email-already-in-use") msg = "This email is already registered. Try logging in.";
       else if (err?.code === "auth/invalid-email") msg = "Invalid email address";
       else if (err?.code === "auth/weak-password") msg = "Password is too weak. Use at least 6 characters.";
@@ -219,6 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signOut(firebaseAuth);
     }
     setUser(null);
+    setFirebaseUser(null);
     saveToStorage(null);
   }, []);
 

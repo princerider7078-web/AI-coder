@@ -39,7 +39,7 @@ function loadAddresses(): Address[] {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
 }
 function saveAddresses(list: Address[]) {
-  if (typeof window !== "undefined") try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch {}
+  if (typeof window !== "undefined") try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch (_e) {}
 }
 
 /* ---------- GPS + Reverse Geocoding ---------- */

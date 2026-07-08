@@ -48,9 +48,9 @@ const PREFIX = "GB";
 
 function load(): Booking[] {
   if (typeof window === "undefined") return [];
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; } catch (_e) { return []; }
 }
-function save(b: Booking[]) { if (typeof window !== "undefined") try { localStorage.setItem(STORAGE_KEY, JSON.stringify(b)); } catch {} }
+function save(b: Booking[]) { if (typeof window !== "undefined") try { localStorage.setItem(STORAGE_KEY, JSON.stringify(b)); } catch (_e) {} }
 
 export function BookingsProvider({ children }: { children: ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);

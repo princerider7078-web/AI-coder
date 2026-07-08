@@ -245,9 +245,10 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       {/* Terms acceptance */}
       <div className="space-y-2">
         <div className="flex items-start gap-2">
-          <Checkbox
+          <input
+            type="checkbox"
             id="register-terms"
-            className="mt-0.5"
+            className="size-4 accent-[#1A6B3C] mt-0.5"
             aria-invalid={!!errors.acceptTerms}
             aria-describedby={errors.acceptTerms ? "register-terms-error" : undefined}
             {...register("acceptTerms")}

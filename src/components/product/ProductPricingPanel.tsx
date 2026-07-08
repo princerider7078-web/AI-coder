@@ -62,7 +62,7 @@ export function ProductPricingPanel(props: ProductPricingPanelProps) {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: props.productName, url: window.location.href }); } catch {}
+      try { await navigator.share({ title: props.productName, url: window.location.href }); } catch (_e) {}
     } else {
       navigator.clipboard.writeText(window.location.href);
       appToast.success("Link copied!", "Product link copied to clipboard");
