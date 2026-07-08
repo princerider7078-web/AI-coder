@@ -36,8 +36,8 @@ export const HERO_SLIDES: HeroSlide[] = [
     },
     primaryCta: { label: { en: "Shop Plants", hi: "पौधे खरीदें" }, href: "/shop?category=indoor-plants" },
     secondaryCta: { label: { en: "Explore Collection", hi: "संग्रह देखें" }, href: "/shop" },
-    image: "https://nurserylive.com/cdn/shop/collections/nurserylive-indoor-plants_1600x.jpg",
-    imageAlt: { en: "Indoor plants collection", hi: "इंडोर पौधों का संग्रह" },
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBBsZc39PTv7nBgZzHrCxzLOlLBq1C0tnYDkHSytQ0g-ko4wI-xydAAd33yQiIw40vAzWZKqSQshPetOqOp-4DVHEMT33qy427oWHXUAqje9T0ia1770zLwVsH5aMJumReTVVzHZHgaDk70CejheTVg6gKfTP2hdcuGrM2SeSfpNPj5HnYBdtyHHzRcH1kSd2fgnC4g8_RXY6DeFCl5B2jQBnOSf0JTxPijZZJ9Koc8b748kxr6e3k6mBjSeq8BpULGSUhzQ2FYXs7d",
+    imageAlt: { en: "Indoor plants collection in a bright home", hi: "एक उज्ज्वल घर में इंडोर पौधों का संग्रह" },
     tone: "green",
   },
   {
@@ -53,8 +53,8 @@ export const HERO_SLIDES: HeroSlide[] = [
     },
     primaryCta: { label: { en: "Book a Service", hi: "सेवा बुक करें" }, href: "/services" },
     secondaryCta: { label: { en: "Become a Provider", hi: "प्रदाता बनें" }, href: "/become-provider" },
-    image: "https://nurserylive.com/cdn/shop/articles/nurserylive-gardening-tools_1600x.jpg",
-    imageAlt: { en: "Gardener at work", hi: "काम करता हुआ माली" },
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAn4SZmoYC-TWOHlrDkProVO06IKAPpW8vTIf7U2d85ePzno9HUqPZGimAq54AL8bZ56YN_RG1PAqXUoAMOFJIVC2YLouJDsP_J_127xAyUNC-fN8RnerhQOQ3Zb4gyei1vXR2agsRHxuAHPS2-Cr-vHFwgi3ZX9eePSOMxUegwnVVv6v-IQZ0tIEqe_YEAxWskhebzvf4y91uF8N5LJHrWLhJ6YLDf2_lyqMFPpMszR6LSUJ5lQMnTOc0tdJFhsUd9HHvjOCeupgPF",
+    imageAlt: { en: "Gardener tending to plants in a home garden", hi: "घर के बगीचे में पौधों की देखभाल करता हुआ माली" },
     tone: "sage",
   },
   {
@@ -70,9 +70,26 @@ export const HERO_SLIDES: HeroSlide[] = [
     },
     primaryCta: { label: { en: "Shop Seasonal", hi: "मौसमी खरीदें" }, href: "/shop?category=seasonal-plants" },
     secondaryCta: { label: { en: "See Reviews", hi: "समीक्षाएं देखें" }, href: "/#testimonials" },
-    image: "https://nurserylive.com/cdn/shop/articles/nurserylive-monsoon-plants_1600x.jpg",
-    imageAlt: { en: "Monsoon plants", hi: "मानसून पौधे" },
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDXDyeLZVK9QbLFNwqQgWzO439Qws7uIWWfoYtwtdjMmPIimZ1NamCCSRI8_EbcZfpj42zoX_NkYWY2LTQPNgEgSL0Yz15ClKj8PRwzazHnyg38SvtQz6mW0FYhQjdar01002qHzml90jp2sgN5YFg6nN25zXKWYQdNTuiA5g",
+    imageAlt: { en: "Lush green plants thriving in monsoon rain", hi: "मानसून बारिश में फलते-फूलते हरित पौधे" },
     tone: "amber",
+  },
+  {
+    id: "slide-4",
+    badge: { en: "🪴 Premium Planters", hi: "🪴 प्रीमियम प्लांटर" },
+    headline: {
+      en: "Style Your Space",
+      hi: "अपनी जगह सजाएं",
+    },
+    subtitle: {
+      en: "Handcrafted ceramic, terracotta, and decorative planters — designed to complement every plant.",
+      hi: "हस्तनिर्मित सिरामिक, मिट्टी, और सजावटी प्लांटर — हर पौधे के अनुरूप डिज़ाइन किए गए।",
+    },
+    primaryCta: { label: { en: "Shop Planters", hi: "प्लांटर खरीदें" }, href: "/shop?category=ceramic-planters" },
+    secondaryCta: { label: { en: "View Collection", hi: "संग्रह देखें" }, href: "/shop?category=planters" },
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCVpptpcEz4r7LnHtzvTelMWxMjjDfiYA9z4yjhCwbIOQuZXxaer-oZGPY6CcMzI5-Z8k0dKQIjJMiwl8_NZfyj3nlK08qw9QDw8x_KQ0--cbf8PqkQ6TTztknN0J9tmKiultJ-gZ14Y-LUMvOAipRTizzoX_emoH69nWo5e-97oPaHxQSDnXqhwzJjLQKp70Xy2edY9LWrveDcD268jN1nFB3PbEyTuc80vay449tV7qgHihHciK-TloKypRR09t3VJIvsOArVf2Yp",
+    imageAlt: { en: "Premium ceramic and terracotta planters display", hi: "प्रीमियम सिरामिक और मिट्टी के प्लांटर प्रदर्शन" },
+    tone: "neutral",
   },
 ];
 
