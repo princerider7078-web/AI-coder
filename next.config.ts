@@ -50,8 +50,12 @@ const nextConfig: NextConfig = {
     })),
   },
   // Allow the preview gateway origin to load _next/* assets during dev.
+  // The preview subdomain includes the chat ID, so we allow all space-z.ai subdomains.
   allowedDevOrigins: [
     "https://preview-chat-9491ca16-c30d-4a2b-8976-79a75d0955cc.space-z.ai",
+    "http://preview-chat-9491ca16-c30d-4a2b-8976-79a75d0955cc.space-z.ai",
+    "preview-chat-9491ca16-c30d-4a2b-8976-79a75d0955cc.space-z.ai",
+    "*.space-z.ai",
   ],
   typescript: {
     // Foundation types are strict; allow build to surface issues during dev.
