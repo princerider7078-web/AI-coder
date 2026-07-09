@@ -160,7 +160,6 @@ export function OrderTrackingClientWrapper({ orderId }: OrderTrackingClientWrapp
         order={order}
         onCancel={() => setShowCancelModal(true)}
         onReorder={() => appToast.info("Reorder", "Adding items to cart...")}
-        onDownloadInvoice={() => appToast.info("Invoice", "Generating invoice PDF...")}
         onReturn={() => appToast.info("Return Request", "Opening return request form...")}
       />
 

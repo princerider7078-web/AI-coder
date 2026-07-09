@@ -3,23 +3,23 @@
 /**
  * GrowPlants — ProfessionalOrderDetail
  * ============================================================================
- * A single, cohesive, production-grade Order Detail component with 8 sections:
+ * A single, cohesive, production-grade Order Detail component with 6 sections:
  *
  *   1. Order Header       — ID, date, color-coded status badge
- *   2. Status Tracker     — visual step-by-step timeline
+ *   2. Status Tracker     — 8-step visual timeline (Order Journey)
  *   3. Customer & Shipping— name, phone, email, shipping + billing address
  *   4. Ordered Items      — image, name, variant, qty, price, subtotal
  *   5. Price Summary      — subtotal, discount, delivery, GST, grand total
- *   6. Payment Details    — method, status, transaction ID
- *   7. Delivery Info      — courier, tracking#, ETA, actual delivery
- *   8. Action Buttons     — Track, Invoice, Cancel/Return, Reorder, Support
+ *   6. Action Buttons     — Track, Cancel/Return, Reorder, Support
  *
- * Design principles:
- *   - Clean, modern, card-based layout with proper spacing
- *   - Mobile-first responsive (single column → 2-column on lg)
- *   - Clear visual hierarchy — status + total stand out immediately
- *   - Consistent color coding (green=delivered, amber=pending, red=cancelled)
- *   - Scannable within 5 seconds
+ * Removed per user request:
+ *   - Delivery Information section (courier, tracking#, ETA)
+ *   - Payment Details section (method, status, transaction ID)
+ *   - Invoice button
+ *   - Tracking Number
+ *
+ * Order Journey status is fetched from Firebase in real-time
+ * (via onUserOrderSnapshot in OrderTrackingClientWrapper).
  * ============================================================================
  */
 import { cn, formatINR, formatDate } from "@/lib/utils";
@@ -27,9 +27,8 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Hash, Calendar, Clock, Package, CheckCircle2, XCircle, Truck, AlertCircle,
-  User, Phone, Mail, MapPin, Home, CreditCard, Navigation, Tag, Copy,
-  IndianRupee, Download, RotateCcw, MessageCircle, Headphones, ExternalLink,
-  ChevronRight, Box, Sparkles, Leaf,
+  User, Phone, Mail, MapPin, Home, CreditCard, IndianRupee, RotateCcw,
+  MessageCircle, Headphones, Sparkles, Leaf,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -44,7 +43,6 @@ import { OrderTimeline } from "@/components/orders/timeline";
 
 interface ProfessionalOrderDetailProps {
   order: Order;
-  onDownloadInvoice?: () => void;
   onCancel?: () => void;
   onReturn?: () => void;
   onReorder?: () => void;
@@ -108,59 +106,10 @@ function Section({
 }
 
 /* ============================================================================
- * Info row — label + value with icon
- * ============================================================================ */
-function InfoRow({
-  icon: Icon,
-  label,
-  value,
-  link,
-  mono = false,
-  copyable = false,
-}: {
-  icon: typeof Hash;
-  label: string;
-  value: string | undefined;
-  link?: string;
-  mono?: boolean;
-  copyable?: boolean;
-}) {
-  if (!value) return null;
-  const handleCopy = () => copyable && navigator.clipboard?.writeText(value);
-
-  return (
-    <div className="flex items-start gap-2.5">
-      <div className="size-7 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="size-3.5 text-slate-500" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{label}</p>
-        <div className="flex items-center gap-1.5">
-          {link ? (
-            <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-[#1A6B3C] hover:underline font-medium">
-              <span className={cn(mono && "font-mono")}>{value}</span>
-              <ExternalLink className="size-3" />
-            </a>
-          ) : (
-            <p className={cn("text-sm text-slate-700 font-medium", mono && "font-mono")}>{value}</p>
-          )}
-          {copyable && (
-            <button onClick={handleCopy} className="p-0.5 rounded hover:bg-slate-100 transition-colors" aria-label={`Copy ${label}`}>
-              <Copy className="size-3 text-slate-400" />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================================
  * MAIN COMPONENT
  * ============================================================================ */
 export function ProfessionalOrderDetail({
   order,
-  onDownloadInvoice,
   onCancel,
   onReturn,
   onReorder,
@@ -185,11 +134,6 @@ export function ProfessionalOrderDetail({
   const gstTotal = order.tax ?? 0;
   const cgst = Math.round(gstTotal / 2);
   const sgst = gstTotal - cgst;
-
-  // Tracking
-  const tracking = order.tracking;
-  const estimatedDate = tracking?.estimatedDeliveryDate
-    ?? new Date(new Date(order.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
 
   return (
     <div className={cn("space-y-5", className)}>
@@ -274,18 +218,19 @@ export function ProfessionalOrderDetail({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 2: STATUS TRACKER (visual timeline)
+          SECTION 2: ORDER JOURNEY (visual timeline)
+          Status fetched from Firebase in real-time via onUserOrderSnapshot
           ═══════════════════════════════════════════════════════════════ */}
       <OrderTimeline
         order={order}
-        estimatedDelivery={estimatedDate}
+        estimatedDelivery={new Date(new Date(order.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()}
         estimatedDeliveryTime="10:00 AM – 6:00 PM"
       />
 
       {/* ═══════════════════════════════════════════════════════════════
           MAIN GRID: 2 columns on desktop
-          Left: Items + Delivery Info
-          Right: Customer + Payment + Price Summary
+          Left: Ordered Items
+          Right: Customer & Shipping + Price Summary
           ═══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* ═════ LEFT COLUMN (2/3) ═════ */}
@@ -365,77 +310,6 @@ export function ProfessionalOrderDetail({
               })}
             </div>
           </Section>
-
-          {/* ───── SECTION 7: DELIVERY INFO ───── */}
-          <Section icon={Truck} title="Delivery Information">
-            <div className="space-y-4">
-              {/* Shipping method badge */}
-              <div className="flex items-center gap-2.5 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                <div className="size-9 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
-                  <Truck className="size-4 text-blue-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-800">{order.shippingMethod === "express" ? "Express Delivery" : order.shippingMethod === "same_day" ? "Same Day Delivery" : order.shippingMethod === "pickup" ? "Store Pickup" : "Standard Delivery"}</p>
-                  <p className="text-xs text-slate-600">
-                    {order.shippingMethod === "express" ? "1-2 business days" : order.shippingMethod === "same_day" ? "Within 6 hours" : order.shippingMethod === "pickup" ? "Pickup from nursery" : "3-5 business days"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Tracking details */}
-              {tracking && ["shipped", "out_for_delivery", "delivered"].includes(order.orderStatus) ? (
-                <div className="space-y-3">
-                  <InfoRow icon={Box} label="Courier Partner" value={tracking.courierPartner ?? "GrowPlants Express"} />
-                  <InfoRow icon={Package} label="Tracking Number" value={tracking.trackingNumber} link={tracking.trackingUrl ?? `https://www.delhivery.com/tracking/${tracking.trackingNumber}`} mono copyable />
-                  {tracking.shipmentId && <InfoRow icon={Hash} label="Shipment ID" value={tracking.shipmentId} mono copyable />}
-                  {tracking.dispatchedAt && <InfoRow icon={Calendar} label="Dispatched On" value={`${formatDate(tracking.dispatchedAt)} at ${new Date(tracking.dispatchedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}`} />}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <Clock className="size-4 text-amber-600 shrink-0" />
-                  <p className="text-xs text-amber-700">
-                    {["pending", "payment_confirmed"].includes(order.orderStatus) ? "Order received. Will be shipped soon." : "Preparing your order for dispatch."}
-                  </p>
-                </div>
-              )}
-
-              <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-
-              {/* Delivery status hero */}
-              {isDelivered && tracking?.deliveredAt ? (
-                <div className="flex items-center gap-3 p-3.5 bg-green-50 border border-green-200 rounded-xl">
-                  <div className="size-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="size-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-green-800">Delivered Successfully</p>
-                    <p className="text-xs text-green-700">{formatDate(tracking.deliveredAt)} at {new Date(tracking.deliveredAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}</p>
-                  </div>
-                </div>
-              ) : order.orderStatus === "out_for_delivery" ? (
-                <div className="flex items-center gap-3 p-3.5 bg-orange-50 border border-orange-200 rounded-xl">
-                  <div className="size-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-                    <Navigation className="size-5 text-orange-600 animate-pulse" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-orange-800">Out for Delivery</p>
-                    <p className="text-xs text-orange-700">Arriving today: {tracking?.estimatedArrivalTime ?? "10:00 AM – 6:00 PM"}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-[#F3F8F1] to-green-50 border border-[#1A6B3C]/10 rounded-xl">
-                  <div className="size-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Calendar className="size-5 text-[#1A6B3C]" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Estimated Delivery</p>
-                    <p className="text-sm font-bold text-slate-800">{formatDate(estimatedDate)}</p>
-                    <p className="text-xs text-slate-500">10:00 AM – 6:00 PM</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </Section>
         </div>
 
         {/* ═════ RIGHT COLUMN (1/3) ═════ */}
@@ -504,52 +378,6 @@ export function ProfessionalOrderDetail({
             </div>
           </Section>
 
-          {/* ───── SECTION 6: PAYMENT DETAILS ───── */}
-          <Section icon={CreditCard} title="Payment Details">
-            <div className="space-y-3">
-              {/* Method + status */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={cn("size-9 rounded-xl flex items-center justify-center shrink-0", order.paymentMethod === "cod" ? "bg-amber-50" : "bg-blue-50")}>
-                    {order.paymentMethod === "cod" ? <Box className="size-4 text-amber-600" /> : <CreditCard className="size-4 text-blue-600" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-800 truncate">
-                      {order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod === "upi" ? "UPI Payment" : order.paymentMethod === "card" ? "Credit / Debit Card" : order.paymentMethod === "netbanking" ? "Net Banking" : order.paymentMethod === "wallet" ? "Wallet" : "Online Payment"}
-                    </p>
-                    <p className="text-xs text-slate-500 truncate">
-                      {order.paymentMethod === "cod" ? "Pay with cash on arrival" : "Paid online via gateway"}
-                    </p>
-                  </div>
-                </div>
-                <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full shrink-0", PAYMENT_STATUS_COLORS[order.paymentStatus])}>
-                  {PAYMENT_STATUS_LABELS[order.paymentStatus]}
-                </span>
-              </div>
-
-              {/* Transaction ID */}
-              {order.transactionId && (
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-xs text-slate-500 font-medium">Transaction ID</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono text-slate-700 truncate max-w-[140px]">{order.transactionId}</span>
-                    <button onClick={() => navigator.clipboard?.writeText(order.transactionId!)} className="p-1 rounded hover:bg-slate-200 transition-colors" aria-label="Copy">
-                      <Copy className="size-3 text-slate-400" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Coupon */}
-              {order.couponCode && (
-                <div className="flex items-center justify-between p-2.5 bg-green-50 rounded-lg border border-green-200">
-                  <span className="text-xs text-green-700 font-medium flex items-center gap-1"><Tag className="size-3" /> Coupon Applied</span>
-                  <span className="text-xs font-bold text-green-700 uppercase tracking-wide">{order.couponCode}</span>
-                </div>
-              )}
-            </div>
-          </Section>
-
           {/* ───── SECTION 5: PRICE SUMMARY ───── */}
           <Section icon={IndianRupee} title="Price Summary">
             <div className="space-y-2.5">
@@ -559,7 +387,7 @@ export function ProfessionalOrderDetail({
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-green-600">Discount {order.couponCode ? `(${order.couponCode})` : ""}</span>
+                  <span className="text-green-600">Discount</span>
                   <span className="font-medium text-green-600 tabular-nums">−{formatINR(order.discount)}</span>
                 </div>
               )}
@@ -586,27 +414,10 @@ export function ProfessionalOrderDetail({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 8: ACTION BUTTONS
+          SECTION 6: ACTION BUTTONS (no Invoice, no Track)
           ═══════════════════════════════════════════════════════════════ */}
       <Section icon={Headphones} title="Order Actions">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          {/* Track Order */}
-          {tracking?.trackingNumber && (
-            <a
-              href={tracking.trackingUrl ?? `https://www.delhivery.com/tracking/${tracking.trackingNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-[#1A6B3C] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors h-11"
-            >
-              <Truck className="size-4" /> Track
-            </a>
-          )}
-
-          {/* Download Invoice */}
-          <Button variant="outline" onClick={onDownloadInvoice} className="border-[#1A6B3C] text-[#1A6B3C] hover:bg-[#F3F8F1] gap-2 text-sm h-11">
-            <Download className="size-4" /> Invoice
-          </Button>
-
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
           {/* Cancel / Return */}
           {canCancel && onCancel && (
             <Button variant="outline" onClick={onCancel} className="border-red-300 text-red-600 hover:bg-red-50 gap-2 text-sm h-11">

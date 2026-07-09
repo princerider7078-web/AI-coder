@@ -514,13 +514,12 @@ export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
   partial_refund: "bg-orange-100 text-orange-700",
 };
 
-// Premium 9-step tracking timeline (back-compat export; canonical source is
-// src/components/orders/timeline/stages.ts)
+// Premium 8-step tracking timeline (back-compat export; canonical source is
+// src/components/orders/timeline/timeline-stages.ts)
 export const ORDER_TIMELINE: { status: OrderStatus; label: string }[] = [
   { status: "pending", label: "Order Placed" },
-  { status: "payment_confirmed", label: "Payment Confirmed" },
   { status: "confirmed", label: "Order Confirmed" },
-  { status: "processing", label: "Preparing Your Plants" },
+  { status: "processing", label: "Preparing Your Order" },
   { status: "quality_inspection", label: "Quality Inspection" },
   { status: "packed", label: "Packed" },
   { status: "shipped", label: "Shipped" },

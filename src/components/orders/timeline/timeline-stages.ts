@@ -71,8 +71,8 @@ export interface TimelineDetailField {
 }
 
 /* ============================================================================
- * 9-STEP PREMIUM TIMELINE
- * Order Placed → Payment Confirmed → Order Confirmed → Preparing →
+ * 8-STEP PREMIUM TIMELINE
+ * Order Placed → Order Confirmed → Preparing Your Order →
  * Quality Inspection → Packed → Shipped → Out For Delivery → Delivered
  * ============================================================================ */
 
@@ -92,18 +92,6 @@ export const TIMELINE_STAGES: TimelineStage[] = [
     ],
   },
   {
-    id: "payment_confirmed",
-    status: "confirmed",
-    label: "Payment Confirmed",
-    description: "Your payment has been verified successfully.",
-    iconName: "wallet",
-    accentColor: "bg-[#1A6B3C] text-white",
-    iconColor: "text-white",
-    detailFields: [
-      { key: "paymentMethod", label: "Payment Method", iconName: "credit-card", critical: true },
-    ],
-  },
-  {
     id: "order_confirmed",
     status: "confirmed",
     label: "Order Confirmed",
@@ -115,7 +103,7 @@ export const TIMELINE_STAGES: TimelineStage[] = [
   {
     id: "preparing",
     status: "processing",
-    label: "Preparing Your Plants",
+    label: "Preparing Your Order",
     description: "Your plants and products are being carefully prepared for dispatch.",
     iconName: "package",
     accentColor: "bg-[#1A6B3C] text-white",
@@ -124,7 +112,7 @@ export const TIMELINE_STAGES: TimelineStage[] = [
   },
   {
     id: "quality_inspection",
-    status: "packed",
+    status: "quality_inspection",
     label: "Quality Inspection",
     description: "Each plant is being inspected for health and quality before shipping.",
     iconName: "leaf-shield",
@@ -151,8 +139,6 @@ export const TIMELINE_STAGES: TimelineStage[] = [
     iconColor: "text-white",
     detailFields: [
       { key: "courierPartner", label: "Courier Partner", iconName: "truck", critical: true },
-      { key: "trackingNumber", label: "Tracking Number", iconName: "hash", critical: true },
-      { key: "shipmentId", label: "Shipment ID", iconName: "package" },
       { key: "dispatchTime", label: "Dispatch Time", iconName: "clock" },
     ],
   },
@@ -330,10 +316,7 @@ export const TOTAL_STAGES = TIMELINE_STAGES.length;
  */
 export function getCurrentStageIndex(
   orderStatus: OrderStatus,
-  paymentStatus?: string,
+  _paymentStatus?: string,
 ): number {
-  if (orderStatus === "pending" && paymentStatus === "paid") {
-    return TIMELINE_STAGES.findIndex((s) => s.id === "payment_confirmed");
-  }
   return getTimelineStageIndex(orderStatus);
 }
