@@ -198,7 +198,7 @@ function mapFirestoreOrderToOrder(fo: FirestoreOrder): Order {
       dateIso = createdAtIso;
     }
     return {
-      status: (h.status as OrderStatus) ?? "pending",
+      status: normalizeAdminStatus(h.status as string) as OrderStatus,
       date: dateIso,
       note: h.note,
     };
@@ -208,6 +208,12 @@ function mapFirestoreOrderToOrder(fo: FirestoreOrder): Order {
   if (statusHistory.length === 0) {
     statusHistory.push({ status: "pending", date: createdAtIso, note: "Order placed" });
   }
+
+  // Defensive status extraction: admin panel writes to `status` field.
+  // Old docs may also have `orderStatus` (capitalized). Read both, normalize.
+  const rawStatus = (fo as unknown as Record<string, unknown>).status
+    ?? (fo as unknown as Record<string, unknown>).orderStatus
+    ?? "pending";
 
   return {
     id: fo.orderId,
@@ -221,11 +227,41 @@ function mapFirestoreOrderToOrder(fo: FirestoreOrder): Order {
     address,
     paymentMethod: (fo.paymentMethod === "razorpay" ? "razorpay" : "cod") as PaymentMethod,
     paymentStatus: (fo.paymentStatus as PaymentStatus) ?? "pending",
-    orderStatus: (fo.status as OrderStatus) ?? "pending",
+    orderStatus: normalizeAdminStatus(rawStatus as string) as OrderStatus,
     notes: fo.notes,
     createdAt: createdAtIso,
     statusHistory,
   };
+}
+
+/**
+ * Normalize status values from the admin panel to our timeline's expected values.
+ *
+ * Admin panel writes these values to Firestore `status` field:
+ *   "placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"
+ *
+ * Our 8-step timeline expects:
+ *   "pending", "confirmed", "processing", "quality_inspection",
+ *   "packed", "shipped", "out_for_delivery", "delivered", "cancelled"
+ *
+ * Mapping:
+ *   - "placed" / "Placed" / "Order Placed" → "pending" (step 0: Order Placed)
+ *   - "processing" / "Preparing" / "preparing" → "processing" (step 2: Preparing)
+ *   - "quality_inspection" / "Quality Inspection" → "quality_inspection" (step 3)
+ *   - All other values pass through (lowercased)
+ */
+function normalizeAdminStatus(status: string | undefined | null): string {
+  if (!status) return "pending";
+  const s = String(status).toLowerCase().trim();
+
+  // Admin's "placed" → our "pending" (Order Placed step)
+  if (s === "placed" || s === "order_placed" || s === "order placed") return "pending";
+
+  // Normalize "preparing" → "processing"
+  if (s === "preparing" || s === "preparing your order" || s === "preparing your plants") return "processing";
+
+  // Pass through all other valid statuses
+  return s;
 }
 
 export function OrdersProvider({ children }: { children: ReactNode }) {

@@ -270,12 +270,17 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
     } else {
       dateIso = createdAtIso;
     }
-    return { status: (h.status as Order["orderStatus"]) ?? "pending", date: dateIso, note: h.note };
+    return { status: normalizeAdminStatus(h.status as string) as Order["orderStatus"], date: dateIso, note: h.note };
   });
 
   if (statusHistory.length === 0) {
     statusHistory.push({ status: "pending", date: createdAtIso, note: "Order placed" });
   }
+
+  // Read both `status` (admin writes this) and `orderStatus` (old field) for compat
+  const rawStatus = (fo as unknown as Record<string, unknown>).status
+    ?? (fo as unknown as Record<string, unknown>).orderStatus
+    ?? "pending";
 
   return {
     id: fo.orderId,
@@ -289,9 +294,22 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
     address,
     paymentMethod: (fo.paymentMethod === "razorpay" ? "razorpay" : "cod") as Order["paymentMethod"],
     paymentStatus: (fo.paymentStatus as Order["paymentStatus"]) ?? "pending",
-    orderStatus: (fo.status as Order["orderStatus"]) ?? "pending",
+    orderStatus: normalizeAdminStatus(rawStatus as string) as Order["orderStatus"],
     notes: fo.notes,
     createdAt: createdAtIso,
     statusHistory,
   };
+}
+
+/**
+ * Normalize admin panel status values to our timeline's expected values.
+ * Admin writes: "placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"
+ * Timeline expects: "pending", "confirmed", "processing", "quality_inspection", "packed", ...
+ */
+function normalizeAdminStatus(status: string | undefined | null): string {
+  if (!status) return "pending";
+  const s = String(status).toLowerCase().trim();
+  if (s === "placed" || s === "order_placed" || s === "order placed") return "pending";
+  if (s === "preparing" || s === "preparing your order" || s === "preparing your plants") return "processing";
+  return s;
 }

@@ -40,7 +40,6 @@ import {
   type Order,
 } from "@/contexts/OrdersContext";
 import { OrderTimeline } from "@/components/orders/timeline";
-import { AdminStatusUpdater } from "@/components/orders/AdminStatusUpdater";
 
 interface ProfessionalOrderDetailProps {
   order: Order;
@@ -220,23 +219,15 @@ export function ProfessionalOrderDetail({
 
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 2: ORDER JOURNEY (visual timeline)
-          Status fetched from Firebase in real-time via onUserOrderSnapshot
-          Admin can update status via AdminStatusUpdater dropdown
+          Status fetched from Firebase in real-time via onUserOrderSnapshot.
+          Admin panel (separate website) updates the `status` field in
+          Firestore → onSnapshot fires → timeline re-renders automatically.
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="relative">
-        <OrderTimeline
-          order={order}
-          estimatedDelivery={new Date(new Date(order.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()}
-          estimatedDeliveryTime="10:00 AM – 6:00 PM"
-        />
-        {/* Admin Status Updater — floating top-right of timeline section */}
-        <div className="absolute top-4 right-4 z-10">
-          <AdminStatusUpdater
-            orderId={order.id}
-            currentStatus={order.orderStatus}
-          />
-        </div>
-      </div>
+      <OrderTimeline
+        order={order}
+        estimatedDelivery={new Date(new Date(order.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()}
+        estimatedDeliveryTime="10:00 AM – 6:00 PM"
+      />
 
       {/* ═══════════════════════════════════════════════════════════════
           MAIN GRID: 2 columns on desktop

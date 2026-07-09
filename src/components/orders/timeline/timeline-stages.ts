@@ -259,9 +259,24 @@ export const FUTURE_STAGES: TimelineStage[] = [
 
 /**
  * Map an OrderStatus to the index in TIMELINE_STAGES.
- * Multiple stages can map to the same status (e.g. "confirmed" maps to both
- * "Payment Confirmed" at index 1 and "Order Confirmed" at index 2). In that
- * case, we return the LATEST one (so the user sees the most progressed view).
+ *
+ * Admin panel writes these status values to Firestore:
+ *   "placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"
+ *
+ * Our 8-step timeline has these statuses:
+ *   pending(0), confirmed(1), processing(2), quality_inspection(3),
+ *   packed(4), shipped(5), out_for_delivery(6), delivered(7)
+ *
+ * Mapping logic:
+ *   - "placed" → step 0 (Order Placed) — normalizeAdminStatus already converts to "pending"
+ *   - "confirmed" → step 1 (Order Confirmed)
+ *   - "processing" → step 2 (Preparing Your Order)
+ *   - "quality_inspection" → step 3 (Quality Inspection)
+ *   - "packed" → step 4 (Packed)
+ *   - "shipped" → step 5 (Shipped)
+ *   - "out_for_delivery" → step 6 (Out For Delivery)
+ *   - "delivered" → step 7 (Delivered)
+ *   - "cancelled" → -1 (handled separately in getStepState)
  *
  * Returns -1 if status is not in the timeline (e.g. cancelled, returned).
  */
