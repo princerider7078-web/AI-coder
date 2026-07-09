@@ -423,7 +423,7 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
   };
 
   const statusHistory = (fo.statusHistory ?? []).map((h) => {
-    const ht = h.date;
+    const ht = (h as { timestamp?: unknown; date?: unknown }).timestamp ?? (h as { date?: unknown }).date;
     let dateIso: string;
     if (typeof ht === "string") dateIso = ht;
     else if (ht instanceof Date) dateIso = ht.toISOString();

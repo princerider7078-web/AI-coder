@@ -70,49 +70,71 @@ export interface FirestoreOrderProduct {
   image: string;
   price: number;
   quantity: number;
-  type?: string;            // "plant" | "pot" | "gardening"
-  size?: string;
-  status?: string;          // item-level status (e.g. "shipped" if split shipment)
+  type: string;              // "plant" | "pot" | "gardening"
+  size: string;              // variant size (e.g. "Small", "Medium")
+  status: string;            // item-level status (e.g. "placed", "shipped")
   slug?: string;
   variantId?: string | null;
 }
 
 export interface FirestoreOrderAddressDetails {
   house: string;
-  street?: string;
+  street: string;
   city: string;
   state: string;
   pincode: string;
-  lat?: number | null;
-  lng?: number | null;
-  instructions?: string;
+  lat: number | null;
+  lng: number | null;
+  instructions: string;
 }
 
 export interface FirestoreOrderStatusEvent {
   status: string;
-  date: import("firebase/firestore").Timestamp | Date | string;
+  timestamp: import("firebase/firestore").Timestamp | Date | string;
   note?: string;
-  createdBy?: string;
+  updatedBy?: string;
 }
 
+/**
+ * Firestore Order Document — orders/{orderId}
+ * Matches the admin panel's structure exactly.
+ *
+ * Dual status fields (kept in sync):
+ *   - status (lowercase): "placed" | "confirmed" | "processing" | "packed" |
+ *                         "shipped" | "out_for_delivery" | "delivered" | "cancelled"
+ *   - orderStatus (capitalized): "Placed" | "Confirmed" | ... (backward compat)
+ */
 export interface FirestoreOrder {
   orderId: string;
-  orderNumber?: string;
   userId: string;
   orderPlacedAt: import("firebase/firestore").Timestamp | Date | string;
-  status: string;                                   // pending|confirmed|processing|packed|shipped|out_for_delivery|delivered|cancelled
-  paymentMethod: string;                            // cod | razorpay
-  paymentStatus: string;                            // pending|paid|failed|refunded|partial_refund
+  /** Formatted display string: "12 Jul 2026, 03:45 PM" */
+  orderTime: string;
+  paymentMethod: string;                            // "cod" | "online"
+  paymentStatus: string;                            // "Pending" | "Paid"
   name: string;                                     // recipient fullName
   phone: string;
-  address: string;                                  // single-line formatted address (legacy)
+  /** Formatted: "Name, house, street, city, state - pincode" */
+  address: string;
   addressDetails: FirestoreOrderAddressDetails;
   products: FirestoreOrderProduct[];
   subtotal: number;
   shippingFee: number;
-  totalAmount: number;
+  /** Alias for shippingFee (some admin panels use this field name) */
+  shippingCharge?: number;
   discount?: number;
-  tax?: number;
-  notes?: string;
+  totalAmount: number;
+  orderNumber?: string;
+  /** Capitalized — "Placed" | "Confirmed" | ... (backward compat, kept in sync with status) */
+  orderStatus: string;
+  /** Lowercase — PRIMARY field used by timeline */
+  status: string;
+  /** Admin notes (editable from admin panel) */
+  adminNotes: string;
+  /** Audit trail of every status change */
   statusHistory?: FirestoreOrderStatusEvent[];
+  /** Optional tax (GST) — not in original spec but kept for compatibility */
+  tax?: number;
+  /** Optional customer notes */
+  notes?: string;
 }

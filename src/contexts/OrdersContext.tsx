@@ -64,11 +64,13 @@ export interface OrderAddress {
 }
 
 export type OrderStatus =
-  // 9-step premium timeline statuses
-  | "pending" | "payment_confirmed" | "confirmed" | "processing"
-  | "quality_inspection" | "packed" | "shipped" | "out_for_delivery" | "delivered"
+  // 7-step timeline statuses (exact match with admin panel)
+  | "placed" | "confirmed" | "processing"
+  | "packed" | "shipped" | "out_for_delivery" | "delivered"
   // Auxiliary statuses (non-timeline)
-  | "cancelled" | "completed" | "returned" | "refunded" | "failed" | "on_hold";
+  | "cancelled" | "completed" | "returned" | "refunded" | "failed" | "on_hold"
+  // Legacy compat (normalized to "placed" by normalizeAdminStatus)
+  | "pending" | "payment_confirmed" | "quality_inspection";
 
 export type PaymentMethod = "cod" | "card" | "upi" | "netbanking" | "wallet" | "razorpay";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "partial_refund";
@@ -187,8 +189,9 @@ function mapFirestoreOrderToOrder(fo: FirestoreOrder): Order {
   };
 
   // Map statusHistory (FirestoreOrderStatusEvent[] → Order.statusHistory)
+  // Handle both `timestamp` (new field name) and `date` (legacy field name)
   const statusHistory = (fo.statusHistory ?? []).map((h) => {
-    const ht = h.date;
+    const ht = (h as { timestamp?: unknown; date?: unknown }).timestamp ?? (h as { date?: unknown }).date;
     let dateIso: string;
     if (typeof ht === "string") dateIso = ht;
     else if (ht instanceof Date) dateIso = ht.toISOString();
@@ -206,7 +209,7 @@ function mapFirestoreOrderToOrder(fo: FirestoreOrder): Order {
 
   // If statusHistory is empty, add a fallback entry
   if (statusHistory.length === 0) {
-    statusHistory.push({ status: "pending", date: createdAtIso, note: "Order placed" });
+    statusHistory.push({ status: "placed", date: createdAtIso, note: "Order placed" });
   }
 
   // Defensive status extraction: admin panel writes to `status` field.
@@ -235,32 +238,35 @@ function mapFirestoreOrderToOrder(fo: FirestoreOrder): Order {
 }
 
 /**
- * Normalize status values from the admin panel to our timeline's expected values.
+ * Normalize status values from Firestore.
  *
- * Admin panel writes these values to Firestore `status` field:
- *   "placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"
+ * Admin panel writes (lowercase `status` field):
+ *   "placed", "confirmed", "processing", "packed", "shipped",
+ *   "out_for_delivery", "delivered", "cancelled"
  *
- * Our 8-step timeline expects:
- *   "pending", "confirmed", "processing", "quality_inspection",
- *   "packed", "shipped", "out_for_delivery", "delivered", "cancelled"
- *
- * Mapping:
- *   - "placed" / "Placed" / "Order Placed" → "pending" (step 0: Order Placed)
- *   - "processing" / "Preparing" / "preparing" → "processing" (step 2: Preparing)
- *   - "quality_inspection" / "Quality Inspection" → "quality_inspection" (step 3)
- *   - All other values pass through (lowercased)
+ * Legacy/old docs may have (capitalized `orderStatus` field):
+ *   "Placed", "Confirmed", "Processing", etc. → lowercased + passed through
+ *   "pending" / "order_placed" → "placed" (old client wrote this)
+ *   "preparing" → "processing"
+ *   "quality_inspection" → "processing" (skip this step in 7-step timeline)
  */
 function normalizeAdminStatus(status: string | undefined | null): string {
-  if (!status) return "pending";
+  if (!status) return "placed";
   const s = String(status).toLowerCase().trim();
 
-  // Admin's "placed" → our "pending" (Order Placed step)
-  if (s === "placed" || s === "order_placed" || s === "order placed") return "pending";
+  // Legacy: "pending" / "order_placed" → "placed" (our 7-step uses "placed")
+  if (s === "pending" || s === "order_placed" || s === "order placed") return "placed";
 
-  // Normalize "preparing" → "processing"
+  // Legacy: "preparing" → "processing"
   if (s === "preparing" || s === "preparing your order" || s === "preparing your plants") return "processing";
 
-  // Pass through all other valid statuses
+  // Legacy: "quality_inspection" was in old 8-step timeline; skip to "processing"
+  if (s === "quality_inspection" || s === "quality check") return "processing";
+
+  // Legacy: "payment_confirmed" was in old 9-step; treat as "confirmed"
+  if (s === "payment_confirmed" || s === "payment confirmed") return "confirmed";
+
+  // Pass through all valid 7-step statuses
   return s;
 }
 
@@ -427,10 +433,13 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
             phone: data.address.phone,
             addressDetails: {
               house: data.address.addressLine1,
-              street: data.address.addressLine2,
+              street: data.address.addressLine2 ?? "",
               city: data.address.city,
               state: data.address.state,
               pincode: data.address.pincode,
+              lat: data.address.latitude ?? null,
+              lng: data.address.longitude ?? null,
+              instructions: data.notes ?? "",
             },
             products: data.items.map((i) => ({
               id: i.productId,
@@ -438,6 +447,9 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
               image: i.image,
               price: i.price,
               quantity: i.quantity,
+              type: "plant",
+              size: i.variant?.size ?? "Standard",
+              status: "placed",
               slug: i.slug,
               variantId: i.variantId,
             })),
@@ -446,8 +458,8 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
             totalAmount: data.total,
             discount: data.discount,
             tax: data.tax,
-            paymentMethod: data.paymentMethod,
-            paymentStatus,
+            paymentMethod: data.paymentMethod === "cod" ? "cod" : "online",
+            paymentStatus: data.paymentMethod === "cod" ? "Pending" : "Paid",
             notes: data.notes,
             status: "placed",
           });
@@ -499,11 +511,12 @@ export function useOrders() {
  * ============================================================================ */
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Order Placed",
-  payment_confirmed: "Payment Confirmed",
+  placed: "Order Placed",
+  pending: "Order Placed", // legacy
+  payment_confirmed: "Payment Confirmed", // legacy
   confirmed: "Order Confirmed",
-  processing: "Preparing Your Plants",
-  quality_inspection: "Quality Inspection",
+  processing: "Preparing Your Order",
+  quality_inspection: "Quality Inspection", // legacy
   packed: "Packed",
   shipped: "Shipped",
   out_for_delivery: "Out For Delivery",
@@ -517,11 +530,12 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  payment_confirmed: "bg-emerald-100 text-emerald-700",
+  placed: "bg-amber-100 text-amber-700",
+  pending: "bg-amber-100 text-amber-700", // legacy
+  payment_confirmed: "bg-emerald-100 text-emerald-700", // legacy
   confirmed: "bg-blue-100 text-blue-700",
   processing: "bg-indigo-100 text-indigo-700",
-  quality_inspection: "bg-teal-100 text-teal-700",
+  quality_inspection: "bg-teal-100 text-teal-700", // legacy
   packed: "bg-cyan-100 text-cyan-700",
   shipped: "bg-purple-100 text-purple-700",
   out_for_delivery: "bg-orange-100 text-orange-700",

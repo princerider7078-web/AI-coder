@@ -33,7 +33,7 @@ interface OrderTrackingClientWrapperProps {
   orderId: string;
 }
 
-const NOT_FOUND_TIMEOUT_MS = 10_000;
+const NOT_FOUND_TIMEOUT_MS = 30_000; // 30 seconds (was 10s — too short for slow connections)
 
 export function OrderTrackingClientWrapper({ orderId }: OrderTrackingClientWrapperProps) {
   const { user } = useAuth();
@@ -261,7 +261,7 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
   };
 
   const statusHistory = (fo.statusHistory ?? []).map((h) => {
-    const ht = h.date;
+    const ht = (h as { timestamp?: unknown; date?: unknown }).timestamp ?? (h as { date?: unknown }).date;
     let dateIso: string;
     if (typeof ht === "string") dateIso = ht;
     else if (ht instanceof Date) dateIso = ht.toISOString();
@@ -274,7 +274,7 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
   });
 
   if (statusHistory.length === 0) {
-    statusHistory.push({ status: "pending", date: createdAtIso, note: "Order placed" });
+    statusHistory.push({ status: "placed", date: createdAtIso, note: "Order placed" });
   }
 
   // Read both `status` (admin writes this) and `orderStatus` (old field) for compat
@@ -302,14 +302,24 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
 }
 
 /**
- * Normalize admin panel status values to our timeline's expected values.
- * Admin writes: "placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"
- * Timeline expects: "pending", "confirmed", "processing", "quality_inspection", "packed", ...
+ * Normalize admin panel status values to our 7-step timeline's expected values.
+ *
+ * Admin writes (lowercase `status` field):
+ *   "placed", "confirmed", "processing", "packed", "shipped",
+ *   "out_for_delivery", "delivered", "cancelled"
+ *
+ * Legacy values normalized:
+ *   - "pending" / "order_placed" → "placed"
+ *   - "preparing" → "processing"
+ *   - "quality_inspection" → "processing" (skip step in 7-step timeline)
+ *   - "payment_confirmed" → "confirmed"
  */
 function normalizeAdminStatus(status: string | undefined | null): string {
-  if (!status) return "pending";
+  if (!status) return "placed";
   const s = String(status).toLowerCase().trim();
-  if (s === "placed" || s === "order_placed" || s === "order placed") return "pending";
+  if (s === "pending" || s === "order_placed" || s === "order placed") return "placed";
   if (s === "preparing" || s === "preparing your order" || s === "preparing your plants") return "processing";
+  if (s === "quality_inspection" || s === "quality check") return "processing";
+  if (s === "payment_confirmed" || s === "payment confirmed") return "confirmed";
   return s;
 }

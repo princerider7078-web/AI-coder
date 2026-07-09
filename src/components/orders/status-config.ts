@@ -40,7 +40,7 @@ export interface StatusConfig {
  * ============================================================================ */
 
 export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
-  pending: {
+  placed: {
     label: "Order Placed",
     labelHi: "ऑर्डर दिया गया",
     color: "bg-amber-100 text-amber-700 border-amber-200",
@@ -49,6 +49,17 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
     stepIndex: 0,
     cancellable: true,
     description: "Order placed, awaiting confirmation",
+    descriptionHi: "ऑर्डर दिया गया, पुष्टि की प्रतीक्षा है",
+  },
+  pending: {
+    label: "Order Placed",
+    labelHi: "ऑर्डर दिया गया",
+    color: "bg-amber-100 text-amber-700 border-amber-200",
+    dotColor: "bg-amber-500",
+    isTimelineStep: true,
+    stepIndex: 0,
+    cancellable: true,
+    description: "Order placed, awaiting confirmation (legacy)",
     descriptionHi: "ऑर्डर दिया गया, पुष्टि की प्रतीक्षा है",
   },
   payment_confirmed: {

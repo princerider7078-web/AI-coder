@@ -230,33 +230,57 @@ export interface BuildOrderObjectInput {
   totalAmount: number;
   discount?: number;
   tax?: number;
-  paymentMethod: string;       // "cod" | "razorpay"
-  paymentStatus: string;       // "pending" | "paid" | ...
+  paymentMethod: string;       // "cod" | "online"
+  paymentStatus: string;       // "Pending" | "Paid"
   notes?: string;
-  status?: string;             // default "placed"
+  /** Initial status — default "placed" */
+  status?: string;
+  adminNotes?: string;
 }
 
 /**
  * Build a plain-object FirestoreOrder from API/checkout input.
- * Returned object is JSON-serialisable (no Timestamps except via serverTimestamp
- * — but we store orderPlacedAt as ISO string so it round-trips safely).
+ *
+ * Writes BOTH status fields (kept in sync):
+ *   - status: "placed" (lowercase — primary, used by timeline)
+ *   - orderStatus: "Placed" (capitalized — backward compat)
+ *
+ * Also writes:
+ *   - orderTime: formatted display string "12 Jul 2026, 03:45 PM"
+ *   - address: formatted single-line string
+ *   - statusHistory: initial entry [{ status: "placed", timestamp, note }]
  */
 export function buildOrderObject(input: BuildOrderObjectInput): FirestoreOrder {
-  const now = new Date().toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  // Format: "12 Jul 2026, 03:45 PM"
+  const orderTime = now.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  // Formatted address: "Name, house, street, city, state - pincode"
   const addressLine = [
+    input.name,
     input.addressDetails.house,
     input.addressDetails.street,
     input.addressDetails.city,
-    input.addressDetails.state,
-    input.addressDetails.pincode,
+    `${input.addressDetails.state} - ${input.addressDetails.pincode}`,
   ].filter(Boolean).join(", ");
+
+  const initialStatus = input.status ?? "placed";
 
   const statusHistory: FirestoreOrderStatusEvent[] = [
     {
-      status: input.status ?? "placed",
-      date: now,
-      note: "Order placed",
-      createdBy: input.userId,
+      status: initialStatus,
+      timestamp: nowIso,
+      note: "Order placed by customer.",
+      updatedBy: input.userId,
     },
   ];
 
@@ -264,8 +288,8 @@ export function buildOrderObject(input: BuildOrderObjectInput): FirestoreOrder {
     orderId: input.orderId,
     orderNumber: input.orderNumber,
     userId: input.userId,
-    orderPlacedAt: now,
-    status: input.status ?? "placed",
+    orderPlacedAt: nowIso,
+    orderTime,
     paymentMethod: input.paymentMethod,
     paymentStatus: input.paymentStatus,
     name: input.name,
@@ -275,12 +299,24 @@ export function buildOrderObject(input: BuildOrderObjectInput): FirestoreOrder {
     products: input.products,
     subtotal: input.subtotal,
     shippingFee: input.shippingFee,
-    totalAmount: input.totalAmount,
+    shippingCharge: input.shippingFee,
     discount: input.discount ?? 0,
+    totalAmount: input.totalAmount,
+    status: initialStatus,                    // lowercase — primary
+    orderStatus: capitalizeStatus(initialStatus), // capitalized — sync
+    adminNotes: input.adminNotes ?? "",
+    statusHistory,
     tax: input.tax ?? 0,
     notes: input.notes,
-    statusHistory,
   };
+}
+
+/** Capitalize status for the orderStatus field: "placed" → "Placed", "out_for_delivery" → "Out For Delivery" */
+function capitalizeStatus(s: string): string {
+  return s
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 /**

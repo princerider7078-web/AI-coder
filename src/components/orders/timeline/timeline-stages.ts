@@ -20,16 +20,14 @@
 import type { OrderStatus } from "@/contexts/OrdersContext";
 
 export type TimelineIconName =
-  | "shopping-bag"
-  | "wallet"
-  | "check-circle"
-  | "package"
-  | "leaf-shield"
-  | "box"
-  | "truck"
-  | "map-pin"
-  | "check-badge"
-  | "clock";
+  | "package"        // Order Placed
+  | "clipboard-check" // Order Confirmed
+  | "refresh-cw"     // Processing (Preparing)
+  | "box"            // Packed
+  | "truck"          // Shipped
+  | "map-pin"        // Out For Delivery
+  | "check-circle"   // Delivered
+  | "x-circle";      // Cancelled (special case)
 
 export interface TimelineStage {
   /** Stable ID — must match a value in OrderStatus OR be a future-only stage */
@@ -71,18 +69,22 @@ export interface TimelineDetailField {
 }
 
 /* ============================================================================
- * 8-STEP PREMIUM TIMELINE
- * Order Placed → Order Confirmed → Preparing Your Order →
- * Quality Inspection → Packed → Shipped → Out For Delivery → Delivered
+ * 7-STEP TIMELINE (exact match with admin panel)
+ * placed → confirmed → processing → packed → shipped → out_for_delivery → delivered
+ *
+ * Icons (exact spec):
+ *   Package → ClipboardCheck → RefreshCw → Box → Truck → MapPin → CheckCircle
+ *
+ * Cancelled status is handled separately (not a timeline step).
  * ============================================================================ */
 
 export const TIMELINE_STAGES: TimelineStage[] = [
   {
     id: "order_placed",
-    status: "pending",
+    status: "placed",
     label: "Order Placed",
     description: "We have successfully received your order.",
-    iconName: "shopping-bag",
+    iconName: "package",
     accentColor: "bg-[#1A6B3C] text-white",
     iconColor: "text-white",
     detailFields: [
@@ -96,26 +98,16 @@ export const TIMELINE_STAGES: TimelineStage[] = [
     status: "confirmed",
     label: "Order Confirmed",
     description: "Our team has confirmed your order.",
-    iconName: "check-circle",
+    iconName: "clipboard-check",
     accentColor: "bg-[#1A6B3C] text-white",
     iconColor: "text-white",
   },
   {
-    id: "preparing",
+    id: "processing",
     status: "processing",
     label: "Preparing Your Order",
     description: "Your plants and products are being carefully prepared for dispatch.",
-    iconName: "package",
-    accentColor: "bg-[#1A6B3C] text-white",
-    iconColor: "text-white",
-    isBotanical: true,
-  },
-  {
-    id: "quality_inspection",
-    status: "quality_inspection",
-    label: "Quality Inspection",
-    description: "Each plant is being inspected for health and quality before shipping.",
-    iconName: "leaf-shield",
+    iconName: "refresh-cw",
     accentColor: "bg-[#1A6B3C] text-white",
     iconColor: "text-white",
     isBotanical: true,
@@ -162,7 +154,7 @@ export const TIMELINE_STAGES: TimelineStage[] = [
     status: "delivered",
     label: "Delivered",
     description: "Your order has been delivered successfully.",
-    iconName: "check-badge",
+    iconName: "check-circle",
     accentColor: "bg-[#1A6B3C] text-white",
     iconColor: "text-white",
     detailFields: [
@@ -177,6 +169,7 @@ export const TIMELINE_STAGES: TimelineStage[] = [
  * FUTURE-READY STAGES — not in default timeline, but available for returns etc.
  * ============================================================================
  * To enable: add to TIMELINE_STAGES array above. UI auto-adapts.
+ * NOTE: These use only the 7 icon names defined in TimelineIconName type.
  */
 export const FUTURE_STAGES: TimelineStage[] = [
   {
@@ -211,7 +204,7 @@ export const FUTURE_STAGES: TimelineStage[] = [
     status: "refunded",
     label: "Refund Initiated",
     description: "Your refund has been initiated.",
-    iconName: "wallet",
+    iconName: "refresh-cw",
     accentColor: "bg-blue-500 text-white",
     iconColor: "text-white",
   },
@@ -220,7 +213,7 @@ export const FUTURE_STAGES: TimelineStage[] = [
     status: "refunded",
     label: "Refund Completed",
     description: "Your refund has been processed successfully.",
-    iconName: "check-badge",
+    iconName: "check-circle",
     accentColor: "bg-blue-500 text-white",
     iconColor: "text-white",
   },
@@ -229,7 +222,7 @@ export const FUTURE_STAGES: TimelineStage[] = [
     status: "cancelled",
     label: "Cancelled",
     description: "This order has been cancelled.",
-    iconName: "check-circle",
+    iconName: "x-circle",
     accentColor: "bg-red-500 text-white",
     iconColor: "text-white",
   },
@@ -238,7 +231,7 @@ export const FUTURE_STAGES: TimelineStage[] = [
     status: "on_hold",
     label: "Delayed",
     description: "Your delivery has been delayed. We apologize for the inconvenience.",
-    iconName: "clock",
+    iconName: "refresh-cw",
     accentColor: "bg-amber-500 text-white",
     iconColor: "text-white",
   },
@@ -260,25 +253,13 @@ export const FUTURE_STAGES: TimelineStage[] = [
 /**
  * Map an OrderStatus to the index in TIMELINE_STAGES.
  *
- * Admin panel writes these status values to Firestore:
- *   "placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"
+ * 7-step timeline statuses (exact match with admin panel):
+ *   placed(0), confirmed(1), processing(2), packed(3), shipped(4),
+ *   out_for_delivery(5), delivered(6)
  *
- * Our 8-step timeline has these statuses:
- *   pending(0), confirmed(1), processing(2), quality_inspection(3),
- *   packed(4), shipped(5), out_for_delivery(6), delivered(7)
+ * "cancelled" → -1 (handled separately in getStepState)
  *
- * Mapping logic:
- *   - "placed" → step 0 (Order Placed) — normalizeAdminStatus already converts to "pending"
- *   - "confirmed" → step 1 (Order Confirmed)
- *   - "processing" → step 2 (Preparing Your Order)
- *   - "quality_inspection" → step 3 (Quality Inspection)
- *   - "packed" → step 4 (Packed)
- *   - "shipped" → step 5 (Shipped)
- *   - "out_for_delivery" → step 6 (Out For Delivery)
- *   - "delivered" → step 7 (Delivered)
- *   - "cancelled" → -1 (handled separately in getStepState)
- *
- * Returns -1 if status is not in the timeline (e.g. cancelled, returned).
+ * Returns -1 if status is not in the timeline.
  */
 export function getTimelineStageIndex(status: OrderStatus | undefined | null): number {
   if (!status) return -1;

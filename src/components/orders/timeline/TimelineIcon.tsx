@@ -15,24 +15,21 @@
  * ============================================================================
  */
 import {
-  ShoppingBag, Wallet, CheckCircle2, Package, Leaf, Box,
-  Truck, MapPin, CheckCheck, AlertCircle, XCircle, Shield, Clock,
-  type LucideIcon,
+  Package, ClipboardCheck, RefreshCw, Box, Truck, MapPin, CheckCircle2,
+  XCircle, Clock, type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TimelineIconName } from "./timeline-stages";
 
 const ICON_REGISTRY: Partial<Record<TimelineIconName, LucideIcon>> = {
-  "shopping-bag": ShoppingBag,
-  wallet: Wallet,
-  "check-circle": CheckCircle2,
-  package: Package,
-  "leaf-shield": Leaf,
-  box: Box,
-  truck: Truck,
+  "package": Package,
+  "clipboard-check": ClipboardCheck,
+  "refresh-cw": RefreshCw,
+  "box": Box,
+  "truck": Truck,
   "map-pin": MapPin,
-  "check-badge": CheckCheck,
-  clock: Clock,
+  "check-circle": CheckCircle2,
+  "x-circle": XCircle,
 };
 
 interface TimelineIconProps {
@@ -79,22 +76,10 @@ export function TimelineIcon({
       )}
       aria-hidden="true"
     >
-      {/* Special: leaf-shield gets a shield overlay */}
-      {name === "leaf-shield" && (
-        <Shield
-          className={cn(
-            "absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full bg-white p-0.5",
-            state === "completed" && "text-[#1A6B3C]",
-            state === "current" && "text-[#1A6B3C]",
-            state === "upcoming" && "text-slate-400",
-            state === "cancelled_step" && "text-red-500",
-          )}
-        />
-      )}
       <Icon className={dims.icon} strokeWidth={2.2} />
 
-      {/* Checkmark overlay on completed steps */}
-      {state === "completed" && showCheckOnComplete && name !== "check-circle" && name !== "check-badge" && (
+      {/* Checkmark overlay on completed steps (not for check-circle which already IS a checkmark) */}
+      {state === "completed" && showCheckOnComplete && name !== "check-circle" && (
         <div className="absolute -bottom-0.5 -right-0.5 size-4 rounded-full bg-white flex items-center justify-center shadow-sm animate-checkmark-pop">
           <CheckCircle2 className="size-4 text-[#1A6B3C]" strokeWidth={2.5} />
         </div>
@@ -114,14 +99,14 @@ export function TimelineIcon({
  * TimelineDetailIcon — resolves field icons for detail rows
  * ============================================================================ */
 const DETAIL_ICON_REGISTRY: Record<string, LucideIcon> = {
-  calendar: CheckCircle2, // re-use; replace with Calendar if needed
+  calendar: CheckCircle2,
   clock: Clock,
   hash: CheckCircle2,
   user: CheckCircle2,
   phone: CheckCircle2,
   truck: Truck,
   "map-pin": MapPin,
-  "credit-card": Wallet,
+  "credit-card": CheckCircle2,
   package: Package,
   "check-circle": CheckCircle2,
 };
