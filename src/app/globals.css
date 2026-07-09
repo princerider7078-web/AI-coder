@@ -607,6 +607,31 @@
   animation: connector-fill 0.6s ease-out both;
 }
 
+/* Fade-in-up — used by timeline steps for staggered entrance */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Checkmark pop — slight overshoot scale for completed step checkmarks */
+@keyframes checkmark-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-checkmark-pop {
+  animation: checkmark-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* ============================================================================
  * PRINT — legal/policy pages
  * ============================================================================

@@ -1,56 +1,67 @@
 "use client";
 
 /**
- * TimelineConnector — Animated line between two steps.
+ * GrowPlants — TimelineConnector
+ * ============================================================================
+ * Animated connector line between timeline steps.
  *
- * Desktop: horizontal line (flex-1, height 2px)
- * Mobile:  vertical line (absolute positioned between circles)
+ * Desktop (horizontal): renders a horizontal line to the right of the step.
+ * Mobile (vertical):   renders a vertical line below the step.
  *
- * State:
- *   - completed → green fill (animated width/height grow on mount)
- *   - upcoming  → grey dashed
+ * States:
+ *   - completed → solid brand green, full fill, animated draw-in
+ *   - current   → brand green at 50% (partial fill, animating toward full)
+ *   - upcoming  → light grey, no animation
+ *   - cancelled → red dashed
+ * ============================================================================
  */
 import { cn } from "@/lib/utils";
 
 interface TimelineConnectorProps {
-  state: "completed" | "upcoming";
+  state: "completed" | "current" | "upcoming" | "cancelled_step";
   orientation: "horizontal" | "vertical";
+  /** Whether this is the last step (no connector rendered) */
+  isLast?: boolean;
   className?: string;
 }
 
 export function TimelineConnector({
   state,
   orientation,
+  isLast = false,
   className,
 }: TimelineConnectorProps) {
+  if (isLast) return null;
+
   if (orientation === "horizontal") {
     return (
       <div
         className={cn(
-          "flex-1 h-0.5 mx-1 relative overflow-hidden rounded-full",
-          "min-w-[24px] mt-4",
+          "absolute top-5 left-1/2 w-full h-1 rounded-full overflow-hidden",
           className,
         )}
         aria-hidden="true"
       >
-        {/* Base track */}
         <div className="absolute inset-0 bg-slate-200" />
-        {/* Fill (animated) */}
         <div
           className={cn(
-            "absolute inset-0 origin-left transition-all duration-700 ease-out",
-            state === "completed" ? "bg-[#1A6B3C] scale-x-100" : "scale-x-0",
+            "absolute inset-0 rounded-full transition-all duration-700 ease-out",
+            state === "completed" && "bg-[#1A6B3C] w-full",
+            state === "current" && "bg-[#1A6B3C] w-1/2",
+            state === "upcoming" && "w-0",
+            state === "cancelled_step" && "bg-red-400 w-full opacity-50",
           )}
+          style={{ transformOrigin: "left" }}
         />
       </div>
     );
   }
 
-  // Vertical connector (mobile)
+  // Vertical (mobile)
   return (
     <div
       className={cn(
-        "absolute left-[14px] top-7 bottom-0 w-0.5 overflow-hidden",
+        "absolute left-3.5 top-9 bottom-0 w-1 rounded-full overflow-hidden",
         className,
       )}
       aria-hidden="true"
@@ -58,9 +69,13 @@ export function TimelineConnector({
       <div className="absolute inset-0 bg-slate-200" />
       <div
         className={cn(
-          "absolute inset-0 origin-top transition-all duration-700 ease-out",
-          state === "completed" ? "bg-[#1A6B3C] scale-y-100" : "scale-y-0",
+          "absolute inset-0 rounded-full transition-all duration-700 ease-out",
+          state === "completed" && "bg-[#1A6B3C] h-full",
+          state === "current" && "bg-[#1A6B3C] h-1/2",
+          state === "upcoming" && "h-0",
+          state === "cancelled_step" && "bg-red-400 h-full opacity-50",
         )}
+        style={{ transformOrigin: "top" }}
       />
     </div>
   );

@@ -1,70 +1,75 @@
 "use client";
 
 /**
- * TrackingErrorState — Shown when tracking can't be loaded.
- * Includes Retry + Support buttons.
+ * GrowPlants — TrackingErrorState
+ * ============================================================================
+ * Error state shown when tracking data can't be loaded. Includes retry and
+ * support buttons.
+ * ============================================================================
  */
-import { AlertCircle, RefreshCw, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AlertTriangle, RefreshCw, Headphones } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TrackingErrorStateProps {
-  className?: string;
   /** Error message */
   message?: string;
   /** Retry callback */
   onRetry?: () => void;
-  /** Support callback (defaults to opening WhatsApp) */
-  onSupport?: () => void;
+  /** Support callback (e.g. open WhatsApp / navigate to /contact) */
+  onContactSupport?: () => void;
+  className?: string;
 }
 
 export function TrackingErrorState({
-  className,
-  message,
+  message = "Unable to load tracking information.",
   onRetry,
-  onSupport,
+  onContactSupport,
+  className,
 }: TrackingErrorStateProps) {
   return (
     <div
       className={cn(
-        "bg-red-50/50 rounded-2xl border border-red-200 p-6 sm:p-8 flex flex-col items-center text-center",
+        "flex flex-col items-center justify-center text-center py-12 px-6 rounded-2xl border border-red-200 bg-red-50/50",
         className,
       )}
       role="alert"
     >
-      <div className="size-14 rounded-full bg-red-100 flex items-center justify-center mb-3">
-        <AlertCircle className="size-7 text-red-500" aria-hidden="true" />
+      {/* Icon */}
+      <div className="size-16 rounded-full bg-red-100 flex items-center justify-center mb-4 shadow-sm">
+        <AlertTriangle className="size-8 text-red-500" strokeWidth={2} />
       </div>
-      <h3 className="text-base font-bold text-slate-800 mb-1">
-        Unable to Load Tracking
+
+      <h3 className="text-base font-bold text-red-800 mb-1.5">
+        Tracking Unavailable
       </h3>
-      <p className="text-sm text-slate-600 max-w-sm leading-relaxed mb-5">
-        {message ??
-          "We couldn't load your tracking information. Please check your connection and try again."}
+      <p className="text-sm text-red-600 max-w-sm leading-relaxed mb-5">
+        {message}
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-2">
+
+      <div className="flex flex-wrap items-center justify-center gap-3">
         {onRetry && (
-          <button
+          <Button
             onClick={onRetry}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1A6B3C] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors"
+            className="bg-[#1A6B3C] hover:bg-[#16A34A] gap-2"
+            size="sm"
           >
-            <RefreshCw className="size-4" aria-hidden="true" />
+            <RefreshCw className="size-4" />
             Retry
-          </button>
+          </Button>
         )}
-        <button
-          onClick={onSupport ?? defaultSupport}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:border-[#1A6B3C] hover:text-[#1A6B3C] transition-colors"
-        >
-          <MessageCircle className="size-4" aria-hidden="true" />
-          Contact Support
-        </button>
+        {onContactSupport && (
+          <Button
+            onClick={onContactSupport}
+            variant="outline"
+            className="border-red-300 text-red-600 hover:bg-red-50 gap-2"
+            size="sm"
+          >
+            <Headphones className="size-4" />
+            Contact Support
+          </Button>
+        )}
       </div>
     </div>
   );
-}
-
-function defaultSupport() {
-  if (typeof window !== "undefined") {
-    window.open("https://wa.me/919999999999?text=Hi%20GrowPlants,%20I%20need%20help%20with%20my%20order", "_blank");
-  }
 }

@@ -50,11 +50,8 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
         {/* Premium Order Timeline */}
         <OrderTimeline
           order={order}
-          showBanner
-          showProgressCard
-          showSummaryCard={false}
-          layout="auto"
-          compact
+          estimatedDelivery={new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()}
+          estimatedDeliveryTime="10:00 AM – 6:00 PM"
         />
 
         {/* Items */}

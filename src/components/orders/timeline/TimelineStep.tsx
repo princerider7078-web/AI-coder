@@ -1,212 +1,259 @@
 "use client";
 
 /**
- * TimelineStep — Single step in the tracking timeline.
+ * GrowPlants — TimelineStep
+ * ============================================================================
+ * Individual stage card in the premium timeline.
  *
- * Renders differently based on state:
- *   - completed       → green circle with checkmark, soft success bg
- *   - current         → primary color, pulsing glow, elevated card
- *   - upcoming        → grey circle, muted text
- *   - cancelled_step  → red circle with X
+ * Desktop (horizontal): circle on top, label below, connector line to right.
+ * Mobile (vertical): circle on left, content card on right, connector below.
  *
- * Desktop: vertical stack (circle on top, label below)
- * Mobile:  horizontal row (circle on left, content on right)
+ * States:
+ *   - completed       → green circle + checkmark, full label, soft success bg
+ *   - current         → accent color + pulse glow, elevated card, prominent
+ *   - upcoming        → grey circle, muted label, lower opacity
+ *   - cancelled_step  → red circle + X, "Cancelled" label override
  *
- * Detail fields (courier, tracking #, etc.) render only when step is
- * completed or current.
+ * Premium stage (Quality Inspection) gets a special "Exclusive" badge.
+ * ============================================================================
  */
-import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  type TimelineStage,
-  type StepState,
-} from "./timeline-stages";
-import { TimelineIcon, TimelineDetailIcon } from "./TimelineIcon";
+import { TimelineIcon } from "./TimelineIcon";
+import { TimelineConnector } from "./TimelineConnector";
 import { StatusBadge } from "./StatusBadge";
+import type { TimelineStage, StepState } from "./timeline-stages";
+
+interface DisplayField {
+  key: string;
+  label: string;
+  value: string | undefined;
+  critical?: boolean;
+}
 
 interface TimelineStepProps {
   stage: TimelineStage;
   state: StepState;
-  /** Metadata values keyed by detailField.key */
-  details?: Record<string, string | undefined>;
-  /** Timestamp when this step was completed (ISO string) */
-  timestamp?: string;
-  /** Format function for timestamps */
-  formatDate?: (iso: string) => string;
-  /** Whether this is the last step (no connector after) */
-  isLast?: boolean;
-  /** Index for ARIA labeling */
-  index: number;
+  stepIndex: number;
+  totalSteps: number;
+  orientation: "horizontal" | "vertical";
+  /** Date when this stage was completed (from statusHistory) */
+  completedDate?: string;
+  /** Display fields for this stage (courier, tracking #, etc.) */
+  displayFields?: DisplayField[];
+  /** Delay for staggered fade-in animation (ms) */
+  animationDelay?: number;
 }
 
 export function TimelineStep({
   stage,
   state,
-  details,
-  timestamp,
-  formatDate,
-  isLast,
-  index,
+  stepIndex,
+  totalSteps,
+  orientation,
+  completedDate,
+  displayFields = [],
+  animationDelay = 0,
 }: TimelineStepProps) {
-  const isCompleted = state === "completed";
-  const isCurrent = state === "current";
+  const isLast = stepIndex === totalSteps - 1;
   const isCancelled = state === "cancelled_step";
-  const isUpcoming = state === "upcoming";
-  const showDetails = (isCompleted || isCurrent) && stage.detailFields && details;
+  const displayLabel = isCancelled ? "Cancelled" : stage.label;
 
-  return (
-    <>
-      {/* ============ DESKTOP: vertical stack ============ */}
+  // Format completed date
+  const formattedDate = completedDate
+    ? new Date(completedDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+    : undefined;
+  const formattedTime = completedDate
+    ? new Date(completedDate).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+    : undefined;
+
+  /* ====================================================================
+   * DESKTOP (horizontal)
+   * ==================================================================== */
+  if (orientation === "horizontal") {
+    return (
       <div
-        className="hidden md:flex flex-col items-center gap-2 flex-1 min-w-0 relative"
-        aria-label={`Step ${index + 1}: ${stage.label} — ${state}`}
+        className={cn(
+          "relative flex flex-col items-center gap-2 flex-1 min-w-0 group",
+          "animate-fade-in-up",
+        )}
+        style={{ animationDelay: `${animationDelay}ms` }}
         role="listitem"
+        aria-label={`Step ${stepIndex + 1}: ${displayLabel}, ${state}`}
       >
-        {/* Step circle */}
-        <div
-          className={cn(
-            "relative z-10 size-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-300",
-            // State-based styling
-            isCompleted && "bg-[#1A6B3C] text-white shadow-md shadow-[#1A6B3C]/20",
-            isCurrent &&
-              "bg-[#1A6B3C] text-white ring-4 ring-[#1A6B3C]/20 animate-pulse-soft shadow-lg shadow-[#1A6B3C]/30",
-            isUpcoming && "bg-slate-50 text-slate-400 border-2 border-slate-200",
-            isCancelled && "bg-red-500 text-white shadow-md shadow-red-500/20",
-          )}
-        >
-          {isCompleted ? (
-            <Check className="size-5" strokeWidth={3} aria-hidden="true" />
-          ) : isCancelled ? (
-            <X className="size-5" strokeWidth={3} aria-hidden="true" />
-          ) : (
-            <TimelineIcon
-              name={stage.iconName}
-              className="size-5"
-              withLeafAccent={stage.isBotanical && (isCurrent || isCompleted)}
-            />
-          )}
-        </div>
+        <TimelineConnector
+          state={state}
+          orientation="horizontal"
+          isLast={isLast}
+        />
+
+        <TimelineIcon
+          name={stage.iconName}
+          accentColor={stage.accentColor}
+          iconColor={stage.iconColor}
+          state={state}
+          size="md"
+        />
+
+        {/* Premium badge (Quality Inspection) */}
+        {stage.isBotanical && state !== "upcoming" && (
+          <span className="absolute -top-1 right-1/2 translate-x-7 px-1.5 py-0.5 rounded-full bg-[#1A6B3C] text-white text-[8px] font-bold uppercase tracking-wide shadow-sm">
+            Exclusive
+          </span>
+        )}
 
         {/* Label */}
         <p
           className={cn(
-            "text-xs font-semibold text-center leading-tight max-w-[100px]",
-            isUpcoming ? "text-slate-400" : "text-slate-800",
-            isCurrent && "text-[#1A6B3C]",
+            "text-center text-xs font-semibold leading-tight transition-colors",
+            state === "completed" && "text-slate-800",
+            state === "current" && "text-[#1A6B3C] text-sm",
+            state === "upcoming" && "text-slate-400",
             isCancelled && "text-red-600",
           )}
         >
-          {isCancelled ? "Cancelled" : stage.label}
+          {displayLabel}
         </p>
 
-        {/* Timestamp */}
-        {isCompleted && timestamp && formatDate && (
-          <p className="text-[10px] text-slate-400 text-center leading-tight">
-            {formatDate(timestamp)}
+        {/* Subtitle */}
+        {stage.isBotanical && state === "current" && (
+          <p className="text-[9px] text-slate-500 text-center leading-tight italic">
+            GrowPlants Exclusive
           </p>
         )}
-        {isCurrent && timestamp && formatDate && (
-          <p className="text-[10px] text-[#1A6B3C]/70 text-center leading-tight font-medium">
-            {formatDate(timestamp)}
+
+        {/* Date (when completed) */}
+        {formattedDate && state === "completed" && (
+          <p className="text-[9px] text-slate-400 text-center leading-tight">
+            {formattedDate}
+          </p>
+        )}
+        {formattedDate && state === "current" && (
+          <p className="text-[9px] text-[#1A6B3C] text-center leading-tight font-medium">
+            {formattedDate} · {formattedTime}
           </p>
         )}
       </div>
+    );
+  }
 
-      {/* ============ MOBILE: horizontal row ============ */}
+  /* ====================================================================
+   * MOBILE (vertical)
+   * ==================================================================== */
+  return (
+    <li
+      className="relative flex items-start gap-3 pb-5 last:pb-0 animate-fade-in-up"
+      style={{ animationDelay: `${animationDelay}ms` }}
+      role="listitem"
+      aria-label={`Step ${stepIndex + 1}: ${displayLabel}, ${state}`}
+    >
+      <TimelineConnector
+        state={state}
+        orientation="vertical"
+        isLast={isLast}
+      />
+
+      <TimelineIcon
+        name={stage.iconName}
+        accentColor={stage.accentColor}
+        iconColor={stage.iconColor}
+        state={state}
+        size="md"
+      />
+
+      {/* Content card */}
       <div
-        className="md:hidden flex items-start gap-3 relative pb-6 last:pb-0"
-        role="listitem"
-        aria-label={`Step ${index + 1}: ${stage.label} — ${state}`}
+        className={cn(
+          "flex-1 min-w-0 rounded-xl p-3 transition-all duration-300",
+          state === "current" && "bg-[#F3F8F1] border border-[#1A6B3C]/20 shadow-sm",
+          state === "completed" && "bg-green-50/50 border border-green-100",
+          state === "upcoming" && "bg-transparent",
+          isCancelled && "bg-red-50 border border-red-200",
+        )}
       >
-        {/* Circle */}
-        <div
-          className={cn(
-            "relative z-10 size-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 mt-0.5",
-            isCompleted && "bg-[#1A6B3C] text-white shadow-md shadow-[#1A6B3C]/20",
-            isCurrent &&
-              "bg-[#1A6B3C] text-white ring-4 ring-[#1A6B3C]/20 animate-pulse-soft shadow-lg shadow-[#1A6B3C]/30",
-            isUpcoming && "bg-slate-50 text-slate-400 border-2 border-slate-200",
-            isCancelled && "bg-red-500 text-white shadow-md shadow-red-500/20",
-          )}
-        >
-          {isCompleted ? (
-            <Check className="size-4" strokeWidth={3} aria-hidden="true" />
-          ) : isCancelled ? (
-            <X className="size-4" strokeWidth={3} aria-hidden="true" />
-          ) : (
-            <TimelineIcon
-              name={stage.iconName}
-              className="size-4"
-              withLeafAccent={stage.isBotanical && (isCurrent || isCompleted)}
+        {/* Header row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <p
+            className={cn(
+              "text-sm font-semibold leading-tight",
+              state === "completed" && "text-slate-800",
+              state === "current" && "text-[#1A6B3C]",
+              state === "upcoming" && "text-slate-400",
+              isCancelled && "text-red-600",
+            )}
+          >
+            {displayLabel}
+          </p>
+
+          {state === "current" && (
+            <StatusBadge
+              label="Current"
+              color="green"
+              variant="solid"
+              size="xs"
             />
+          )}
+          {stage.isBotanical && state !== "upcoming" && (
+            <StatusBadge
+              label="Exclusive"
+              color="green"
+              variant="soft"
+              size="xs"
+            />
+          )}
+          {isCancelled && (
+            <StatusBadge label="Cancelled" color="red" variant="solid" size="xs" />
           )}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0 pt-0.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p
-              className={cn(
-                "text-sm font-semibold leading-tight",
-                isUpcoming ? "text-slate-400" : "text-slate-800",
-                isCurrent && "text-[#1A6B3C]",
-                isCancelled && "text-red-600",
-              )}
-            >
-              {isCancelled ? "Cancelled" : stage.label}
-            </p>
-            <StatusBadge state={state} size="sm" />
-          </div>
-
+        {/* Description (only show for current and completed states to reduce clutter) */}
+        {state !== "upcoming" && (
           <p
             className={cn(
-              "text-xs mt-0.5 leading-relaxed",
-              isUpcoming ? "text-slate-400" : "text-slate-600",
+              "text-xs mt-1 leading-relaxed",
+              state === "completed" && "text-slate-600",
+              state === "current" && "text-slate-700",
+              isCancelled && "text-red-600",
             )}
           >
             {isCancelled ? "This order was cancelled after being placed." : stage.description}
           </p>
+        )}
 
-          {/* Timestamp */}
-          {(isCompleted || isCurrent) && timestamp && formatDate && (
-            <p
-              className={cn(
-                "text-[10px] mt-1",
-                isCurrent ? "text-[#1A6B3C]/70 font-medium" : "text-slate-400",
-              )}
-            >
-              {formatDate(timestamp)}
-            </p>
-          )}
+        {/* Date row */}
+        {formattedDate && state !== "upcoming" && (
+          <p
+            className={cn(
+              "text-[10px] mt-1.5 flex items-center gap-1",
+              state === "current" ? "text-[#1A6B3C] font-medium" : "text-slate-400",
+            )}
+          >
+            <span>📅</span> {formattedDate} · {formattedTime}
+          </p>
+        )}
 
-          {/* Detail fields */}
-          {showDetails && (
-            <div className="mt-2 space-y-1 p-2.5 rounded-lg bg-[#F3F8F1] border border-[#1A6B3C]/10">
-              {stage.detailFields!.map((field) => {
-                const value = details?.[field.key];
-                if (!value) return null;
-                return (
-                  <div key={field.key} className="flex items-center gap-2 text-xs">
-                    <TimelineDetailIcon
-                      name={field.iconName}
-                      className="size-3.5 text-[#1A6B3C] shrink-0"
-                    />
-                    <span className="text-slate-500">{field.label}:</span>
-                    <span
-                      className={cn(
-                        "text-slate-800 font-medium",
-                        field.critical && "font-bold text-[#1A6B3C]",
-                      )}
-                    >
-                      {value}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* Display fields (courier, tracking #, etc.) */}
+        {state !== "upcoming" && displayFields.length > 0 && (
+          <dl className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1">
+            {displayFields.map((field) =>
+              field.value ? (
+                <div key={field.key} className="min-w-0">
+                  <dt className="text-[9px] text-slate-400 uppercase tracking-wide font-medium">
+                    {field.label}
+                  </dt>
+                  <dd
+                    className={cn(
+                      "text-xs truncate",
+                      field.critical ? "text-slate-800 font-bold" : "text-slate-700 font-medium",
+                    )}
+                  >
+                    {field.value}
+                  </dd>
+                </div>
+              ) : null,
+            )}
+          </dl>
+        )}
       </div>
-    </>
+    </li>
   );
 }

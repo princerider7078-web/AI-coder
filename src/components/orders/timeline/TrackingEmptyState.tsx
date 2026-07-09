@@ -1,64 +1,59 @@
 "use client";
 
 /**
- * TrackingEmptyState — Shown when tracking hasn't started yet.
- * Premium botanical illustration + calm message.
+ * GrowPlants — TrackingEmptyState
+ * ============================================================================
+ * Premium illustration + message shown when tracking hasn't started yet
+ * (order just placed, no tracking info available).
+ * ============================================================================
  */
-import { Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Sprout, Clock } from "lucide-react";
 
 interface TrackingEmptyStateProps {
+  orderNumber?: string;
   className?: string;
-  /** Custom message */
-  message?: string;
-  /** Optional action button */
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
 }
 
-export function TrackingEmptyState({
-  className,
-  message,
-  action,
-}: TrackingEmptyStateProps) {
+export function TrackingEmptyState({ orderNumber, className }: TrackingEmptyStateProps) {
   return (
     <div
       className={cn(
-        "bg-gradient-to-br from-[#F3F8F1] to-white rounded-2xl border border-[#1A6B3C]/10",
-        "p-8 sm:p-12 flex flex-col items-center text-center",
+        "flex flex-col items-center justify-center text-center py-12 px-6 rounded-2xl border border-dashed border-slate-300 bg-gradient-to-b from-[#F3F8F1] to-white",
         className,
       )}
       role="status"
     >
-      {/* Botanical illustration (CSS-drawn sprout) */}
-      <div className="relative mb-4">
-        <div className="size-20 rounded-full bg-[#1A6B3C]/10 flex items-center justify-center">
-          <Sprout className="size-10 text-[#1A6B3C]" strokeWidth={1.5} aria-hidden="true" />
+      {/* Illustration: sprout in a circle */}
+      <div className="relative mb-5">
+        <div className="absolute inset-0 bg-[#1A6B3C]/10 rounded-full blur-xl animate-pulse-soft" />
+        <div className="relative size-20 rounded-full bg-gradient-to-br from-[#1A6B3C] to-[#43A047] flex items-center justify-center shadow-lg">
+          <Sprout className="size-10 text-white" strokeWidth={2} />
         </div>
-        {/* Decorative dots */}
-        <div className="absolute -top-1 -right-1 size-2 rounded-full bg-[#43A047]/40" aria-hidden="true" />
-        <div className="absolute -bottom-2 -left-2 size-2.5 rounded-full bg-[#E8930A]/40" aria-hidden="true" />
-        <div className="absolute top-1/2 -right-3 size-1.5 rounded-full bg-[#1A6B3C]/30" aria-hidden="true" />
+        {/* Decorative leaves */}
+        <Sprout className="absolute -top-1 -right-2 size-5 text-[#1A6B3C]/40 rotate-12" />
+        <Sprout className="absolute -bottom-1 -left-2 size-4 text-[#1A6B3C]/30 -rotate-12" />
       </div>
 
-      <h3 className="text-base font-bold text-slate-800 mb-1">
-        Tracking Not Available Yet
+      <h3 className="text-base font-bold text-slate-800 mb-1.5">
+        Tracking will begin soon
       </h3>
       <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
-        {message ??
-          "Tracking information will appear once your order is processed. This usually takes a few minutes."}
+        Tracking information will appear once your order is processed.
+        {orderNumber && (
+          <>
+            <br />
+            <span className="text-xs text-slate-400 mt-1 inline-block">
+              Order #{orderNumber}
+            </span>
+          </>
+        )}
       </p>
 
-      {action && (
-        <button
-          onClick={action.onClick}
-          className="mt-5 px-4 py-2 rounded-full bg-[#1A6B3C] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors"
-        >
-          {action.label}
-        </button>
-      )}
+      <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
+        <Clock className="size-3.5" />
+        <span>Usually starts within 1-2 hours</span>
+      </div>
     </div>
   );
 }

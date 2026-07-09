@@ -7,4 +7,3 @@
  * Deprecated: import from "@/components/orders/timeline" instead.
  */
 export { OrderTimeline as OrderTrackingTimeline } from "./timeline";
-export type { OrderTimelineProps as OrderTrackingTimelineProps } from "./timeline/types";

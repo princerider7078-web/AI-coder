@@ -319,3 +319,21 @@ export function getProgressPercentage(currentIndex: number, totalSteps: number):
   if (currentIndex >= totalSteps - 1) return 100;
   return Math.round(((currentIndex + 1) / totalSteps) * 100);
 }
+
+/** Total number of stages in the default timeline */
+export const TOTAL_STAGES = TIMELINE_STAGES.length;
+
+/**
+ * Map an order's status + paymentStatus to the current stage index.
+ * Special handling: if status is "pending" but paymentStatus is "paid",
+ * show stage 1 (Payment Confirmed) as current.
+ */
+export function getCurrentStageIndex(
+  orderStatus: OrderStatus,
+  paymentStatus?: string,
+): number {
+  if (orderStatus === "pending" && paymentStatus === "paid") {
+    return TIMELINE_STAGES.findIndex((s) => s.id === "payment_confirmed");
+  }
+  return getTimelineStageIndex(orderStatus);
+}

@@ -370,8 +370,8 @@ export default function FoundationVerificationPage() {
                     <span className="text-caption text-muted-foreground">xl</span>
                   </div>
                   <div className="flex flex-col items-center gap-2">
-                    <LogoMark size="lg" variant="bare" className="text-primary" />
-                    <span className="text-caption text-muted-foreground">bare</span>
+                    <LogoMark size="lg" variant="tile" className="text-primary" />
+                    <span className="text-caption text-muted-foreground">tile</span>
                   </div>
                 </div>
               </div>

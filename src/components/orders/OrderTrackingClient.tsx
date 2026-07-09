@@ -175,8 +175,7 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
           <ArrowLeft className="size-3.5" /> Back to Orders
         </Link>
         <TrackingEmptyState
-          message="This order may have been removed, or it may still be syncing to our servers. Please try again in a moment."
-          action={{ label: "Back to Orders", onClick: () => (window.location.href = "/account/orders") }}
+          orderNumber={orderId}
         />
       </Container>
     );
@@ -261,9 +260,8 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
           {/* PREMIUM ORDER TIMELINE (real-time) */}
           <OrderTimeline
             order={order}
-            stageDetails={stageDetails}
-            estimatedDeliveryDate={computeETA(order)}
-            estimatedDeliveryWindow="10:00 AM – 6:00 PM"
+            estimatedDelivery={computeETA(order)}
+            estimatedDeliveryTime="10:00 AM – 6:00 PM"
           />
 
           {/* Items */}
