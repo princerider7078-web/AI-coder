@@ -27,10 +27,40 @@ import type { FirestoreOrder, FirestoreOrderProduct, FirestoreOrderAddressDetail
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface OrderItem {
-  productId: string; name: string; slug: string; price: number; image: string; quantity: number; variantId?: string | null;
+  productId: string;
+  name: string;
+  slug: string;
+  price: number;
+  image: string;
+  quantity: number;
+  variantId?: string | null;
+  /** Stock Keeping Unit — unique product code for inventory */
+  sku?: string;
+  /** Variant details (size, color, model, etc.) */
+  variant?: {
+    size?: string;
+    color?: string;
+    model?: string;
+    label?: string; // generic variant label
+  };
+  /** Item-level subtotal (price × quantity) — computed if not provided */
+  itemSubtotal?: number;
+  /** Item-level status (for split shipments) */
+  itemStatus?: OrderStatus;
 }
 export interface OrderAddress {
-  fullName: string; phone: string; addressLine1: string; addressLine2?: string; landmark?: string; city: string; state: string; pincode: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  /** GPS coordinates (latitude/longitude) for verified addresses */
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export type OrderStatus =
@@ -40,8 +70,9 @@ export type OrderStatus =
   // Auxiliary statuses (non-timeline)
   | "cancelled" | "completed" | "returned" | "refunded" | "failed" | "on_hold";
 
-export type PaymentMethod = "razorpay" | "cod";
+export type PaymentMethod = "cod" | "card" | "upi" | "netbanking" | "wallet" | "razorpay";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "partial_refund";
+export type ShippingMethod = "standard" | "express" | "same_day" | "pickup";
 
 export interface Order {
   id: string;
@@ -53,18 +84,27 @@ export interface Order {
   tax: number;
   total: number;
   address: OrderAddress;
+  /** Billing address (if different from shipping) */
+  billingAddress?: OrderAddress;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  /** Transaction/reference ID from payment gateway (Razorpay, etc.) */
+  transactionId?: string;
+  /** Coupon code applied (if any) */
+  couponCode?: string;
   orderStatus: OrderStatus;
   notes?: string;
   createdAt: string;
   statusHistory: { status: OrderStatus; date: string; note?: string }[];
   /** True if order is from in-memory mock fallback (no DB persistence) */
   _mock?: boolean;
+  /** Shipping method (Standard / Express / Same Day / Pickup) */
+  shippingMethod?: ShippingMethod;
   /** Shipping/tracking metadata (populated when order is shipped) */
   tracking?: {
     courierPartner?: string;
     trackingNumber?: string;
+    trackingUrl?: string;
     shipmentId?: string;
     dispatchedAt?: string;
     deliveryPartner?: string;

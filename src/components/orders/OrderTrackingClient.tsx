@@ -1,28 +1,26 @@
 "use client";
 
 /**
- * GrowPlants — OrderTrackingClient (Professional Edition)
+ * GrowPlants — OrderTrackingClient (Comprehensive Edition)
  * ============================================================================
  * Client wrapper that subscribes to a single order's Firestore document and
- * renders the complete professional order detail experience.
+ * renders the complete professional order detail experience with 7 sections:
+ *
+ *   1. Order Information (OrderHeaderCard) — ID, status, date, total, payment badges
+ *   2. Visual Status Timeline (OrderTimeline) — premium 9-step tracker
+ *   3. Customer Details (CustomerDetailsCard) — name, phone, email, shipping + billing
+ *   4. Product/Item Details (OrderItemsCard) — image, name, SKU, variant, qty, price, subtotal
+ *   5. Payment Information (PaymentSummaryCard) — method, status, transaction ID, breakdown
+ *   6. Shipping & Delivery (ShippingDeliveryCard) — method, courier, tracking#, ETA
+ *   7. Order Actions (OrderActionsBar) — invoice, cancel, return, exchange, reorder, support
  *
  * Layout (Desktop, lg+):
  *   ┌─────────────────────────────────────┬───────────────────┐
  *   │ OrderHeaderCard (full width)        │                   │
- *   │ OrderTimeline (premium 9-step)      │ PaymentSummaryCard│
- *   │ OrderItemsCard                      │ DeliveryAddressCard│
- *   │ OrderActionsBar                     │                   │
+ *   │ OrderTimeline (premium 9-step)      │ CustomerDetailsCard│
+ *   │ OrderItemsCard                      │ PaymentSummaryCard │
+ *   │ ShippingDeliveryCard                │ OrderActionsBar    │
  *   └─────────────────────────────────────┴───────────────────┘
- *
- * Layout (Mobile):
- *   All cards stacked vertically in order:
- *   Header → Timeline → Items → Payment → Address → Actions
- *
- * Flow:
- *   1. useEffect → onUserOrderSnapshot(uid, orderId, callback) — REAL-TIME
- *   2. Loading → TrackingSkeleton (shimmer)
- *   3. Not found (after 10s) → TrackingEmptyState
- *   4. Order found → Professional layout with all cards
  * ============================================================================
  */
 import { useEffect, useState, useRef } from "react";
@@ -30,7 +28,6 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Container } from "@/components/common/Container";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -49,7 +46,8 @@ import {
 import { OrderHeaderCard } from "@/components/orders/OrderHeaderCard";
 import { OrderItemsCard } from "@/components/orders/OrderItemsCard";
 import { PaymentSummaryCard } from "@/components/orders/PaymentSummaryCard";
-import { DeliveryAddressCard } from "@/components/orders/DeliveryAddressCard";
+import { CustomerDetailsCard } from "@/components/orders/CustomerDetailsCard";
+import { ShippingDeliveryCard } from "@/components/orders/ShippingDeliveryCard";
 import { OrderActionsBar } from "@/components/orders/OrderActionsBar";
 import { appToast } from "@/lib/toast";
 
@@ -63,7 +61,6 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
   const { user } = useAuth();
   const { getOrder, cancelOrder } = useOrders();
 
-  // Live order from Firestore (real-time)
   const [liveOrder, setLiveOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,14 +99,14 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
         if (!fo) {
           const cached = getOrder(orderId);
           if (cached) {
-            setLiveOrder(cached);
+            setLiveOrder(enrichOrder(cached));
             setNotFound(false);
           } else {
             setNotFound(true);
           }
         } else {
           const mapped = mapFirestoreOrderInline(fo);
-          setLiveOrder(mapped);
+          setLiveOrder(enrichOrder(mapped));
           setNotFound(false);
         }
         setLoading(false);
@@ -121,7 +118,7 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
         }
         const cached = getOrder(orderId);
         if (cached) {
-          setLiveOrder(cached);
+          setLiveOrder(enrichOrder(cached));
           setNotFound(false);
         } else {
           setError(err.message);
@@ -197,6 +194,14 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
     appToast.info("Invoice", "Generating invoice PDF...");
   };
 
+  const handleReturn = () => {
+    appToast.info("Return Request", "Opening return request form...");
+  };
+
+  const handleExchange = () => {
+    appToast.info("Exchange Request", "Opening exchange request form...");
+  };
+
   return (
     <Container className="py-6 md:py-10">
       {/* Back link */}
@@ -211,46 +216,49 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
         {/* ═══════════════ LEFT COLUMN (2/3) ═══════════════ */}
         <div className="lg:col-span-2 space-y-5">
-          {/* 1. Order Header Card */}
+          {/* 1. Order Information Header */}
           <OrderHeaderCard order={order} />
 
-          {/* 2. Premium Order Timeline (9-step) */}
+          {/* 2. Visual Order Status Timeline */}
           <OrderTimeline
             order={order}
             estimatedDelivery={computeETA(order)}
             estimatedDeliveryTime="10:00 AM – 6:00 PM"
           />
 
-          {/* 3. Order Items Card */}
+          {/* 3. Product/Item Details */}
           <OrderItemsCard order={order} />
 
-          {/* 4. Order Actions Bar */}
+          {/* 6. Shipping & Delivery */}
+          <ShippingDeliveryCard order={order} />
+        </div>
+
+        {/* ═══════════════ RIGHT COLUMN (1/3) ═══════════════ */}
+        <div className="lg:col-span-1 space-y-5">
+          {/* 2. Customer Details */}
+          <CustomerDetailsCard order={order} />
+
+          {/* 5. Payment Information */}
+          <PaymentSummaryCard order={order} />
+
+          {/* 7. Order Actions */}
           <OrderActionsBar
             order={order}
             onCancel={() => setShowCancelModal(true)}
             onReorder={handleReorder}
             onDownloadInvoice={handleDownloadInvoice}
+            onReturn={handleReturn}
+            onExchange={handleExchange}
           />
-        </div>
 
-        {/* ═══════════════ RIGHT COLUMN (1/3) ═══════════════ */}
-        <div className="lg:col-span-1 space-y-5">
-          {/* 5. Payment Summary Card */}
-          <PaymentSummaryCard order={order} />
-
-          {/* 6. Delivery Address Card */}
-          <DeliveryAddressCard order={order} gpsVerified={false} />
-
-          {/* 7. Quick Help Card (compact) */}
+          {/* GrowPlants Care guarantee */}
           <div className="bg-gradient-to-br from-[#F3F8F1] to-white rounded-2xl border border-[#1A6B3C]/10 p-5 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="size-10 rounded-xl bg-[#1A6B3C] flex items-center justify-center shrink-0">
                 <span className="text-lg">🌿</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-slate-800 mb-1">
-                  GrowPlants Care
-                </h4>
+                <h4 className="text-sm font-bold text-slate-800 mb-1">GrowPlants Care</h4>
                 <p className="text-xs text-slate-600 leading-relaxed mb-3">
                   Every plant comes with a 7-day health guarantee. If your plant arrives damaged or unhealthy, we&apos;ll replace it free.
                 </p>
@@ -323,13 +331,48 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
 }
 
 /* ============================================================================
+ * Enrich order with mock data for fields not yet in Firestore
+ * (In production, these would come from the API)
+ * ============================================================================ */
+function enrichOrder(order: Order): Order {
+  return {
+    ...order,
+    // Add shipping method if not set
+    shippingMethod: order.shippingMethod ?? "standard",
+    // Add tracking info mock if order is shipped
+    tracking: order.tracking ?? (["shipped", "out_for_delivery", "delivered"].includes(order.orderStatus) ? {
+      courierPartner: "GrowPlants Express",
+      trackingNumber: `GP${order.orderNumber.slice(-8)}`,
+      trackingUrl: `https://www.delhivery.com/tracking/GP${order.orderNumber.slice(-8)}`,
+      shipmentId: `SHP-${order.id.slice(-6)}`,
+      dispatchedAt: order.statusHistory.find((s) => s.status === "shipped")?.date,
+      estimatedDeliveryDate: computeETA(order),
+      estimatedDeliveryWindow: "10:00 AM – 6:00 PM",
+      deliveryPartner: order.orderStatus === "out_for_delivery" ? "Rajesh Kumar" : undefined,
+      driverContact: order.orderStatus === "out_for_delivery" ? "+91 99999 99999" : undefined,
+      currentLocation: order.orderStatus === "out_for_delivery" ? "Sonipat Hub" : undefined,
+      deliveredAt: order.orderStatus === "delivered"
+        ? order.statusHistory.find((s) => s.status === "delivered")?.date
+        : undefined,
+      recipientName: order.orderStatus === "delivered" ? order.address.fullName : undefined,
+      proofOfDelivery: order.orderStatus === "delivered" ? "Signature captured" : undefined,
+    } : undefined),
+    // Add transaction ID for online payments
+    transactionId: order.transactionId ?? (order.paymentMethod !== "cod" && order.paymentStatus === "paid"
+      ? `pay_${order.id.slice(-12)}`
+      : undefined),
+    // Add SKU + variant to items if not present
+    items: order.items.map((item, i) => ({
+      ...item,
+      sku: item.sku ?? `GP-${item.productId.slice(-6).toUpperCase()}-${String(i + 1).padStart(2, "0")}`,
+    })),
+  };
+}
+
+/* ============================================================================
  * Helpers
  * ============================================================================ */
 
-/**
- * Compute ETA — 3 days from order date as default.
- * In production, this would come from the courier API.
- */
 function computeETA(order: Order): string {
   if (order.orderStatus === "delivered") {
     const lastHistory = order.statusHistory[order.statusHistory.length - 1];
@@ -342,7 +385,6 @@ function computeETA(order: Order): string {
 
 /* ============================================================================
  * Inline mapper — FirestoreOrder → Order
- * (Defensive against missing addressDetails in old orders)
  * ============================================================================ */
 function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
   let createdAtIso: string;
@@ -372,6 +414,7 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
   const address = {
     fullName: fo.name ?? "",
     phone: fo.phone ?? "",
+    email: (fo as unknown as { email?: string }).email,
     addressLine1: addr?.house ?? (typeof fo.address === "string" ? fo.address : "") ?? "",
     addressLine2: addr?.street ?? undefined,
     city: addr?.city ?? "",

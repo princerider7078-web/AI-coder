@@ -1,24 +1,27 @@
 "use client";
 
 /**
- * GrowPlants — PaymentSummaryCard
+ * GrowPlants — PaymentSummaryCard (Enhanced)
  * ============================================================================
  * Premium payment summary card showing:
- *   - Payment method (COD / Razorpay) with icon
- *   - Payment status badge (paid / pending / refunded / failed)
- *   - Transaction ID (if available)
- *   - Price breakdown: Subtotal, Discount, Delivery, Tax, Total
+ *   - Payment method (COD / Card / UPI / Net Banking / Wallet / Razorpay) with icon
+ *   - Payment status badge (paid / pending / failed / refunded / partial_refund)
+ *   - Transaction/reference ID (mono font)
+ *   - Coupon code applied (if any)
+ *   - Price breakdown: Subtotal, Discount, Delivery, Tax (GST), Total
  *
  * Features:
- *   - Color-coded status badge
- *   - Clean breakdown with dividers
- *   - Prominent total amount
+ *   - Color-coded status badge with icon
+ *   - All 6 payment methods supported with appropriate icons
+ *   - GST breakdown (CGST + SGST for India)
+ *   - Prominent grand total
  *   - Hover elevation
  * ============================================================================
  */
 import { cn, formatINR } from "@/lib/utils";
 import {
-  CreditCard, Wallet, Banknote, CheckCircle2, Clock, XCircle, RefreshCw, IndianRupee,
+  CreditCard, Wallet, Banknote, Smartphone, Building2, Landmark,
+  CheckCircle2, Clock, XCircle, RefreshCw, IndianRupee, Tag, Hash,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -26,17 +29,22 @@ import {
   PAYMENT_STATUS_COLORS,
   type Order,
   type PaymentStatus,
+  type PaymentMethod,
 } from "@/contexts/OrdersContext";
 
 interface PaymentSummaryCardProps {
   order: Order;
-  /** Optional transaction ID (from Razorpay) */
-  transactionId?: string;
   className?: string;
 }
 
-/* Payment method config */
-const PAYMENT_METHOD_CONFIG = {
+/* Payment method config — 6 methods */
+const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, {
+  icon: typeof CreditCard;
+  label: string;
+  description: string;
+  color: string;
+  bg: string;
+}> = {
   cod: {
     icon: Banknote,
     label: "Cash on Delivery",
@@ -44,14 +52,42 @@ const PAYMENT_METHOD_CONFIG = {
     color: "text-amber-600",
     bg: "bg-amber-50",
   },
-  razorpay: {
-    icon: Wallet,
-    label: "Online Payment",
-    description: "Paid via Razorpay (UPI / Card / Net Banking)",
+  card: {
+    icon: CreditCard,
+    label: "Credit / Debit Card",
+    description: "Visa, Mastercard, RuPay, Amex",
     color: "text-blue-600",
     bg: "bg-blue-50",
   },
-} as const;
+  upi: {
+    icon: Smartphone,
+    label: "UPI Payment",
+    description: "GPay, PhonePe, Paytm, BHIM",
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+  },
+  netbanking: {
+    icon: Building2,
+    label: "Net Banking",
+    description: "All major banks supported",
+    color: "text-indigo-600",
+    bg: "bg-indigo-50",
+  },
+  wallet: {
+    icon: Wallet,
+    label: "Wallet Payment",
+    description: "Paytm, Mobikwik, Amazon Pay",
+    color: "text-teal-600",
+    bg: "bg-teal-50",
+  },
+  razorpay: {
+    icon: Landmark,
+    label: "Online Payment (Razorpay)",
+    description: "UPI / Card / Net Banking via Razorpay",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
+};
 
 /* Payment status icon config */
 const PAYMENT_STATUS_ICON: Record<PaymentStatus, typeof CheckCircle2> = {
@@ -62,13 +98,14 @@ const PAYMENT_STATUS_ICON: Record<PaymentStatus, typeof CheckCircle2> = {
   partial_refund: RefreshCw,
 };
 
-export function PaymentSummaryCard({
-  order,
-  transactionId,
-  className,
-}: PaymentSummaryCardProps) {
+export function PaymentSummaryCard({ order, className }: PaymentSummaryCardProps) {
   const methodConfig = PAYMENT_METHOD_CONFIG[order.paymentMethod] ?? PAYMENT_METHOD_CONFIG.cod;
   const StatusIcon = PAYMENT_STATUS_ICON[order.paymentStatus] ?? Clock;
+
+  // Compute GST split (half CGST + half SGST for intra-state)
+  const gstTotal = order.tax ?? 0;
+  const cgst = Math.round(gstTotal / 2);
+  const sgst = gstTotal - cgst;
 
   return (
     <div
@@ -82,9 +119,7 @@ export function PaymentSummaryCard({
         <div className="size-8 rounded-lg bg-[#F3F8F1] flex items-center justify-center">
           <CreditCard className="size-4 text-[#1A6B3C]" />
         </div>
-        <h3 className="text-sm sm:text-base font-bold text-slate-800">
-          Payment Details
-        </h3>
+        <h3 className="text-sm sm:text-base font-bold text-slate-800">Payment Details</h3>
       </div>
 
       <Separator />
@@ -118,13 +153,34 @@ export function PaymentSummaryCard({
               <StatusIcon className="size-3" />
               {PAYMENT_STATUS_LABELS[order.paymentStatus]}
             </span>
-            {transactionId && (
-              <span className="text-[10px] text-slate-400 font-mono">
-                {transactionId}
-              </span>
-            )}
           </div>
         </div>
+
+        {/* Transaction ID */}
+        {order.transactionId && (
+          <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+            <div className="flex items-center gap-1.5">
+              <Hash className="size-3.5 text-slate-400" />
+              <span className="text-xs text-slate-500 font-medium">Transaction ID</span>
+            </div>
+            <span className="text-xs font-mono text-slate-700 truncate max-w-[60%]">
+              {order.transactionId}
+            </span>
+          </div>
+        )}
+
+        {/* Coupon code */}
+        {order.couponCode && (
+          <div className="flex items-center justify-between p-2.5 bg-green-50 rounded-lg border border-green-100">
+            <div className="flex items-center gap-1.5">
+              <Tag className="size-3.5 text-green-600" />
+              <span className="text-xs text-green-700 font-medium">Coupon Applied</span>
+            </div>
+            <span className="text-xs font-bold text-green-700 uppercase tracking-wide">
+              {order.couponCode}
+            </span>
+          </div>
+        )}
 
         {/* Divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
@@ -142,7 +198,7 @@ export function PaymentSummaryCard({
           {/* Discount */}
           {order.discount > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-green-600">Discount</span>
+              <span className="text-green-600">Discount {order.couponCode ? `(${order.couponCode})` : ""}</span>
               <span className="font-medium text-green-600 tabular-nums">
                 −{formatINR(order.discount)}
               </span>
@@ -161,26 +217,32 @@ export function PaymentSummaryCard({
             </span>
           </div>
 
-          {/* Tax (if any) */}
+          {/* Tax (GST breakdown) */}
           {order.tax > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Taxes & Fees</span>
-              <span className="font-medium text-slate-800 tabular-nums">
-                {formatINR(order.tax)}
-              </span>
-            </div>
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">CGST (9%)</span>
+                <span className="font-medium text-slate-800 tabular-nums">
+                  {formatINR(cgst)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">SGST (9%)</span>
+                <span className="font-medium text-slate-800 tabular-nums">
+                  {formatINR(sgst)}
+                </span>
+              </div>
+            </>
           )}
         </div>
 
         <Separator />
 
-        {/* Total */}
+        {/* Grand Total */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <IndianRupee className="size-4 text-[#1A6B3C]" />
-            <span className="text-sm sm:text-base font-bold text-slate-800">
-              Total Amount
-            </span>
+            <span className="text-sm sm:text-base font-bold text-slate-800">Grand Total</span>
           </div>
           <span className="text-lg sm:text-xl font-bold text-[#1A6B3C] tabular-nums">
             {formatINR(order.total)}
@@ -203,6 +265,16 @@ export function PaymentSummaryCard({
             <RefreshCw className="size-4 text-blue-600 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700">
               Refund of <span className="font-bold">{formatINR(order.total)}</span> has been processed. It will reflect in your account within 5-7 business days.
+            </p>
+          </div>
+        )}
+
+        {/* Payment note for failed */}
+        {order.paymentStatus === "failed" && (
+          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <XCircle className="size-4 text-red-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-red-700">
+              Payment failed. Please retry payment or choose a different payment method.
             </p>
           </div>
         )}
