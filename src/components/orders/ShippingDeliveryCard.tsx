@@ -1,31 +1,24 @@
 "use client";
 
 /**
- * GrowPlants — ShippingDeliveryCard
+ * GrowPlants — ShippingDeliveryCard (Premium Edition)
  * ============================================================================
- * Premium shipping & delivery card showing:
- *   - Shipping method (Standard / Express / Same Day / Pickup) with icon
- *   - Courier/logistics partner name
- *   - Tracking number with external link
+ * Premium shipping & delivery card with:
+ *   - Shipping method hero (colored background + icon)
+ *   - Courier partner info
+ *   - Tracking number (clickable, external link, copyable)
  *   - Shipment ID
- *   - Dispatched date & time
- *   - Estimated delivery date + time window
- *   - Actual delivery date (if delivered)
- *   - Delivery partner name + contact (if out for delivery)
- *   - Current location (if available)
- *   - Proof of delivery (if delivered)
- *
- * Features:
- *   - Color-coded shipping method badges
- *   - Clickable tracking link (opens courier website)
- *   - Delivery timeline mini-view
- *   - Empty state (no shipping info yet)
+ *   - Dispatch date & time
+ *   - ETA hero card (estimated delivery date + time window)
+ *   - Delivered state (green hero + proof of delivery)
+ *   - Out for delivery state (orange hero + driver info)
+ *   - Empty state (waiting to ship)
  * ============================================================================
  */
 import { cn, formatDate } from "@/lib/utils";
 import {
   Truck, Package, Zap, Clock, Store, ExternalLink, MapPin, User, Phone,
-  Calendar, CheckCircle2, Navigation, FileText, Box,
+  Calendar, CheckCircle2, Navigation, FileText, Box, Copy, Hash,
 } from "lucide-react";
 import type { Order, ShippingMethod } from "@/contexts/OrdersContext";
 
@@ -34,13 +27,13 @@ interface ShippingDeliveryCardProps {
   className?: string;
 }
 
-/* Shipping method config */
 const SHIPPING_METHOD_CONFIG: Record<ShippingMethod, {
   icon: typeof Truck;
   label: string;
   description: string;
   color: string;
   bg: string;
+  borderColor: string;
 }> = {
   standard: {
     icon: Truck,
@@ -48,6 +41,7 @@ const SHIPPING_METHOD_CONFIG: Record<ShippingMethod, {
     description: "3-5 business days",
     color: "text-blue-600",
     bg: "bg-blue-50",
+    borderColor: "border-blue-200",
   },
   express: {
     icon: Zap,
@@ -55,6 +49,7 @@ const SHIPPING_METHOD_CONFIG: Record<ShippingMethod, {
     description: "1-2 business days",
     color: "text-purple-600",
     bg: "bg-purple-50",
+    borderColor: "border-purple-200",
   },
   same_day: {
     icon: Clock,
@@ -62,6 +57,7 @@ const SHIPPING_METHOD_CONFIG: Record<ShippingMethod, {
     description: "Within 6 hours",
     color: "text-orange-600",
     bg: "bg-orange-50",
+    borderColor: "border-orange-200",
   },
   pickup: {
     icon: Store,
@@ -69,6 +65,7 @@ const SHIPPING_METHOD_CONFIG: Record<ShippingMethod, {
     description: "Pickup from our nursery",
     color: "text-teal-600",
     bg: "bg-teal-50",
+    borderColor: "border-teal-200",
   },
 };
 
@@ -78,34 +75,52 @@ function InfoRow({
   value,
   link,
   mono = false,
+  copyable = false,
 }: {
   icon: typeof Truck;
   label: string;
   value: string | undefined;
   link?: string;
   mono?: boolean;
+  copyable?: boolean;
 }) {
   if (!value) return null;
+
+  const handleCopy = () => {
+    if (copyable) navigator.clipboard?.writeText(value);
+  };
+
   return (
     <div className="flex items-start gap-2.5">
       <div className="size-7 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
         <Icon className="size-3.5 text-slate-500" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">{label}</p>
-        {link ? (
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-[#1A6B3C] hover:underline font-medium"
-          >
-            <span className={cn(mono && "font-mono")}>{value}</span>
-            <ExternalLink className="size-3" />
-          </a>
-        ) : (
-          <p className={cn("text-sm text-slate-700 font-medium", mono && "font-mono")}>{value}</p>
-        )}
+        <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{label}</p>
+        <div className="flex items-center gap-1.5">
+          {link ? (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-[#1A6B3C] hover:underline font-medium"
+            >
+              <span className={cn(mono && "font-mono")}>{value}</span>
+              <ExternalLink className="size-3" />
+            </a>
+          ) : (
+            <p className={cn("text-sm text-slate-700 font-medium", mono && "font-mono")}>{value}</p>
+          )}
+          {copyable && (
+            <button
+              onClick={handleCopy}
+              className="p-0.5 rounded hover:bg-slate-100 transition-colors"
+              aria-label={`Copy ${label}`}
+            >
+              <Copy className="size-3 text-slate-400" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -125,29 +140,31 @@ export function ShippingDeliveryCard({ order, className }: ShippingDeliveryCardP
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md",
+        "bg-white rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md overflow-hidden",
         className,
       )}
     >
       {/* Header */}
       <div className="flex items-center gap-2 p-5 sm:p-6 pb-3">
-        <div className="size-8 rounded-lg bg-[#F3F8F1] flex items-center justify-center">
-          <Truck className="size-4 text-[#1A6B3C]" />
+        <div className="size-9 rounded-xl bg-[#1A6B3C] flex items-center justify-center shadow-sm">
+          <Truck className="size-4 text-white" />
         </div>
-        <h3 className="text-sm sm:text-base font-bold text-slate-800">Shipping & Delivery</h3>
+        <h3 className="text-base sm:text-lg font-bold text-slate-800">Shipping & Delivery</h3>
       </div>
 
       <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
       <div className="p-5 sm:p-6 pt-4 space-y-4">
-        {/* Shipping method */}
-        <div className="flex items-center gap-2.5 p-3 bg-slate-50 rounded-xl">
-          <div className={cn("size-10 rounded-xl flex items-center justify-center shrink-0", methodConfig.bg)}>
-            <methodConfig.icon className={cn("size-5", methodConfig.color)} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-slate-800">{methodConfig.label}</p>
-            <p className="text-xs text-slate-500">{methodConfig.description}</p>
+        {/* Shipping method hero */}
+        <div className={cn("rounded-xl border p-3.5", methodConfig.bg, methodConfig.borderColor)}>
+          <div className="flex items-center gap-2.5">
+            <div className="size-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
+              <methodConfig.icon className={cn("size-5", methodConfig.color)} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-800">{methodConfig.label}</p>
+              <p className="text-xs text-slate-600">{methodConfig.description}</p>
+            </div>
           </div>
         </div>
 
@@ -165,20 +182,22 @@ export function ShippingDeliveryCard({ order, className }: ShippingDeliveryCardP
               value={tracking.trackingNumber}
               link={tracking.trackingUrl ?? `https://www.delhivery.com/tracking/${tracking.trackingNumber}`}
               mono
+              copyable
             />
             {tracking.shipmentId && (
               <InfoRow
-                icon={FileText}
+                icon={Hash}
                 label="Shipment ID"
                 value={tracking.shipmentId}
                 mono
+                copyable
               />
             )}
             {tracking.dispatchedAt && (
               <InfoRow
                 icon={Calendar}
                 label="Dispatched On"
-                value={formatDate(tracking.dispatchedAt)}
+                value={`${formatDate(tracking.dispatchedAt)} at ${new Date(tracking.dispatchedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}`}
               />
             )}
           </div>
@@ -193,16 +212,19 @@ export function ShippingDeliveryCard({ order, className }: ShippingDeliveryCardP
           </div>
         )}
 
-        {/* Estimated / Actual delivery */}
+        {/* Divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
+        {/* Delivery status hero */}
         {order.orderStatus === "delivered" && tracking?.deliveredAt ? (
           /* Delivered */
           <div className="space-y-3">
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <CheckCircle2 className="size-5 text-green-600 shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-green-800">Delivered Successfully</p>
+            <div className="flex items-center gap-3 p-3.5 bg-green-50 border border-green-200 rounded-xl">
+              <div className="size-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="size-5 text-green-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-green-800">Delivered Successfully</p>
                 <p className="text-xs text-green-700">
                   {formatDate(tracking.deliveredAt)} at{" "}
                   {new Date(tracking.deliveredAt).toLocaleTimeString("en-IN", {
@@ -221,10 +243,12 @@ export function ShippingDeliveryCard({ order, className }: ShippingDeliveryCardP
         ) : order.orderStatus === "out_for_delivery" && tracking ? (
           /* Out for delivery */
           <div className="space-y-3">
-            <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <Navigation className="size-5 text-orange-600 shrink-0 animate-pulse" />
-              <div>
-                <p className="text-sm font-semibold text-orange-800">Out for Delivery</p>
+            <div className="flex items-center gap-3 p-3.5 bg-orange-50 border border-orange-200 rounded-xl">
+              <div className="size-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                <Navigation className="size-5 text-orange-600 animate-pulse" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-orange-800">Out for Delivery</p>
                 <p className="text-xs text-orange-700">
                   Arriving today: {tracking.estimatedArrivalTime ?? estimatedWindow}
                 </p>
@@ -242,15 +266,15 @@ export function ShippingDeliveryCard({ order, className }: ShippingDeliveryCardP
           </div>
         ) : (
           /* Estimated delivery (pending/processing) */
-          <div className="flex items-center gap-2.5 p-3 bg-[#F3F8F1] rounded-lg border border-[#1A6B3C]/10">
-            <Calendar className="size-5 text-[#1A6B3C] shrink-0" />
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">
+          <div className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-[#F3F8F1] to-green-50 border border-[#1A6B3C]/10 rounded-xl">
+            <div className="size-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
+              <Calendar className="size-5 text-[#1A6B3C]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
                 Estimated Delivery
               </p>
-              <p className="text-sm font-semibold text-slate-800">
-                {formatDate(estimatedDate)}
-              </p>
+              <p className="text-sm font-bold text-slate-800">{formatDate(estimatedDate)}</p>
               <p className="text-xs text-slate-500">{estimatedWindow}</p>
             </div>
           </div>

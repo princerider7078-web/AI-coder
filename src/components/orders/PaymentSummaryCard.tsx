@@ -1,27 +1,22 @@
 "use client";
 
 /**
- * GrowPlants — PaymentSummaryCard (Enhanced)
+ * GrowPlants — PaymentSummaryCard (Premium Edition)
  * ============================================================================
- * Premium payment summary card showing:
- *   - Payment method (COD / Card / UPI / Net Banking / Wallet / Razorpay) with icon
- *   - Payment status badge (paid / pending / failed / refunded / partial_refund)
- *   - Transaction/reference ID (mono font)
- *   - Coupon code applied (if any)
- *   - Price breakdown: Subtotal, Discount, Delivery, Tax (GST), Total
- *
- * Features:
- *   - Color-coded status badge with icon
- *   - All 6 payment methods supported with appropriate icons
- *   - GST breakdown (CGST + SGST for India)
- *   - Prominent grand total
- *   - Hover elevation
+ * Premium payment summary with:
+ *   - Payment method hero card (colored background + icon)
+ *   - Payment status badge with icon
+ *   - Transaction ID (monospace, copyable)
+ *   - Coupon code badge (if applied)
+ *   - Detailed price breakdown with GST split (CGST + SGST)
+ *   - Grand total hero (large, brand color)
+ *   - Conditional notices (COD, refund, failed)
  * ============================================================================
  */
 import { cn, formatINR } from "@/lib/utils";
 import {
   CreditCard, Wallet, Banknote, Smartphone, Building2, Landmark,
-  CheckCircle2, Clock, XCircle, RefreshCw, IndianRupee, Tag, Hash,
+  CheckCircle2, Clock, XCircle, RefreshCw, IndianRupee, Tag, Hash, Copy,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -37,13 +32,13 @@ interface PaymentSummaryCardProps {
   className?: string;
 }
 
-/* Payment method config — 6 methods */
 const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, {
   icon: typeof CreditCard;
   label: string;
   description: string;
   color: string;
   bg: string;
+  borderColor: string;
 }> = {
   cod: {
     icon: Banknote,
@@ -51,6 +46,7 @@ const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, {
     description: "Pay with cash when your order arrives",
     color: "text-amber-600",
     bg: "bg-amber-50",
+    borderColor: "border-amber-200",
   },
   card: {
     icon: CreditCard,
@@ -58,6 +54,7 @@ const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, {
     description: "Visa, Mastercard, RuPay, Amex",
     color: "text-blue-600",
     bg: "bg-blue-50",
+    borderColor: "border-blue-200",
   },
   upi: {
     icon: Smartphone,
@@ -65,6 +62,7 @@ const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, {
     description: "GPay, PhonePe, Paytm, BHIM",
     color: "text-purple-600",
     bg: "bg-purple-50",
+    borderColor: "border-purple-200",
   },
   netbanking: {
     icon: Building2,
@@ -72,6 +70,7 @@ const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, {
     description: "All major banks supported",
     color: "text-indigo-600",
     bg: "bg-indigo-50",
+    borderColor: "border-indigo-200",
   },
   wallet: {
     icon: Wallet,
@@ -79,6 +78,7 @@ const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, {
     description: "Paytm, Mobikwik, Amazon Pay",
     color: "text-teal-600",
     bg: "bg-teal-50",
+    borderColor: "border-teal-200",
   },
   razorpay: {
     icon: Landmark,
@@ -86,10 +86,10 @@ const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, {
     description: "UPI / Card / Net Banking via Razorpay",
     color: "text-blue-600",
     bg: "bg-blue-50",
+    borderColor: "border-blue-200",
   },
 };
 
-/* Payment status icon config */
 const PAYMENT_STATUS_ICON: Record<PaymentStatus, typeof CheckCircle2> = {
   pending: Clock,
   paid: CheckCircle2,
@@ -107,46 +107,51 @@ export function PaymentSummaryCard({ order, className }: PaymentSummaryCardProps
   const cgst = Math.round(gstTotal / 2);
   const sgst = gstTotal - cgst;
 
+  const handleCopyTxnId = () => {
+    if (order.transactionId) {
+      navigator.clipboard?.writeText(order.transactionId);
+    }
+  };
+
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md",
+        "bg-white rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md overflow-hidden",
         className,
       )}
     >
       {/* Header */}
       <div className="flex items-center gap-2 p-5 sm:p-6 pb-3">
-        <div className="size-8 rounded-lg bg-[#F3F8F1] flex items-center justify-center">
-          <CreditCard className="size-4 text-[#1A6B3C]" />
+        <div className="size-9 rounded-xl bg-[#1A6B3C] flex items-center justify-center shadow-sm">
+          <CreditCard className="size-4 text-white" />
         </div>
-        <h3 className="text-sm sm:text-base font-bold text-slate-800">Payment Details</h3>
+        <h3 className="text-base sm:text-lg font-bold text-slate-800">Payment Details</h3>
       </div>
 
       <Separator />
 
       <div className="p-5 sm:p-6 pt-4 space-y-4">
-        {/* Payment method + status */}
-        <div className="flex items-start justify-between gap-3">
-          {/* Method */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className={cn("size-10 rounded-xl flex items-center justify-center shrink-0", methodConfig.bg)}>
-              <methodConfig.icon className={cn("size-5", methodConfig.color)} />
+        {/* Payment method hero */}
+        <div className={cn("rounded-xl border p-3.5", methodConfig.bg, methodConfig.borderColor)}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="size-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
+                <methodConfig.icon className={cn("size-5", methodConfig.color)} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-800 truncate">
+                  {methodConfig.label}
+                </p>
+                <p className="text-xs text-slate-600 truncate">
+                  {methodConfig.description}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">
-                {methodConfig.label}
-              </p>
-              <p className="text-xs text-slate-500 truncate">
-                {methodConfig.description}
-              </p>
-            </div>
-          </div>
 
-          {/* Status badge */}
-          <div className="flex flex-col items-end gap-1 shrink-0">
+            {/* Status badge */}
             <span
               className={cn(
-                "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full",
+                "inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm shrink-0",
                 PAYMENT_STATUS_COLORS[order.paymentStatus],
               )}
             >
@@ -158,20 +163,29 @@ export function PaymentSummaryCard({ order, className }: PaymentSummaryCardProps
 
         {/* Transaction ID */}
         {order.transactionId && (
-          <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
-            <div className="flex items-center gap-1.5">
-              <Hash className="size-3.5 text-slate-400" />
-              <span className="text-xs text-slate-500 font-medium">Transaction ID</span>
+          <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Hash className="size-3.5 text-slate-400 shrink-0" />
+              <span className="text-xs text-slate-500 font-medium shrink-0">Transaction ID</span>
             </div>
-            <span className="text-xs font-mono text-slate-700 truncate max-w-[60%]">
-              {order.transactionId}
-            </span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-xs font-mono text-slate-700 truncate max-w-[140px]">
+                {order.transactionId}
+              </span>
+              <button
+                onClick={handleCopyTxnId}
+                className="p-1 rounded hover:bg-slate-200 transition-colors shrink-0"
+                aria-label="Copy transaction ID"
+              >
+                <Copy className="size-3 text-slate-400" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* Coupon code */}
         {order.couponCode && (
-          <div className="flex items-center justify-between p-2.5 bg-green-50 rounded-lg border border-green-100">
+          <div className="flex items-center justify-between p-2.5 bg-green-50 rounded-lg border border-green-200">
             <div className="flex items-center gap-1.5">
               <Tag className="size-3.5 text-green-600" />
               <span className="text-xs text-green-700 font-medium">Coupon Applied</span>
@@ -187,50 +201,40 @@ export function PaymentSummaryCard({ order, className }: PaymentSummaryCardProps
 
         {/* Price breakdown */}
         <div className="space-y-2.5">
-          {/* Subtotal */}
           <div className="flex justify-between text-sm">
             <span className="text-slate-600">Items Subtotal</span>
-            <span className="font-medium text-slate-800 tabular-nums">
-              {formatINR(order.subtotal)}
-            </span>
+            <span className="font-medium text-slate-800 tabular-nums">{formatINR(order.subtotal)}</span>
           </div>
 
-          {/* Discount */}
           {order.discount > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-green-600">Discount {order.couponCode ? `(${order.couponCode})` : ""}</span>
-              <span className="font-medium text-green-600 tabular-nums">
-                −{formatINR(order.discount)}
+              <span className="text-green-600">
+                Discount {order.couponCode ? `(${order.couponCode})` : ""}
               </span>
+              <span className="font-medium text-green-600 tabular-nums">−{formatINR(order.discount)}</span>
             </div>
           )}
 
-          {/* Delivery fee */}
           <div className="flex justify-between text-sm">
             <span className="text-slate-600">Delivery Fee</span>
             <span className="font-medium text-slate-800 tabular-nums">
               {order.shipping === 0 ? (
-                <span className="text-green-600 font-semibold">FREE</span>
+                <span className="text-green-600 font-bold">FREE</span>
               ) : (
                 formatINR(order.shipping)
               )}
             </span>
           </div>
 
-          {/* Tax (GST breakdown) */}
           {order.tax > 0 && (
             <>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">CGST (9%)</span>
-                <span className="font-medium text-slate-800 tabular-nums">
-                  {formatINR(cgst)}
-                </span>
+              <div className="flex justify-between text-xs text-slate-500 pl-2">
+                <span>CGST (9%)</span>
+                <span className="tabular-nums">{formatINR(cgst)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">SGST (9%)</span>
-                <span className="font-medium text-slate-800 tabular-nums">
-                  {formatINR(sgst)}
-                </span>
+              <div className="flex justify-between text-xs text-slate-500 pl-2">
+                <span>SGST (9%)</span>
+                <span className="tabular-nums">{formatINR(sgst)}</span>
               </div>
             </>
           )}
@@ -238,18 +242,18 @@ export function PaymentSummaryCard({ order, className }: PaymentSummaryCardProps
 
         <Separator />
 
-        {/* Grand Total */}
-        <div className="flex items-center justify-between">
+        {/* Grand Total hero */}
+        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#F3F8F1] to-green-50 rounded-xl border border-[#1A6B3C]/10">
           <div className="flex items-center gap-1.5">
-            <IndianRupee className="size-4 text-[#1A6B3C]" />
+            <IndianRupee className="size-5 text-[#1A6B3C]" />
             <span className="text-sm sm:text-base font-bold text-slate-800">Grand Total</span>
           </div>
-          <span className="text-lg sm:text-xl font-bold text-[#1A6B3C] tabular-nums">
+          <span className="text-xl sm:text-2xl font-bold text-[#1A6B3C] tabular-nums">
             {formatINR(order.total)}
           </span>
         </div>
 
-        {/* Payment note for COD */}
+        {/* Conditional notices */}
         {order.paymentMethod === "cod" && order.paymentStatus === "pending" && (
           <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <Banknote className="size-4 text-amber-600 shrink-0 mt-0.5" />
@@ -259,17 +263,15 @@ export function PaymentSummaryCard({ order, className }: PaymentSummaryCardProps
           </div>
         )}
 
-        {/* Payment note for refunded */}
         {order.paymentStatus === "refunded" && (
           <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <RefreshCw className="size-4 text-blue-600 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700">
-              Refund of <span className="font-bold">{formatINR(order.total)}</span> has been processed. It will reflect in your account within 5-7 business days.
+              Refund of <span className="font-bold">{formatINR(order.total)}</span> processed. Will reflect in your account within 5-7 business days.
             </p>
           </div>
         )}
 
-        {/* Payment note for failed */}
         {order.paymentStatus === "failed" && (
           <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
             <XCircle className="size-4 text-red-600 shrink-0 mt-0.5" />

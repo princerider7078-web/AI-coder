@@ -1,19 +1,14 @@
 "use client";
 
 /**
- * GrowPlants — CustomerDetailsCard
+ * GrowPlants — CustomerDetailsCard (Premium Edition)
  * ============================================================================
- * Premium customer details card showing:
- *   - Full name, phone, email
- *   - Shipping address (with GPS verified badge)
- *   - Billing address (if different from shipping)
- *   - "Same as shipping" indicator if billing === shipping
- *
- * Features:
- *   - Clickable phone (tel:) and email (mailto:) links
- *   - GPS Verified badge
- *   - Two-column layout when billing differs
- *   - Botanical-themed icons
+ * Premium customer details with:
+ *   - Customer hero card (avatar, name, phone, email)
+ *   - Shipping address card (with GPS verified badge)
+ *   - Billing address card (if different from shipping)
+ *   - "Same as shipping" indicator
+ *   - Clickable phone + email links
  * ============================================================================
  */
 import { cn } from "@/lib/utils";
@@ -27,10 +22,19 @@ interface CustomerDetailsCardProps {
   className?: string;
 }
 
-function AddressBlock({
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function AddressCard({
   address,
   title,
-  icon: Icon = MapPin,
+  icon: Icon,
   showGpsBadge = false,
 }: {
   address: OrderAddress;
@@ -39,11 +43,18 @@ function AddressBlock({
   showGpsBadge?: boolean;
 }) {
   const hasGps = address.latitude != null && address.longitude != null;
+
   return (
-    <div className="space-y-2">
+    <div className={cn(
+      "rounded-xl border p-4 space-y-3 transition-all",
+      showGpsBadge && hasGps
+        ? "bg-[#F3F8F1] border-[#1A6B3C]/20"
+        : "bg-slate-50 border-slate-200",
+    )}>
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <Icon className="size-3.5 text-[#1A6B3C]" />
+          <Icon className="size-4 text-[#1A6B3C]" />
           <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide">{title}</h4>
         </div>
         {showGpsBadge && hasGps && (
@@ -54,40 +65,46 @@ function AddressBlock({
         )}
       </div>
 
-      <div className="space-y-1.5 pl-1">
-        <div className="flex items-start gap-2">
-          <User className="size-3.5 text-slate-400 shrink-0 mt-0.5" />
-          <p className="text-sm font-semibold text-slate-800">{address.fullName}</p>
+      {/* Recipient */}
+      <div className="flex items-start gap-2.5">
+        <div className="size-8 rounded-full bg-[#1A6B3C] text-white flex items-center justify-center shrink-0 text-xs font-bold">
+          {getInitials(address.fullName || "U")}
         </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-800">{address.fullName}</p>
+          <div className="flex flex-col gap-0.5 mt-0.5">
+            <a
+              href={`tel:${address.phone}`}
+              className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-[#1A6B3C] transition-colors"
+            >
+              <Phone className="size-3" />
+              {address.phone}
+            </a>
+            {address.email && (
+              <a
+                href={`mailto:${address.email}`}
+                className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-[#1A6B3C] transition-colors"
+              >
+                <Mail className="size-3" />
+                <span className="truncate">{address.email}</span>
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
 
-        <a
-          href={`tel:${address.phone}`}
-          className="flex items-center gap-2 text-xs text-slate-600 hover:text-[#1A6B3C] transition-colors"
-        >
-          <Phone className="size-3.5 text-slate-400 shrink-0" />
-          {address.phone}
-        </a>
-
-        {address.email && (
-          <a
-            href={`mailto:${address.email}`}
-            className="flex items-center gap-2 text-xs text-slate-600 hover:text-[#1A6B3C] transition-colors"
-          >
-            <Mail className="size-3.5 text-slate-400 shrink-0" />
-            <span className="truncate">{address.email}</span>
-          </a>
-        )}
-
-        <div className="flex items-start gap-2">
-          <MapPin className="size-3.5 text-slate-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-600 leading-relaxed">
-            {address.addressLine1}
-            {address.addressLine2 ? `, ${address.addressLine2}` : ""}
-            {address.landmark ? `, Near ${address.landmark}` : ""}
-            <br />
+      {/* Address */}
+      <div className="flex items-start gap-2.5 pt-2 border-t border-slate-200/60">
+        <MapPin className="size-4 text-slate-400 shrink-0 mt-0.5" />
+        <p className="text-xs text-slate-600 leading-relaxed">
+          {address.addressLine1}
+          {address.addressLine2 ? `, ${address.addressLine2}` : ""}
+          {address.landmark ? `, Near ${address.landmark}` : ""}
+          <br />
+          <span className="font-medium text-slate-700">
             {address.city}, {address.state} - {address.pincode}
-          </p>
-        </div>
+          </span>
+        </p>
       </div>
     </div>
   );
@@ -102,49 +119,45 @@ export function CustomerDetailsCard({ order, className }: CustomerDetailsCardPro
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md",
+        "bg-white rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md overflow-hidden",
         className,
       )}
     >
       {/* Header */}
       <div className="flex items-center gap-2 p-5 sm:p-6 pb-3">
-        <div className="size-8 rounded-lg bg-[#F3F8F1] flex items-center justify-center">
-          <User className="size-4 text-[#1A6B3C]" />
+        <div className="size-9 rounded-xl bg-[#1A6B3C] flex items-center justify-center shadow-sm">
+          <User className="size-4 text-white" />
         </div>
-        <h3 className="text-sm sm:text-base font-bold text-slate-800">Customer Details</h3>
+        <h3 className="text-base sm:text-lg font-bold text-slate-800">Customer Details</h3>
       </div>
 
       <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
-      <div className="p-5 sm:p-6 pt-4 space-y-5">
+      <div className="p-5 sm:p-6 pt-4 space-y-4">
         {/* Shipping + Billing addresses */}
         {hasBillingAddress && !billingSameAsShipping ? (
-          // Two-column layout when billing differs
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <AddressBlock
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <AddressCard
               address={order.address}
               title="Shipping Address"
               icon={Home}
               showGpsBadge
             />
-            <div className="sm:border-l sm:border-slate-100 sm:pl-5">
-              <AddressBlock
-                address={order.billingAddress!}
-                title="Billing Address"
-                icon={CreditCard}
-              />
-            </div>
+            <AddressCard
+              address={order.billingAddress!}
+              title="Billing Address"
+              icon={CreditCard}
+            />
           </div>
         ) : (
-          // Single address (shipping === billing)
           <div className="space-y-3">
-            <AddressBlock
+            <AddressCard
               address={order.address}
               title="Shipping Address"
               icon={Home}
               showGpsBadge
             />
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 italic pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 italic pt-1">
               <CheckCircle2 className="size-3.5 text-green-500" />
               <span>Billing address same as shipping</span>
             </div>

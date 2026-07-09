@@ -1,19 +1,16 @@
 "use client";
 
 /**
- * GrowPlants — OrderActionsBar (Enhanced)
+ * GrowPlants — OrderActionsBar (Premium Edition)
  * ============================================================================
  * Premium actions bar with:
- *   - Download Invoice (PDF) — primary outline
- *   - Cancel Order (red, only if cancellable: pending/confirmed)
- *   - Return / Exchange (only if delivered, within return window)
- *   - Reorder (brand solid, if delivered/cancelled)
+ *   - Download Invoice (primary)
+ *   - Cancel Order (conditional)
+ *   - Return / Exchange (conditional, within 7-day window)
+ *   - Reorder (conditional)
  *   - WhatsApp Support + Call Support
- *
- * Features:
- *   - Responsive (wrap on mobile, row on desktop)
- *   - Color-coded actions
- *   - Conditional rendering based on order status
+ *   - Help text card
+ *   - Return window notice
  * ============================================================================
  */
 import { cn } from "@/lib/utils";
@@ -30,9 +27,7 @@ interface OrderActionsBarProps {
   onDownloadInvoice?: () => void;
   onReturn?: () => void;
   onExchange?: () => void;
-  /** Support phone number */
   supportPhone?: string;
-  /** WhatsApp number */
   whatsappNumber?: string;
   className?: string;
 }
@@ -65,24 +60,25 @@ export function OrderActionsBar({
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6",
+        "bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 overflow-hidden",
         className,
       )}
     >
+      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <div className="size-8 rounded-lg bg-[#F3F8F1] flex items-center justify-center">
-          <Headphones className="size-4 text-[#1A6B3C]" />
+        <div className="size-9 rounded-xl bg-[#1A6B3C] flex items-center justify-center shadow-sm">
+          <Headphones className="size-4 text-white" />
         </div>
-        <h3 className="text-sm sm:text-base font-bold text-slate-800">Order Actions</h3>
+        <h3 className="text-base sm:text-lg font-bold text-slate-800">Order Actions</h3>
       </div>
 
-      {/* Action buttons grid */}
+      {/* Action buttons grid — 2 cols mobile, 3 cols desktop */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {/* Download Invoice */}
         <Button
           variant="outline"
           onClick={onDownloadInvoice}
-          className="border-[#1A6B3C] text-[#1A6B3C] hover:bg-[#F3F8F1] gap-2 text-sm justify-start"
+          className="border-[#1A6B3C] text-[#1A6B3C] hover:bg-[#F3F8F1] gap-2 text-sm justify-start h-11"
           size="sm"
         >
           <Download className="size-4 shrink-0" />
@@ -94,7 +90,7 @@ export function OrderActionsBar({
           <Button
             variant="outline"
             onClick={onCancel}
-            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 gap-2 text-sm justify-start"
+            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 gap-2 text-sm justify-start h-11"
             size="sm"
           >
             <X className="size-4 shrink-0" />
@@ -107,7 +103,7 @@ export function OrderActionsBar({
           <Button
             variant="outline"
             onClick={onReturn}
-            className="border-amber-300 text-amber-700 hover:bg-amber-50 gap-2 text-sm justify-start"
+            className="border-amber-300 text-amber-700 hover:bg-amber-50 gap-2 text-sm justify-start h-11"
             size="sm"
           >
             <RefreshCw className="size-4 shrink-0" />
@@ -120,7 +116,7 @@ export function OrderActionsBar({
           <Button
             variant="outline"
             onClick={onExchange}
-            className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 gap-2 text-sm justify-start"
+            className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 gap-2 text-sm justify-start h-11"
             size="sm"
           >
             <ArrowLeftRight className="size-4 shrink-0" />
@@ -132,7 +128,7 @@ export function OrderActionsBar({
         {canReorder && onReorder && (
           <Button
             onClick={onReorder}
-            className="bg-[#1A6B3C] hover:bg-[#16A34A] gap-2 text-sm justify-start"
+            className="bg-[#1A6B3C] hover:bg-[#16A34A] gap-2 text-sm justify-start h-11"
             size="sm"
           >
             <RotateCcw className="size-4 shrink-0" />
@@ -145,7 +141,7 @@ export function OrderActionsBar({
           href={`https://wa.me/${whatsappNumber}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10 text-sm font-medium transition-colors justify-start"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10 text-sm font-medium transition-colors justify-start h-11"
         >
           <MessageCircle className="size-4 shrink-0" />
           <span className="truncate">WhatsApp</span>
@@ -154,25 +150,25 @@ export function OrderActionsBar({
         {/* Call Support */}
         <a
           href={`tel:${supportPhone}`}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 text-slate-600 hover:border-[#1A6B3C] hover:text-[#1A6B3C] text-sm font-medium transition-colors justify-start"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-slate-600 hover:border-[#1A6B3C] hover:text-[#1A6B3C] text-sm font-medium transition-colors justify-start h-11"
         >
           <Phone className="size-4 shrink-0" />
           <span className="truncate">Call Us</span>
         </a>
       </div>
 
-      {/* Help text */}
-      <div className="mt-4 p-3 bg-[#F3F8F1] rounded-lg border border-[#1A6B3C]/10">
+      {/* Help text card */}
+      <div className="mt-4 p-3.5 bg-gradient-to-r from-[#F3F8F1] to-green-50 rounded-xl border border-[#1A6B3C]/10">
         <p className="text-xs text-slate-600 leading-relaxed">
-          <span className="font-semibold text-slate-800">Need help?</span> Our support team is available{" "}
-          <span className="font-medium text-[#1A6B3C]">9 AM – 9 PM</span>, all days.
-          Average response time: <span className="font-medium text-[#1A6B3C]">under 10 minutes</span> on WhatsApp.
+          <span className="font-bold text-slate-800">Need help?</span> Our support team is available{" "}
+          <span className="font-bold text-[#1A6B3C]">9 AM – 9 PM</span>, all days.
+          Average response time: <span className="font-bold text-[#1A6B3C]">under 10 minutes</span> on WhatsApp.
         </p>
       </div>
 
       {/* Return window notice */}
       {canReturnOrExchange && (
-        <p className="text-xs text-amber-700 mt-2 flex items-center gap-1.5">
+        <p className="text-xs text-amber-700 mt-2.5 flex items-center gap-1.5">
           <RefreshCw className="size-3" />
           <span>Return/exchange window: 7 days from delivery</span>
         </p>
