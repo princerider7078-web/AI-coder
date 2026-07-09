@@ -112,6 +112,24 @@ export function formatDateTime(
 }
 
 /**
+ * Format a Date or ISO string as a time only ("10:30 AM").
+ */
+export function formatTime(
+  date: Date | string | null | undefined,
+  locale: "en" | "hi" = "en"
+): string {
+  if (!date) return "—";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "—";
+  const localeTag = locale === "hi" ? "hi-IN" : "en-IN";
+  return new Intl.DateTimeFormat(localeTag, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(d);
+}
+
+/**
  * Format a time slot label as "9:00 AM – 11:00 AM".
  * Accepts "09:00-11:00" → "9:00 AM – 11:00 AM".
  */

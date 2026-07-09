@@ -34,9 +34,9 @@ export interface OrderAddress {
 }
 
 export type OrderStatus =
-  // 7-step timeline statuses
-  | "pending" | "confirmed" | "processing" | "packed"
-  | "shipped" | "out_for_delivery" | "delivered"
+  // 9-step premium timeline statuses
+  | "pending" | "payment_confirmed" | "confirmed" | "processing"
+  | "quality_inspection" | "packed" | "shipped" | "out_for_delivery" | "delivered"
   // Auxiliary statuses (non-timeline)
   | "cancelled" | "completed" | "returned" | "refunded" | "failed" | "on_hold";
 
@@ -61,6 +61,22 @@ export interface Order {
   statusHistory: { status: OrderStatus; date: string; note?: string }[];
   /** True if order is from in-memory mock fallback (no DB persistence) */
   _mock?: boolean;
+  /** Shipping/tracking metadata (populated when order is shipped) */
+  tracking?: {
+    courierPartner?: string;
+    trackingNumber?: string;
+    shipmentId?: string;
+    dispatchedAt?: string;
+    deliveryPartner?: string;
+    driverContact?: string;
+    currentLocation?: string;
+    estimatedArrivalTime?: string;
+    deliveredAt?: string;
+    recipientName?: string;
+    proofOfDelivery?: string;
+    estimatedDeliveryDate?: string;
+    estimatedDeliveryWindow?: string;
+  };
 }
 
 interface OrdersContextValue {
@@ -407,9 +423,11 @@ export function useOrders() {
  * ============================================================================ */
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  processing: "Processing",
+  pending: "Order Placed",
+  payment_confirmed: "Payment Confirmed",
+  confirmed: "Order Confirmed",
+  processing: "Preparing Your Plants",
+  quality_inspection: "Quality Inspection",
   packed: "Packed",
   shipped: "Shipped",
   out_for_delivery: "Out For Delivery",
@@ -424,8 +442,10 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   pending: "bg-amber-100 text-amber-700",
+  payment_confirmed: "bg-emerald-100 text-emerald-700",
   confirmed: "bg-blue-100 text-blue-700",
   processing: "bg-indigo-100 text-indigo-700",
+  quality_inspection: "bg-teal-100 text-teal-700",
   packed: "bg-cyan-100 text-cyan-700",
   shipped: "bg-purple-100 text-purple-700",
   out_for_delivery: "bg-orange-100 text-orange-700",
@@ -454,11 +474,14 @@ export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
   partial_refund: "bg-orange-100 text-orange-700",
 };
 
-// Full tracking timeline (7 steps)
+// Premium 9-step tracking timeline (back-compat export; canonical source is
+// src/components/orders/timeline/stages.ts)
 export const ORDER_TIMELINE: { status: OrderStatus; label: string }[] = [
-  { status: "pending", label: "Placed" },
-  { status: "confirmed", label: "Confirmed" },
-  { status: "processing", label: "Processing" },
+  { status: "pending", label: "Order Placed" },
+  { status: "payment_confirmed", label: "Payment Confirmed" },
+  { status: "confirmed", label: "Order Confirmed" },
+  { status: "processing", label: "Preparing Your Plants" },
+  { status: "quality_inspection", label: "Quality Inspection" },
   { status: "packed", label: "Packed" },
   { status: "shipped", label: "Shipped" },
   { status: "out_for_delivery", label: "Out For Delivery" },

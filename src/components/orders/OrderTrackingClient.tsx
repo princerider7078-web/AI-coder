@@ -46,7 +46,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { onUserOrderSnapshot } from "@/lib/firebase/firestore";
 import type { FirestoreOrder, FirestoreOrderAddressDetails } from "@/types/firebase";
-import { OrderTrackingTimeline } from "@/components/orders/OrderTrackingTimeline";
+import { OrderTimeline } from "@/components/orders/timeline";
 import { appToast } from "@/lib/toast";
 
 interface OrderTrackingClientProps {
@@ -62,6 +62,7 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
   // Live order from Firestore (real-time)
   const [liveOrder, setLiveOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -125,8 +126,10 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
         if (cached) {
           setLiveOrder(cached);
           setNotFound(false);
+          setError(null);
         } else {
           setNotFound(true);
+          setError("We couldn't load real-time tracking. Your order data may be stale.");
         }
         setLoading(false);
       }
@@ -217,17 +220,35 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
             </div>
           </div>
 
-          {/* Tracking Timeline (real-time) */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-bold text-slate-800">Tracking Timeline</h2>
-              <div className="flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] text-slate-500 font-medium">Live</span>
+          {/* Premium Order Timeline (real-time) */}
+          <OrderTimeline
+            order={order}
+            loading={false}
+            error={error}
+            onRetry={() => window.location.reload()}
+            showBanner
+            showProgressCard
+            showSummaryCard
+            layout="auto"
+          />
+
+          {/* Loading skeleton during initial fetch (before order arrives) */}
+          {loading && !liveOrder && (
+            <div className="rounded-2xl bg-white border border-slate-200 p-5">
+              <div className="h-4 w-1/4 bg-slate-100 rounded animate-shimmer mb-4" />
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="size-8 rounded-full bg-slate-100 animate-shimmer shrink-0" />
+                    <div className="flex-1 space-y-2 pt-1">
+                      <div className="h-2.5 w-1/3 bg-slate-100 rounded animate-shimmer" />
+                      <div className="h-2 w-1/2 bg-slate-100 rounded animate-shimmer" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <OrderTrackingTimeline order={order} showDates />
-          </div>
+          )}
 
           {/* Items */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">

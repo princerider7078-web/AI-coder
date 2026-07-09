@@ -534,6 +534,8 @@
  * KEYFRAMES — custom animations
  * ============================================================================
  */
+
+/* Soft pulsing glow — used by the "current" step in OrderTrackingTimeline */
 @keyframes pulse-soft {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(26, 107, 60, 0.35);
@@ -542,10 +544,67 @@
     box-shadow: 0 0 0 6px rgba(26, 107, 60, 0);
   }
 }
-
-/* Soft pulsing glow used by the "current" step in OrderTrackingTimeline */
 .animate-pulse-soft {
   animation: pulse-soft 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Shimmer sweep — used by skeleton loaders and progress bar */
+@keyframes shimmer-x {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer-x {
+  animation: shimmer-x 1.8s linear infinite;
+}
+
+/* Static shimmer for skeleton blocks (gradient sweep) */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 1000px 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+/* Staggered step entrance — fade + slide up */
+@keyframes step-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-step-enter {
+  animation: step-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Banner entrance — fade + slide in from top */
+@keyframes banner-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-banner-enter {
+  animation: banner-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Animated connector fill — draws from left to right */
+@keyframes connector-fill {
+  0% { transform: scaleX(0); transform-origin: left; }
+  100% { transform: scaleX(1); transform-origin: left; }
+}
+.animate-connector-fill {
+  animation: connector-fill 0.6s ease-out both;
 }
 
 /* ============================================================================

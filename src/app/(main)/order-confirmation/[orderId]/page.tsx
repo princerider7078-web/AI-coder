@@ -13,7 +13,7 @@ import {
   PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS,
 } from "@/contexts/OrdersContext";
 import { formatINR, formatDate } from "@/lib/utils";
-import { OrderTrackingTimeline } from "@/components/orders/OrderTrackingTimeline";
+import { OrderTimeline } from "@/components/orders/timeline";
 
 export default function OrderConfirmationPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = use(params);
@@ -47,15 +47,15 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
         </div>
 
         {/* Status + Timeline */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-bold text-slate-800">Tracking Timeline</h2>
-            <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", ORDER_STATUS_COLORS[order.orderStatus])}>
-              {ORDER_STATUS_LABELS[order.orderStatus]}
-            </span>
-          </div>
-          <OrderTrackingTimeline order={order} showDates />
-        </div>
+        {/* Premium Order Timeline */}
+        <OrderTimeline
+          order={order}
+          showBanner
+          showProgressCard
+          showSummaryCard={false}
+          layout="auto"
+          compact
+        />
 
         {/* Items */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">

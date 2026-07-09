@@ -17,9 +17,10 @@ import { formatINR, formatDate } from "@/lib/utils";
 
 const FILTERS: { label: string; value: OrderStatus | "all" }[] = [
   { label: "All", value: "all" },
-  { label: "Pending", value: "pending" },
+  { label: "Placed", value: "pending" },
   { label: "Confirmed", value: "confirmed" },
-  { label: "Processing", value: "processing" },
+  { label: "Preparing", value: "processing" },
+  { label: "Quality Check", value: "quality_inspection" },
   { label: "Packed", value: "packed" },
   { label: "Shipped", value: "shipped" },
   { label: "Out For Delivery", value: "out_for_delivery" },
