@@ -1,165 +1,173 @@
 "use client";
 
 /**
- * LiveStatusBanner — Highlighted status banner at the top of the timeline.
+ * LiveStatusBanner — Highlighted banner at the top of the tracking section.
  *
- * Example:
- *   📦 Your order has been shipped.
- *   Expected delivery: Tomorrow between 10:00 AM – 2:00 PM
- *
- * Variants:
- *   - default (current status): brand green background, current icon
- *   - delivered: green success background, checkmark
- *   - cancelled: red background, X icon
- *   - delayed: amber background, clock icon
+ * Answers "where is my order now?" in one glance.
+ * Includes: status emoji/icon, headline, ETA.
  */
-import { CheckCircle2, X, Clock, Sparkles, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  ORDER_STATUS_LABELS,
-  type Order,
-  type OrderStatus,
-} from "@/contexts/OrdersContext";
-import { getCurrentStage, getEstimatedDelivery } from "./stages";
+import { Truck, MapPin, CheckCircle2, Package, AlertCircle, Clock } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { Order } from "@/contexts/OrdersContext";
+import { ORDER_STATUS_LABELS } from "@/contexts/OrdersContext";
 
-export interface LiveStatusBannerProps {
+interface LiveStatusBannerProps {
   order: Order;
+  /** Estimated delivery window, e.g. "Tomorrow between 10:00 AM – 2:00 PM" */
+  estimatedDelivery?: string;
   className?: string;
 }
 
 interface BannerConfig {
   icon: LucideIcon;
-  emoji: string;
   headline: string;
-  subline?: string;
-  variant: "default" | "delivered" | "cancelled" | "delayed";
+  subtext?: string;
+  bgClass: string;
+  iconBgClass: string;
+  iconColor: string;
 }
 
-function getBannerConfig(order: Order): BannerConfig {
-  const currentStage = getCurrentStage(order);
-  const eta = getEstimatedDelivery(order);
-
-  if (order.orderStatus === "delivered") {
-    return {
-      icon: CheckCircle2,
-      emoji: "✅",
-      headline: "Your order has been delivered.",
-      subline: order.tracking?.deliveredAt
-        ? `Delivered on ${new Date(order.tracking.deliveredAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
-        : "Enjoy your plants!",
-      variant: "delivered",
-    };
-  }
-
-  if (order.orderStatus === "cancelled") {
-    return {
-      icon: X,
-      emoji: "❌",
-      headline: "Your order was cancelled.",
-      subline: order.statusHistory?.find((s) => s.status === "cancelled")?.note ?? "If you have questions, please contact support.",
-      variant: "cancelled",
-    };
-  }
-
-  if (order.orderStatus === "on_hold" || order.orderStatus === "failed") {
-    return {
-      icon: Clock,
-      emoji: "⏳",
-      headline: order.orderStatus === "failed" ? "Order processing failed." : "Your order is on hold.",
-      subline: "Our team will reach out shortly. For urgent help, contact support.",
-      variant: "delayed",
-    };
-  }
-
-  // Default — current stage
-  return {
-    icon: currentStage?.icon ?? Sparkles,
-    emoji: "📦",
-    headline: currentStage
-      ? `Your order ${getStageVerb(order.orderStatus)}.`
-      : `Status: ${ORDER_STATUS_LABELS[order.orderStatus]}`,
-    subline: currentStage?.description ?? undefined,
-    variant: "default",
+function getBannerConfig(order: Order, eta?: string): BannerConfig {
+  const status = order.orderStatus;
+  const base: BannerConfig = {
+    icon: Package,
+    headline: "Order placed",
+    subtext: "We've received your order and will confirm shortly.",
+    bgClass: "bg-[#F3F8F1] border-[#1A6B3C]/20",
+    iconBgClass: "bg-[#1A6B3C]/10",
+    iconColor: "text-[#1A6B3C]",
   };
+
+  switch (status) {
+    case "pending":
+      return {
+        ...base,
+        icon: Package,
+        headline: "Order placed successfully",
+        subtext: "Awaiting confirmation from our team.",
+      };
+    case "confirmed":
+      return {
+        ...base,
+        icon: CheckCircle2,
+        headline: "Order confirmed",
+        subtext: "Our team is preparing your plants with care.",
+      };
+    case "processing":
+      return {
+        ...base,
+        icon: Package,
+        headline: "Preparing your plants",
+        subtext: "Your order is being carefully prepared for dispatch.",
+      };
+    case "packed":
+      return {
+        ...base,
+        icon: Package,
+        headline: "Quality check complete",
+        subtext: "Your plants have passed inspection and are packed safely.",
+      };
+    case "shipped":
+      return {
+        ...base,
+        icon: Truck,
+        headline: "Your order has been shipped",
+        subtext: eta
+          ? `Expected delivery: ${eta}`
+          : "Your package is on its way to you.",
+      };
+    case "out_for_delivery":
+      return {
+        ...base,
+        icon: MapPin,
+        headline: "Out for delivery",
+        subtext: eta
+          ? `Expected arrival: ${eta}`
+          : "Your package will reach you today.",
+        bgClass: "bg-orange-50 border-orange-200",
+        iconBgClass: "bg-orange-100",
+        iconColor: "text-orange-600",
+      };
+    case "delivered":
+      return {
+        ...base,
+        icon: CheckCircle2,
+        headline: "Delivered successfully",
+        subtext: "Your order has been delivered. Enjoy your plants!",
+        bgClass: "bg-green-50 border-green-200",
+        iconBgClass: "bg-green-100",
+        iconColor: "text-green-600",
+      };
+    case "cancelled":
+      return {
+        ...base,
+        icon: AlertCircle,
+        headline: "Order cancelled",
+        subtext: "This order has been cancelled.",
+        bgClass: "bg-red-50 border-red-200",
+        iconBgClass: "bg-red-100",
+        iconColor: "text-red-600",
+      };
+    default:
+      return base;
+  }
 }
 
-function getStageVerb(status: OrderStatus): string {
-  const verbs: Partial<Record<OrderStatus, string>> = {
-    pending: "has been placed",
-    payment_confirmed: "payment is confirmed",
-    confirmed: "is confirmed",
-    processing: "is being prepared",
-    quality_inspection: "is undergoing quality inspection",
-    packed: "is packed",
-    shipped: "has been shipped",
-    out_for_delivery: "is out for delivery",
-  };
-  return verbs[status] ?? "is in progress";
-}
-
-export function LiveStatusBanner({ order, className }: LiveStatusBannerProps) {
-  const config = getBannerConfig(order);
-  const eta = getEstimatedDelivery(order);
+export function LiveStatusBanner({
+  order,
+  estimatedDelivery,
+  className,
+}: LiveStatusBannerProps) {
+  const config = getBannerConfig(order, estimatedDelivery);
   const Icon = config.icon;
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl p-5 md:p-6 border transition-all duration-300",
-        "animate-banner-enter",
-        config.variant === "default" && "bg-gradient-to-br from-[#F3F8F1] to-[#DDF5E0] border-[#1A6B3C]/20",
-        config.variant === "delivered" && "bg-gradient-to-br from-green-50 to-emerald-100 border-green-300",
-        config.variant === "cancelled" && "bg-gradient-to-br from-red-50 to-rose-100 border-red-300",
-        config.variant === "delayed" && "bg-gradient-to-br from-amber-50 to-orange-100 border-amber-300",
+        "rounded-2xl border p-4 sm:p-5 flex items-start gap-3 sm:gap-4",
+        "transition-all duration-300 hover:shadow-md",
+        config.bgClass,
         className,
       )}
       role="status"
       aria-live="polite"
-      aria-label={`Order status: ${config.headline}`}
+      aria-label={`Current status: ${ORDER_STATUS_LABELS[order.orderStatus]}`}
     >
-      {/* Decorative botanical leaf pattern (background) */}
+      {/* Icon */}
       <div
-        className="absolute -right-4 -top-4 size-32 rounded-full opacity-10 pointer-events-none"
-        style={{
-          background: "radial-gradient(circle, currentColor 0%, transparent 70%)",
-          color: config.variant === "cancelled" ? "#dc2626" : "#1A6B3C",
-        }}
-        aria-hidden="true"
-      />
+        className={cn(
+          "size-11 sm:size-12 rounded-xl flex items-center justify-center shrink-0",
+          config.iconBgClass,
+        )}
+      >
+        <Icon className={cn("size-5 sm:size-6", config.iconColor)} aria-hidden="true" />
+      </div>
 
-      <div className="relative flex items-start gap-4">
-        {/* Icon */}
-        <div
-          className={cn(
-            "size-12 md:size-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm",
-            config.variant === "default" && "bg-[#1A6B3C] text-white",
-            config.variant === "delivered" && "bg-green-600 text-white",
-            config.variant === "cancelled" && "bg-red-500 text-white",
-            config.variant === "delayed" && "bg-amber-500 text-white",
-          )}
-        >
-          <Icon className="size-6 md:size-7" strokeWidth={2.2} />
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <h2 className="text-base md:text-lg font-bold text-slate-800 leading-tight">
+      {/* Content */}
+      <div className="flex-1 min-w-0 pt-0.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-sm sm:text-base font-bold text-slate-800">
             {config.headline}
           </h2>
-          {config.subline && (
-            <p className="text-xs md:text-sm text-slate-600 mt-1 leading-relaxed">
-              {config.subline}
-            </p>
-          )}
-          {eta && order.orderStatus !== "delivered" && order.orderStatus !== "cancelled" && (
-            <p className="text-xs md:text-sm text-[#1A6B3C] font-semibold mt-2 flex items-center gap-1.5">
-              <Clock className="size-3.5" aria-hidden="true" />
-              <span>
-                Expected delivery: <span className="font-bold">{eta}</span>
-              </span>
-            </p>
-          )}
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500">
+            <span className="size-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true" />
+            LIVE
+          </span>
         </div>
+        {config.subtext && (
+          <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
+            {config.subtext}
+          </p>
+        )}
+        {estimatedDelivery &&
+          (order.orderStatus === "shipped" ||
+            order.orderStatus === "out_for_delivery") && (
+            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-sm text-xs font-medium text-slate-700">
+              <Clock className="size-3.5" aria-hidden="true" />
+              {estimatedDelivery}
+            </div>
+          )}
       </div>
     </div>
   );

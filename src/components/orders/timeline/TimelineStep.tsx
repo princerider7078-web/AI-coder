@@ -1,153 +1,212 @@
 "use client";
 
 /**
- * TimelineStep — A single step in the tracking timeline.
+ * TimelineStep — Single step in the tracking timeline.
  *
- * Renders: icon + label + description + (optional) display fields.
- * State-driven styling: completed, current, upcoming, cancelled, skipped.
+ * Renders differently based on state:
+ *   - completed       → green circle with checkmark, soft success bg
+ *   - current         → primary color, pulsing glow, elevated card
+ *   - upcoming        → grey circle, muted text
+ *   - cancelled_step  → red circle with X
  *
- * Layout adapts:
- *   - Horizontal (desktop): step is a column, icon on top, label below
- *   - Vertical (mobile): step is a row, icon on left, content on right
+ * Desktop: vertical stack (circle on top, label below)
+ * Mobile:  horizontal row (circle on left, content on right)
+ *
+ * Detail fields (courier, tracking #, etc.) render only when step is
+ * completed or current.
  */
-import { cn, formatDate, formatTime } from "@/lib/utils";
-import type { Order } from "@/contexts/OrdersContext";
-import type { TimelineStepState } from "./types";
-import { TimelineIcon } from "./TimelineIcon";
-import { TimelineDisplayFields } from "./TimelineDisplayFields";
+import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  type TimelineStage,
+  type StepState,
+} from "./timeline-stages";
+import { TimelineIcon, TimelineDetailIcon } from "./TimelineIcon";
+import { StatusBadge } from "./StatusBadge";
 
-export interface TimelineStepProps {
-  stepState: TimelineStepState;
-  order: Order;
-  orientation: "horizontal" | "vertical";
-  /** Show display fields (courier, tracking#, etc.) — only when step is completed or current */
-  showFields?: boolean;
-  /** Show completion date under the label */
-  showDate?: boolean;
-  /** Compact mode */
-  compact?: boolean;
-  /** Animation delay (ms) for staggered entrance */
-  animationDelay?: number;
-  className?: string;
+interface TimelineStepProps {
+  stage: TimelineStage;
+  state: StepState;
+  /** Metadata values keyed by detailField.key */
+  details?: Record<string, string | undefined>;
+  /** Timestamp when this step was completed (ISO string) */
+  timestamp?: string;
+  /** Format function for timestamps */
+  formatDate?: (iso: string) => string;
+  /** Whether this is the last step (no connector after) */
+  isLast?: boolean;
+  /** Index for ARIA labeling */
+  index: number;
 }
 
 export function TimelineStep({
-  stepState,
-  order,
-  orientation,
-  showFields = true,
-  showDate = true,
-  compact = false,
-  animationDelay = 0,
-  className,
+  stage,
+  state,
+  details,
+  timestamp,
+  formatDate,
+  isLast,
+  index,
 }: TimelineStepProps) {
-  const { stage, state, completedAt } = stepState;
-  const isHorizontal = orientation === "horizontal";
-  const isBotanical = stage.accent === "botanical";
-  const isActive = state === "completed" || state === "current";
-
-  // Don't render skipped stages at all on mobile; show muted on desktop
-  if (state === "skipped" && isHorizontal) {
-    return (
-      <div
-        className="flex flex-col items-center gap-1.5 flex-1 min-w-0 opacity-40 animate-step-enter"
-        style={{ animationDelay: `${animationDelay}ms` }}
-        aria-label={`${stage.label} (skipped)`}
-      >
-        <TimelineIcon icon={stage.icon} state="skipped" size={compact ? 32 : 40} botanical={isBotanical} />
-        <p className="text-[10px] text-slate-400 text-center font-medium line-through leading-tight">
-          {stage.label}
-        </p>
-      </div>
-    );
-  }
-  if (state === "skipped") return null;
-
-  // Compute display fields if the stage has them
-  const displayFields = isActive && stage.displayFields ? stage.displayFields(order) : [];
+  const isCompleted = state === "completed";
+  const isCurrent = state === "current";
+  const isCancelled = state === "cancelled_step";
+  const isUpcoming = state === "upcoming";
+  const showDetails = (isCompleted || isCurrent) && stage.detailFields && details;
 
   return (
-    <div
-      className={cn(
-        "animate-step-enter",
-        isHorizontal
-          ? "flex flex-col items-center gap-1.5 flex-1 min-w-0"
-          : "flex items-start gap-3 w-full",
-        className,
-      )}
-      style={{ animationDelay: `${animationDelay}ms` }}
-      role="listitem"
-      aria-label={`${stage.label}: ${state}`}
-    >
-      {/* Icon */}
-      <TimelineIcon
-        icon={stage.icon}
-        state={state}
-        size={compact ? 32 : 40}
-        botanical={isBotanical}
-      />
+    <>
+      {/* ============ DESKTOP: vertical stack ============ */}
+      <div
+        className="hidden md:flex flex-col items-center gap-2 flex-1 min-w-0 relative"
+        aria-label={`Step ${index + 1}: ${stage.label} — ${state}`}
+        role="listitem"
+      >
+        {/* Step circle */}
+        <div
+          className={cn(
+            "relative z-10 size-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-300",
+            // State-based styling
+            isCompleted && "bg-[#1A6B3C] text-white shadow-md shadow-[#1A6B3C]/20",
+            isCurrent &&
+              "bg-[#1A6B3C] text-white ring-4 ring-[#1A6B3C]/20 animate-pulse-soft shadow-lg shadow-[#1A6B3C]/30",
+            isUpcoming && "bg-slate-50 text-slate-400 border-2 border-slate-200",
+            isCancelled && "bg-red-500 text-white shadow-md shadow-red-500/20",
+          )}
+        >
+          {isCompleted ? (
+            <Check className="size-5" strokeWidth={3} aria-hidden="true" />
+          ) : isCancelled ? (
+            <X className="size-5" strokeWidth={3} aria-hidden="true" />
+          ) : (
+            <TimelineIcon
+              name={stage.iconName}
+              className="size-5"
+              withLeafAccent={stage.isBotanical && (isCurrent || isCompleted)}
+            />
+          )}
+        </div>
 
-      {/* Content */}
-      <div className={cn("flex-1 min-w-0", isHorizontal && "text-center")}>
         {/* Label */}
         <p
           className={cn(
-            "font-semibold leading-tight",
-            compact ? "text-[10px]" : "text-xs",
-            state === "completed" && "text-slate-800",
-            state === "current" && (isBotanical ? "text-teal-700" : "text-[#1A6B3C]"),
-            state === "upcoming" && "text-slate-400",
-            state === "cancelled" && "text-red-600",
+            "text-xs font-semibold text-center leading-tight max-w-[100px]",
+            isUpcoming ? "text-slate-400" : "text-slate-800",
+            isCurrent && "text-[#1A6B3C]",
+            isCancelled && "text-red-600",
           )}
         >
-          {state === "cancelled" ? "Cancelled" : stage.label}
-          {state === "current" && (
-            <span
-              className={cn(
-                "ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wide",
-                isBotanical ? "bg-teal-100 text-teal-700" : "bg-[#1A6B3C]/10 text-[#1A6B3C]",
-              )}
-            >
-              Current
-            </span>
-          )}
+          {isCancelled ? "Cancelled" : stage.label}
         </p>
 
-        {/* Date (for completed/current steps) */}
-        {showDate && completedAt && isActive && (
-          <p
-            className={cn(
-              "text-[10px] mt-0.5 leading-tight",
-              state === "current"
-                ? (isBotanical ? "text-teal-600/70 font-medium" : "text-[#1A6B3C]/70 font-medium")
-                : "text-slate-400",
-            )}
-          >
-            {formatDate(completedAt)} · {formatTime(completedAt)}
+        {/* Timestamp */}
+        {isCompleted && timestamp && formatDate && (
+          <p className="text-[10px] text-slate-400 text-center leading-tight">
+            {formatDate(timestamp)}
           </p>
         )}
-
-        {/* Description (only for current step in vertical layout, or compact mode off) */}
-        {!compact && state === "current" && (
-          <p
-            className={cn(
-              "text-[11px] mt-1 leading-relaxed",
-              isHorizontal ? "text-slate-500" : "text-slate-600",
-            )}
-          >
-            {stage.description}
+        {isCurrent && timestamp && formatDate && (
+          <p className="text-[10px] text-[#1A6B3C]/70 text-center leading-tight font-medium">
+            {formatDate(timestamp)}
           </p>
-        )}
-
-        {/* Display fields (courier, tracking#, etc.) */}
-        {showFields && displayFields.length > 0 && (
-          <TimelineDisplayFields
-            fields={displayFields}
-            orientation={orientation}
-            compact={compact}
-          />
         )}
       </div>
-    </div>
+
+      {/* ============ MOBILE: horizontal row ============ */}
+      <div
+        className="md:hidden flex items-start gap-3 relative pb-6 last:pb-0"
+        role="listitem"
+        aria-label={`Step ${index + 1}: ${stage.label} — ${state}`}
+      >
+        {/* Circle */}
+        <div
+          className={cn(
+            "relative z-10 size-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 mt-0.5",
+            isCompleted && "bg-[#1A6B3C] text-white shadow-md shadow-[#1A6B3C]/20",
+            isCurrent &&
+              "bg-[#1A6B3C] text-white ring-4 ring-[#1A6B3C]/20 animate-pulse-soft shadow-lg shadow-[#1A6B3C]/30",
+            isUpcoming && "bg-slate-50 text-slate-400 border-2 border-slate-200",
+            isCancelled && "bg-red-500 text-white shadow-md shadow-red-500/20",
+          )}
+        >
+          {isCompleted ? (
+            <Check className="size-4" strokeWidth={3} aria-hidden="true" />
+          ) : isCancelled ? (
+            <X className="size-4" strokeWidth={3} aria-hidden="true" />
+          ) : (
+            <TimelineIcon
+              name={stage.iconName}
+              className="size-4"
+              withLeafAccent={stage.isBotanical && (isCurrent || isCompleted)}
+            />
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 pt-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p
+              className={cn(
+                "text-sm font-semibold leading-tight",
+                isUpcoming ? "text-slate-400" : "text-slate-800",
+                isCurrent && "text-[#1A6B3C]",
+                isCancelled && "text-red-600",
+              )}
+            >
+              {isCancelled ? "Cancelled" : stage.label}
+            </p>
+            <StatusBadge state={state} size="sm" />
+          </div>
+
+          <p
+            className={cn(
+              "text-xs mt-0.5 leading-relaxed",
+              isUpcoming ? "text-slate-400" : "text-slate-600",
+            )}
+          >
+            {isCancelled ? "This order was cancelled after being placed." : stage.description}
+          </p>
+
+          {/* Timestamp */}
+          {(isCompleted || isCurrent) && timestamp && formatDate && (
+            <p
+              className={cn(
+                "text-[10px] mt-1",
+                isCurrent ? "text-[#1A6B3C]/70 font-medium" : "text-slate-400",
+              )}
+            >
+              {formatDate(timestamp)}
+            </p>
+          )}
+
+          {/* Detail fields */}
+          {showDetails && (
+            <div className="mt-2 space-y-1 p-2.5 rounded-lg bg-[#F3F8F1] border border-[#1A6B3C]/10">
+              {stage.detailFields!.map((field) => {
+                const value = details?.[field.key];
+                if (!value) return null;
+                return (
+                  <div key={field.key} className="flex items-center gap-2 text-xs">
+                    <TimelineDetailIcon
+                      name={field.iconName}
+                      className="size-3.5 text-[#1A6B3C] shrink-0"
+                    />
+                    <span className="text-slate-500">{field.label}:</span>
+                    <span
+                      className={cn(
+                        "text-slate-800 font-medium",
+                        field.critical && "font-bold text-[#1A6B3C]",
+                      )}
+                    >
+                      {value}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

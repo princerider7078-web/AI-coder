@@ -1,67 +1,67 @@
 "use client";
 
 /**
- * TimelineConnector — Animated connector line between timeline steps.
+ * TimelineConnector — Animated line between two steps.
  *
- * Desktop (horizontal): rendered as a horizontal line between adjacent step icons.
- * Mobile (vertical):    rendered as a vertical line above/below step icons.
+ * Desktop: horizontal line (flex-1, height 2px)
+ * Mobile:  vertical line (absolute positioned between circles)
  *
- * States:
- *   - completed → solid green line (fills from left with transition)
- *   - upcoming  → dashed grey line
- *   - skipped   → dotted grey line
- *   - cancelled → solid red line
+ * State:
+ *   - completed → green fill (animated width/height grow on mount)
+ *   - upcoming  → grey dashed
  */
 import { cn } from "@/lib/utils";
-import type { StepState } from "./types";
 
-export interface TimelineConnectorProps {
-  /** State of the connector (use the state of the PREVIOUS step) */
-  state: StepState;
-  /** Layout direction */
+interface TimelineConnectorProps {
+  state: "completed" | "upcoming";
   orientation: "horizontal" | "vertical";
-  /** Length (width for horizontal, height for vertical) — default 'flex-1' */
-  length?: string;
   className?: string;
 }
 
 export function TimelineConnector({
   state,
   orientation,
-  length = "flex-1",
   className,
 }: TimelineConnectorProps) {
-  const isHorizontal = orientation === "horizontal";
+  if (orientation === "horizontal") {
+    return (
+      <div
+        className={cn(
+          "flex-1 h-0.5 mx-1 relative overflow-hidden rounded-full",
+          "min-w-[24px] mt-4",
+          className,
+        )}
+        aria-hidden="true"
+      >
+        {/* Base track */}
+        <div className="absolute inset-0 bg-slate-200" />
+        {/* Fill (animated) */}
+        <div
+          className={cn(
+            "absolute inset-0 origin-left transition-all duration-700 ease-out",
+            state === "completed" ? "bg-[#1A6B3C] scale-x-100" : "scale-x-0",
+          )}
+        />
+      </div>
+    );
+  }
 
+  // Vertical connector (mobile)
   return (
     <div
       className={cn(
-        "relative overflow-hidden",
-        isHorizontal ? `h-0.5 ${length} self-center` : `w-0.5 ${length} mx-auto`,
+        "absolute left-[14px] top-7 bottom-0 w-0.5 overflow-hidden",
         className,
       )}
       aria-hidden="true"
     >
-      {/* Base line */}
+      <div className="absolute inset-0 bg-slate-200" />
       <div
         className={cn(
-          "absolute inset-0 transition-colors duration-500",
-          state === "upcoming" && "bg-slate-200",
-          state === "skipped" && "bg-slate-100 border-t border-dashed border-slate-200",
-          state === "completed" && "bg-[#1A6B3C]",
-          state === "cancelled" && "bg-red-300",
-          state === "current" && "bg-[#1A6B3C]",
+          "absolute inset-0 origin-top transition-all duration-700 ease-out",
+          state === "completed" ? "bg-[#1A6B3C] scale-y-100" : "scale-y-0",
         )}
       />
-      {/* Animated fill overlay for completed (draws from start) */}
-      {state === "completed" && (
-        <div
-          className={cn(
-            "absolute inset-0 bg-gradient-to-r from-[#1A6B3C] to-[#43A047] animate-connector-fill",
-            !isHorizontal && "bg-gradient-to-b",
-          )}
-        />
-      )}
     </div>
   );
 }

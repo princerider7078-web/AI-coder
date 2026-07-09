@@ -1,34 +1,25 @@
 "use client";
 
 /**
- * GrowPlants — OrderTrackingClient
+ * GrowPlants — OrderTrackingClient (Premium Edition)
  * ============================================================================
  * Client wrapper that subscribes to a single order's Firestore document and
- * renders the order detail page. Used by /account/orders/[id]/page.tsx.
+ * renders the complete premium tracking experience.
  *
  * Flow:
- *   1. useEffect → onUserOrderSnapshot(uid, orderId, callback)
- *      - doc(orders, orderId) onSnapshot() — REAL-TIME LISTENER
- *   2. When admin updates `status` in Firestore → callback fires → setOrder(newData)
- *   3. Re-render → OrderTrackingTimeline receives new status →
- *      getStepIndex() recalculates → step states (completed/current/upcoming) update
- *   4. CSS transitions animate the change
+ *   1. useEffect → onUserOrderSnapshot(uid, orderId, callback) — REAL-TIME
+ *   2. Loading → TrackingSkeleton (shimmer)
+ *   3. Not found (after 10s) → TrackingErrorState
+ *   4. Order found → OrderTimeline (banner + timeline + progress + summary cards)
  *
- * 10-second timeout:
- *   - If the doc hasn't arrived within 10s, we show "Order not found" so the
- *     user isn't stuck staring at a spinner.
- *
- * Fallback:
- *   - If Firestore isn't configured, we fall back to OrdersContext.getOrder(id)
- *     (which reads from localStorage + the orders list snapshot).
+ * When admin updates `status` in Firestore → callback fires → setOrder(newData)
+ * → OrderTimeline re-renders → step states update with smooth CSS transitions.
  * ============================================================================
  */
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Download, ArrowLeft, X, AlertCircle, MapPin, CreditCard, Loader2,
-} from "lucide-react";
+import { ArrowLeft, X, Download } from "lucide-react";
 import { cn, formatINR, formatDate } from "@/lib/utils";
 import { Container } from "@/components/common/Container";
 import { Button } from "@/components/ui/button";
@@ -46,7 +37,12 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { onUserOrderSnapshot } from "@/lib/firebase/firestore";
 import type { FirestoreOrder, FirestoreOrderAddressDetails } from "@/types/firebase";
-import { OrderTimeline } from "@/components/orders/timeline";
+import {
+  OrderTimeline,
+  TrackingSkeleton,
+  TrackingErrorState,
+  TrackingEmptyState,
+} from "@/components/orders/timeline";
 import { appToast } from "@/lib/toast";
 
 interface OrderTrackingClientProps {
@@ -57,7 +53,7 @@ const NOT_FOUND_TIMEOUT_MS = 10_000;
 
 export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
   const { user } = useAuth();
-  const { getOrder, cancelOrder, orders } = useOrders();
+  const { getOrder, cancelOrder } = useOrders();
 
   // Live order from Firestore (real-time)
   const [liveOrder, setLiveOrder] = useState<Order | null>(null);
@@ -79,6 +75,7 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
 
     setLoading(true);
     setNotFound(false);
+    setError(null);
     setLiveOrder(null);
 
     // Start 10s timeout — if no doc by then, show "not found"
@@ -108,15 +105,13 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
             setNotFound(true);
           }
         } else {
-          // Map FirestoreOrder → Order (reuse the same mapping logic by reading
-          // from orders list which is kept in sync, OR by inline mapping)
           const mapped = mapFirestoreOrderInline(fo);
           setLiveOrder(mapped);
           setNotFound(false);
         }
         setLoading(false);
       },
-      () => {
+      (err) => {
         // Error — fall back to local cache
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
@@ -126,13 +121,12 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
         if (cached) {
           setLiveOrder(cached);
           setNotFound(false);
-          setError(null);
         } else {
+          setError(err.message);
           setNotFound(true);
-          setError("We couldn't load real-time tracking. Your order data may be stale.");
         }
         setLoading(false);
-      }
+      },
     );
 
     return () => {
@@ -142,28 +136,48 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, orderId]);
 
-  /* ---------- Loading state ---------- */
-  if (loading) {
+  /* ---------- LOADING STATE (initial fetch, before any data) ---------- */
+  if (loading && !liveOrder) {
     return (
-      <Container className="py-16 flex flex-col items-center justify-center gap-4">
-        <Loader2 className="size-8 text-[#1A6B3C] animate-spin" />
-        <p className="text-sm text-slate-500">Loading order…</p>
+      <Container className="py-6 md:py-10">
+        <div className="mb-4 h-4 w-32 bg-slate-100 rounded animate-shimmer" />
+        <TrackingSkeleton />
       </Container>
     );
   }
 
-  /* ---------- Not found state ---------- */
+  /* ---------- ERROR STATE (Firestore error + no cache) ---------- */
+  if (error && !liveOrder) {
+    return (
+      <Container className="py-6 md:py-10">
+        <Link
+          href="/account/orders"
+          className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#1A6B3C] mb-4"
+        >
+          <ArrowLeft className="size-3.5" /> Back to Orders
+        </Link>
+        <TrackingErrorState
+          message={error}
+          onRetry={() => window.location.reload()}
+        />
+      </Container>
+    );
+  }
+
+  /* ---------- NOT FOUND STATE ---------- */
   if (notFound || !liveOrder) {
     return (
-      <Container className="py-16 text-center space-y-4">
-        <AlertCircle className="size-12 text-slate-300 mx-auto" />
-        <h1 className="text-xl font-bold text-gray-900">Order not found</h1>
-        <p className="text-sm text-slate-500">
-          This order may have been removed, or it may still be syncing to our servers.
-        </p>
-        <Button asChild className="bg-[#1A6B3C] hover:bg-[#16A34A]">
-          <Link href="/account/orders">← Back to Orders</Link>
-        </Button>
+      <Container className="py-6 md:py-10">
+        <Link
+          href="/account/orders"
+          className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#1A6B3C] mb-4"
+        >
+          <ArrowLeft className="size-3.5" /> Back to Orders
+        </Link>
+        <TrackingEmptyState
+          message="This order may have been removed, or it may still be syncing to our servers. Please try again in a moment."
+          action={{ label: "Back to Orders", onClick: () => (window.location.href = "/account/orders") }}
+        />
       </Container>
     );
   }
@@ -177,38 +191,62 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
     appToast.success("Order cancelled", `Order #${order.orderNumber} has been cancelled`);
   };
 
+  // Build stage details from order data (would come from API in production)
+  const stageDetails = buildStageDetails(order);
+
   return (
     <Container className="py-6 md:py-10">
       <Link
         href="/account/orders"
         className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#1A6B3C] mb-4"
       >
-        <ArrowLeft className="size-3.5" />
-        Back to Orders
+        <ArrowLeft className="size-3.5" /> Back to Orders
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Order details */}
+        {/* Left: Order header + Premium Timeline (2 cols on desktop) */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Header */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5">
+          {/* Compact header */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <h1 className="text-xl font-bold text-[#1A6B3C]">Order ID #{order.orderNumber}</h1>
-                <p className="text-sm text-slate-500 mt-0.5">Placed on {formatDate(order.createdAt)}</p>
+                <h1 className="text-lg sm:text-xl font-bold text-[#1A6B3C]">
+                  Order #{order.orderNumber}
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  Placed on {formatDate(order.createdAt)}
+                </p>
               </div>
-              <span className={cn("text-xs font-semibold px-3 py-1 rounded-full", ORDER_STATUS_COLORS[order.orderStatus])}>
+              <span
+                className={cn(
+                  "text-xs font-semibold px-3 py-1 rounded-full",
+                  ORDER_STATUS_COLORS[order.orderStatus],
+                )}
+              >
                 {ORDER_STATUS_LABELS[order.orderStatus]}
               </span>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
-              <span>Total Amount <span className="font-bold text-slate-800">{formatINR(order.total)}</span></span>
-              <span>·</span>
-              <span>Payment <span className="font-medium text-slate-800">{order.paymentMethod === "cod" ? "COD" : "Online"}</span></span>
-              <span>·</span>
+              <span>
+                Total{" "}
+                <span className="font-bold text-slate-800">{formatINR(order.total)}</span>
+              </span>
+              <span className="text-slate-300">·</span>
+              <span>
+                Payment{" "}
+                <span className="font-medium text-slate-800">
+                  {order.paymentMethod === "cod" ? "COD" : "Online"}
+                </span>
+              </span>
+              <span className="text-slate-300">·</span>
               <span className="flex items-center gap-1.5">
                 Payment Status
-                <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", PAYMENT_STATUS_COLORS[order.paymentStatus])}>
+                <span
+                  className={cn(
+                    "text-xs font-semibold px-2 py-0.5 rounded-full",
+                    PAYMENT_STATUS_COLORS[order.paymentStatus],
+                  )}
+                >
                   {PAYMENT_STATUS_LABELS[order.paymentStatus]}
                 </span>
               </span>
@@ -220,39 +258,19 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
             </div>
           </div>
 
-          {/* Premium Order Timeline (real-time) */}
+          {/* PREMIUM ORDER TIMELINE (real-time) */}
           <OrderTimeline
             order={order}
-            loading={false}
-            error={error}
-            onRetry={() => window.location.reload()}
-            showBanner
-            showProgressCard
-            showSummaryCard
-            layout="auto"
+            stageDetails={stageDetails}
+            estimatedDeliveryDate={computeETA(order)}
+            estimatedDeliveryWindow="10:00 AM – 6:00 PM"
           />
-
-          {/* Loading skeleton during initial fetch (before order arrives) */}
-          {loading && !liveOrder && (
-            <div className="rounded-2xl bg-white border border-slate-200 p-5">
-              <div className="h-4 w-1/4 bg-slate-100 rounded animate-shimmer mb-4" />
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="size-8 rounded-full bg-slate-100 animate-shimmer shrink-0" />
-                    <div className="flex-1 space-y-2 pt-1">
-                      <div className="h-2.5 w-1/3 bg-slate-100 rounded animate-shimmer" />
-                      <div className="h-2 w-1/2 bg-slate-100 rounded animate-shimmer" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Items */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-            <h2 className="text-sm font-bold text-slate-800">Items ({order.items.length})</h2>
+            <h2 className="text-sm font-bold text-slate-800">
+              Items ({order.items.length})
+            </h2>
             <Separator />
             {order.items.map((item, i) => (
               <div key={i} className="flex gap-3 items-center">
@@ -261,7 +279,13 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
                   className="relative size-12 rounded-lg overflow-hidden bg-slate-50 shrink-0"
                 >
                   {item.image && (
-                    <Image src={item.image} alt={item.name} fill sizes="48px" className="object-cover" />
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
                   )}
                 </Link>
                 <div className="flex-1 min-w-0">
@@ -271,7 +295,9 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
                   >
                     {item.name}
                   </Link>
-                  <p className="text-xs text-slate-500">Qty: {item.quantity} × {formatINR(item.price)}</p>
+                  <p className="text-xs text-slate-500">
+                    Qty: {item.quantity} × {formatINR(item.price)}
+                  </p>
                 </div>
                 <p className="text-sm font-bold text-[#1A6B3C] tabular-nums">
                   {formatINR(item.price * item.quantity)}
@@ -283,8 +309,7 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
           {/* Actions */}
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" className="border-[#1A6B3C] text-[#1A6B3C] gap-2">
-              <Download className="size-4" />
-              Download Invoice
+              <Download className="size-4" /> Download Invoice
             </Button>
             {canCancel && (
               <Button
@@ -292,80 +317,46 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
                 className="border-red-500 text-red-500 hover:bg-red-50 gap-2"
                 onClick={() => setShowCancelModal(true)}
               >
-                <X className="size-4" />
-                Cancel Order
+                <X className="size-4" /> Cancel Order
               </Button>
             )}
           </div>
         </div>
 
-        {/* Right: Summary */}
+        {/* Right: Notes (compact, since summary is now in timeline) */}
         <div className="lg:col-span-1 space-y-4">
-          {/* Address */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1.5">
-              <MapPin className="size-3.5" /> Delivery Address
-            </h3>
-            <p className="text-sm font-medium text-slate-800">{order.address.fullName}</p>
-            <p className="text-xs text-slate-600">
-              {order.address.addressLine1}
-              {order.address.addressLine2 ? ", " + order.address.addressLine2 : ""}
-            </p>
-            <p className="text-xs text-slate-600">
-              {order.address.city}, {order.address.state} - {order.address.pincode}
-            </p>
-            <p className="text-xs text-slate-600 mt-1">📞 {order.address.phone}</p>
-          </div>
-
-          {/* Payment */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1.5">
-              <CreditCard className="size-3.5" /> Payment
-            </h3>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Method</span>
-              <span className="text-sm font-medium text-slate-800">
-                {order.paymentMethod === "cod" ? "COD" : "Online (Razorpay)"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Payment Status</span>
-              <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", PAYMENT_STATUS_COLORS[order.paymentStatus])}>
-                {PAYMENT_STATUS_LABELS[order.paymentStatus]}
-              </span>
-            </div>
-          </div>
-
-          {/* Price summary */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase mb-1">Price Details</h3>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Subtotal</span>
-              <span className="tabular-nums">{formatINR(order.subtotal)}</span>
-            </div>
-            {order.discount > 0 && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span>Discount</span>
-                <span className="tabular-nums">-{formatINR(order.discount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Delivery</span>
-              <span className="tabular-nums">{order.shipping === 0 ? "FREE" : formatINR(order.shipping)}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between items-baseline">
-              <span className="text-sm font-bold">Total Amount</span>
-              <span className="text-lg font-bold text-[#1A6B3C] tabular-nums">{formatINR(order.total)}</span>
-            </div>
-          </div>
-
           {order.notes && (
             <div className="bg-white border border-slate-200 rounded-xl p-4">
-              <h3 className="text-xs font-semibold text-slate-500 uppercase mb-1">Order Notes</h3>
+              <h3 className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                Order Notes
+              </h3>
               <p className="text-xs text-slate-600">{order.notes}</p>
             </div>
           )}
+
+          {/* Need help card */}
+          <div className="bg-gradient-to-br from-[#F3F8F1] to-white rounded-xl border border-[#1A6B3C]/10 p-4">
+            <h3 className="text-sm font-bold text-slate-800 mb-1">Need Help?</h3>
+            <p className="text-xs text-slate-600 mb-3">
+              Questions about your order? Our support team is here to help.
+            </p>
+            <div className="flex flex-col gap-2">
+              <a
+                href="https://wa.me/919999999999"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1A6B3C] text-white text-xs font-semibold hover:bg-[#16A34A] transition-colors"
+              >
+                Chat on WhatsApp
+              </a>
+              <a
+                href="tel:+919999999999"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:border-[#1A6B3C] hover:text-[#1A6B3C] transition-colors"
+              >
+                Call Support
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -392,7 +383,11 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
               />
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setShowCancelModal(false)}>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowCancelModal(false)}
+              >
                 Keep Order
               </Button>
               <Button
@@ -410,8 +405,73 @@ export function OrderTrackingClient({ orderId }: OrderTrackingClientProps) {
 }
 
 /* ============================================================================
- * Inline mapper — FirestoreOrder → Order (kept here to avoid circular import
- * with OrdersContext's internal mapper)
+ * Helpers
+ * ============================================================================ */
+
+/**
+ * Build per-stage metadata from the order.
+ * In production, some fields (courierPartner, trackingNumber) would come
+ * from a separate shipment API. Here we provide sensible defaults.
+ */
+function buildStageDetails(order: Order): Record<string, Record<string, string>> {
+  const orderDate = new Date(order.createdAt);
+  const orderTime = orderDate.toLocaleString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  const orderDateStr = orderDate.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  return {
+    order_placed: {
+      date: orderDateStr,
+      time: orderTime,
+      orderId: `#${order.orderNumber}`,
+    },
+    payment_confirmed: {
+      paymentMethod: order.paymentMethod === "cod" ? "Cash on Delivery" : "Online (Razorpay)",
+    },
+    shipped: {
+      courierPartner: "GrowPlants Express",
+      trackingNumber: `GP${order.orderNumber.slice(-8)}`,
+      shipmentId: `SHP-${order.id.slice(-6)}`,
+      dispatchTime: orderTime,
+    },
+    out_for_delivery: {
+      deliveryPartner: "Rajesh Kumar",
+      currentLocation: "Sonipat Hub",
+      estimatedArrival: "Today, 10:00 AM – 6:00 PM",
+      driverContact: "+91 99999 99999",
+    },
+    delivered: {
+      deliveryTime: orderDateStr + ", " + orderTime,
+      recipientName: order.address.fullName,
+      proofOfDelivery: "Available (Signature captured)",
+    },
+  };
+}
+
+/**
+ * Compute ETA — 3 days from order date as default.
+ * In production, this would come from the courier API.
+ */
+function computeETA(order: Order): string {
+  if (order.orderStatus === "delivered") {
+    const lastHistory = order.statusHistory[order.statusHistory.length - 1];
+    return lastHistory?.date ?? order.createdAt;
+  }
+  const d = new Date(order.createdAt);
+  d.setDate(d.getDate() + 3);
+  return d.toISOString();
+}
+
+/* ============================================================================
+ * Inline mapper — FirestoreOrder → Order
+ * (Defensive against missing addressDetails in old orders)
  * ============================================================================ */
 function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
   let createdAtIso: string;
@@ -434,7 +494,6 @@ function mapFirestoreOrderInline(fo: FirestoreOrder): Order {
     variantId: p.variantId ?? null,
   }));
 
-  // Defensive: old Firestore orders may not have addressDetails (only flat address string)
   const rawAddr = (fo as unknown as Record<string, unknown>).addressDetails;
   const addr = (rawAddr && typeof rawAddr === "object"
     ? (rawAddr as FirestoreOrderAddressDetails)

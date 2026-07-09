@@ -1,152 +1,222 @@
 "use client";
 
 /**
- * DeliveryProgressCard — Beautiful progress card showing:
- *   - Progress Percentage (animated bar)
- *   - Current Step label
- *   - Expected Next Step label
- *   - Estimated Delivery Date + Time
+ * DeliveryProgressCard — Premium progress card.
  *
- * Botanical-themed: leaf accent on the progress bar.
+ * Shows:
+ *   - Circular progress ring with %
+ *   - Current step name
+ *   - Expected next step
+ *   - Estimated delivery date
+ *   - Expected delivery time window
  */
-import { Sparkles, TrendingUp, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Calendar, Clock, ArrowRight, Sparkles } from "lucide-react";
 import type { Order } from "@/contexts/OrdersContext";
 import {
-  computeProgress,
-  getCurrentStage,
-  getNextStage,
-  getEstimatedDelivery,
-} from "./stages";
+  TIMELINE_STAGES,
+  getTimelineStageIndex,
+  getProgressPercentage,
+} from "./timeline-stages";
+import { formatINR, formatDate } from "@/lib/utils";
 
-export interface DeliveryProgressCardProps {
+interface DeliveryProgressCardProps {
   order: Order;
+  /** Estimated delivery date (ISO or formatted string) */
+  estimatedDeliveryDate?: string;
+  /** Expected delivery time window, e.g. "10:00 AM – 2:00 PM" */
+  estimatedDeliveryWindow?: string;
   className?: string;
 }
 
-export function DeliveryProgressCard({ order, className }: DeliveryProgressCardProps) {
-  const percent = computeProgress(order);
-  const current = getCurrentStage(order);
-  const next = getNextStage(order);
-  const eta = getEstimatedDelivery(order);
-  const isDelivered = order.orderStatus === "delivered";
+export function DeliveryProgressCard({
+  order,
+  estimatedDeliveryDate,
+  estimatedDeliveryWindow,
+  className,
+}: DeliveryProgressCardProps) {
+  const currentIndex = getTimelineStageIndex(order.orderStatus);
   const isCancelled = order.orderStatus === "cancelled";
+  const isDelivered = order.orderStatus === "delivered";
+  const progress = isCancelled ? 0 : getProgressPercentage(currentIndex, TIMELINE_STAGES.length);
 
-  // Split ETA into date + time if possible
-  const etaParts = eta?.split(" · ") ?? [];
-  const etaDate = etaParts[0] ?? eta ?? "—";
-  const etaTime = etaParts[1] ?? "10:00 AM – 2:00 PM";
+  const currentStage = currentIndex >= 0 ? TIMELINE_STAGES[currentIndex] : null;
+  const nextStage =
+    currentIndex >= 0 && currentIndex < TIMELINE_STAGES.length - 1
+      ? TIMELINE_STAGES[currentIndex + 1]
+      : null;
+
+  // Compute ETA: 3 days from order date if not provided
+  const eta = estimatedDeliveryDate ?? computeDefaultETA(order.createdAt);
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 md:p-6 shadow-sm hover-lift",
+        "bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm",
+        "hover:shadow-md transition-shadow duration-300",
         className,
       )}
     >
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="size-8 rounded-lg bg-[#F3F8F1] flex items-center justify-center">
-            <TrendingUp className="size-4 text-[#1A6B3C]" aria-hidden="true" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-800">Delivery Progress</h3>
-        </div>
-        <span
-          className={cn(
-            "text-2xl font-bold tabular-nums",
-            isDelivered ? "text-green-600" : isCancelled ? "text-red-500" : "text-[#1A6B3C]",
-          )}
-        >
-          {percent}%
-        </span>
-      </div>
-
-      {/* Progress bar */}
-      <div
-        className="relative h-2.5 bg-slate-100 rounded-full overflow-hidden mb-4"
-        role="progressbar"
-        aria-valuenow={percent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label="Order delivery progress"
-      >
-        <div
-          className={cn(
-            "absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-out",
-            isDelivered
-              ? "bg-gradient-to-r from-green-500 to-emerald-600"
-              : isCancelled
-                ? "bg-gradient-to-r from-red-400 to-red-500"
-                : "bg-gradient-to-r from-[#1A6B3C] via-[#43A047] to-[#5ABB59]",
-          )}
-          style={{ width: `${percent}%` }}
-        >
-          {/* Shimmer overlay on the filled portion */}
-          {!isDelivered && !isCancelled && percent > 0 && percent < 100 && (
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-x" />
-          )}
-        </div>
-
-        {/* Leaf icon at the progress tip (when in progress) */}
-        {!isDelivered && !isCancelled && percent > 5 && percent < 100 && (
-          <div
-            className="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out"
-            style={{ left: `calc(${percent}% - 8px)` }}
-            aria-hidden="true"
+        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <Sparkles className="size-4 text-[#E8930A]" aria-hidden="true" />
+          Delivery Progress
+        </h3>
+        {!isCancelled && (
+          <span
+            className={cn(
+              "text-xs font-bold px-2.5 py-1 rounded-full",
+              isDelivered
+                ? "bg-green-100 text-green-700"
+                : progress > 50
+                  ? "bg-[#1A6B3C]/10 text-[#1A6B3C]"
+                  : "bg-amber-100 text-amber-700",
+            )}
           >
-            <Sparkles className="size-3 text-[#1A6B3C]" />
-          </div>
+            {progress}%
+          </span>
         )}
       </div>
 
-      {/* Current + Next step row */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="rounded-lg bg-[#F3F8F1] p-3">
-          <p className="text-[9px] font-bold uppercase tracking-wide text-[#1A6B3C]/70 mb-1">
-            Current Step
-          </p>
-          <p className="text-xs font-semibold text-slate-800 leading-tight">
-            {isDelivered
-              ? "Delivered"
-              : isCancelled
-                ? "Cancelled"
-                : current?.label ?? "Processing"}
-          </p>
-        </div>
-        <div className="rounded-lg bg-slate-50 p-3">
-          <p className="text-[9px] font-bold uppercase tracking-wide text-slate-400 mb-1">
-            Next Step
-          </p>
-          <p className="text-xs font-semibold text-slate-600 leading-tight">
-            {isDelivered
-              ? "✅ Complete"
-              : isCancelled
-                ? "—"
-                : next?.label ?? "Final step"}
-          </p>
+      {/* Circular progress + current step */}
+      <div className="flex items-center gap-4 mb-4">
+        <ProgressRing
+          percentage={progress}
+          isCancelled={isCancelled}
+          isDelivered={isDelivered}
+        />
+        <div className="flex-1 min-w-0">
+          {isCancelled ? (
+            <>
+              <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">
+                Status
+              </p>
+              <p className="text-base font-bold text-red-600 mt-0.5">Order Cancelled</p>
+              <p className="text-xs text-slate-500 mt-1">
+                No delivery will be attempted.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">
+                Current Step
+              </p>
+              <p className="text-base font-bold text-[#1A6B3C] mt-0.5 truncate">
+                {currentStage?.label ?? "Processing"}
+              </p>
+              {nextStage && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
+                  <span>Next:</span>
+                  <span className="font-medium text-slate-700">{nextStage.label}</span>
+                  <ArrowRight className="size-3" aria-hidden="true" />
+                </div>
+              )}
+              {isDelivered && (
+                <p className="text-xs text-green-600 font-medium mt-1">
+                  All steps completed
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 
       {/* ETA row */}
       {!isCancelled && (
-        <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 flex-1">
-            <Calendar className="size-3.5 text-slate-400" aria-hidden="true" />
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Est. Delivery</p>
-              <p className="text-xs font-semibold text-slate-700">{etaDate}</p>
+        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+          <div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+              <Calendar className="size-3.5" aria-hidden="true" />
+              <span className="uppercase tracking-wide font-semibold">
+                {isDelivered ? "Delivered" : "Est. Delivery"}
+              </span>
             </div>
+            <p className="text-sm font-bold text-slate-800">
+              {formatDate(eta)}
+            </p>
           </div>
-          <div className="flex items-center gap-1.5 flex-1">
-            <Clock className="size-3.5 text-slate-400" aria-hidden="true" />
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Time Window</p>
-              <p className="text-xs font-semibold text-slate-700">{isDelivered ? "Delivered" : etaTime}</p>
+          <div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+              <Clock className="size-3.5" aria-hidden="true" />
+              <span className="uppercase tracking-wide font-semibold">Time Window</span>
             </div>
+            <p className="text-sm font-bold text-slate-800">
+              {isDelivered
+                ? "Completed"
+                : estimatedDeliveryWindow ?? "10:00 AM – 6:00 PM"}
+            </p>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+/* ---------- Circular Progress Ring ---------- */
+
+function ProgressRing({
+  percentage,
+  isCancelled,
+  isDelivered,
+}: {
+  percentage: number;
+  isCancelled: boolean;
+  isDelivered: boolean;
+}) {
+  const size = 64;
+  const strokeWidth = 6;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
+
+  const ringColor = isCancelled
+    ? "#EF4444"
+    : isDelivered
+      ? "#22C55E"
+      : "#1A6B3C";
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        {/* Background track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#E2E8F0"
+          strokeWidth={strokeWidth}
+        />
+        {/* Progress arc */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={ringColor}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-700 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span
+          className="text-sm font-bold"
+          style={{ color: ringColor }}
+        >
+          {isCancelled ? "—" : `${percentage}%`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Helpers ---------- */
+
+function computeDefaultETA(createdAtIso: string): string {
+  const d = new Date(createdAtIso);
+  d.setDate(d.getDate() + 3); // 3-day default ETA
+  return d.toISOString();
 }

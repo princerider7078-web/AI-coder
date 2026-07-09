@@ -1,72 +1,50 @@
 "use client";
 
 /**
- * StatusBadge — Pill-shaped status indicator.
- * Used in summary cards, headers, and banners.
- *
- * Variants match the OrderStatus colors. Each has a colored dot + label.
+ * StatusBadge — Small pill showing the step's state.
+ * Used inside TimelineStep and as a header chip.
  */
 import { cn } from "@/lib/utils";
-import {
-  ORDER_STATUS_LABELS,
-  ORDER_STATUS_COLORS,
-  PAYMENT_STATUS_LABELS,
-  PAYMENT_STATUS_COLORS,
-  type OrderStatus,
-  type PaymentStatus,
-} from "@/contexts/OrdersContext";
+import type { StepState } from "./timeline-stages";
 
-export interface StatusBadgeProps {
-  status: OrderStatus | PaymentStatus;
-  /** "order" or "payment" — determines which label/color map to use */
-  kind?: "order" | "payment";
-  size?: "sm" | "md" | "lg";
-  /** Show pulsing dot for current/active statuses */
-  pulse?: boolean;
+interface StatusBadgeProps {
+  state: StepState;
   className?: string;
+  size?: "sm" | "md";
 }
 
-export function StatusBadge({
-  status,
-  kind = "order",
-  size = "md",
-  pulse = false,
-  className,
-}: StatusBadgeProps) {
-  const label =
-    kind === "order"
-      ? ORDER_STATUS_LABELS[status as OrderStatus] ?? status
-      : PAYMENT_STATUS_LABELS[status as PaymentStatus] ?? status;
-  const color =
-    kind === "order"
-      ? ORDER_STATUS_COLORS[status as OrderStatus] ?? "bg-slate-100 text-slate-700"
-      : PAYMENT_STATUS_COLORS[status as PaymentStatus] ?? "bg-slate-100 text-slate-700";
+const STATE_CONFIG: Record<StepState, { label: string; classes: string }> = {
+  completed: {
+    label: "Completed",
+    classes: "bg-green-50 text-green-700 border border-green-200",
+  },
+  current: {
+    label: "In Progress",
+    classes: "bg-[#1A6B3C]/10 text-[#1A6B3C] border border-[#1A6B3C]/30",
+  },
+  upcoming: {
+    label: "Upcoming",
+    classes: "bg-slate-50 text-slate-500 border border-slate-200",
+  },
+  cancelled_step: {
+    label: "Cancelled",
+    classes: "bg-red-50 text-red-600 border border-red-200",
+  },
+};
 
-  const sizeClasses = {
-    sm: "text-[10px] px-2 py-0.5",
-    md: "text-xs px-2.5 py-1",
-    lg: "text-sm px-3 py-1.5",
-  };
-
+export function StatusBadge({ state, className, size = "sm" }: StatusBadgeProps) {
+  const config = STATE_CONFIG[state];
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-semibold border",
-        color,
-        sizeClasses[size],
+        "inline-flex items-center gap-1 rounded-full font-semibold",
+        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+        config.classes,
         className,
       )}
-      role="status"
-      aria-label={`${kind} status: ${label}`}
     >
-      <span
-        className={cn(
-          "size-1.5 rounded-full bg-current",
-          pulse && "animate-pulse",
-        )}
-        aria-hidden="true"
-      />
-      {label}
+      <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden="true" />
+      {config.label}
     </span>
   );
 }
